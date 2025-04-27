@@ -6,20 +6,6 @@
 	"overrides": {
 		"esbuild": "$esbuild"
 	  },
-	"scripts": {
-		"start": "yarn install && yarn dev",
-		"dev": "tsx scripts/esbuild.config.ts",
-		"build": "tsc -noEmit -skipLibCheck && tsx scripts/esbuild.config.ts production",
-		"real": "tsx scripts/esbuild.config.ts production -r",
-		"acp": "tsx scripts/acp.ts",
-		"bacp": "tsx scripts/acp.ts -b",
-		"update-version": "tsx scripts/update-version.ts",
-		"v": "tsx scripts/update-version.ts",
-		"release": "tsx scripts/release.ts",
-		"r": "tsx scripts/release.ts",
-		"lint": "eslint . --ext .ts",
-		"lint:fix": "eslint . --ext .ts --fix"
-	},
 	"keywords": [],
 	"author": "3C0D",
 	"license": "MIT",
@@ -40,7 +26,6 @@
 		"obsidian-typings": "latest",
 		"semver": "^7.6.0",
 		"tslib": "2.4.0",
-		"tsx": "^4.19.3",
 		"typescript": "^5.8.2"
 	}
 }
