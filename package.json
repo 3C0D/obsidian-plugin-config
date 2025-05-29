@@ -1,31 +1,21 @@
 {
-	"name": "obsidian-plugin-config",
-	"version": "1.0.0",
-	"description": "Centralized configuration for Obsidian plugin development",
-	"type": "module",
-	"overrides": {
-		"esbuild": "$esbuild"
-	  },
-	"keywords": [],
-	"author": "3C0D",
-	"license": "MIT",
-	"devDependencies": {
-		"@types/eslint": "latest",
-		"@types/fs-extra": "^11.0.4",
-		"@types/node": "latest",
-		"@types/semver": "^7.5.8",
-		"@typescript-eslint/eslint-plugin": "latest",
-		"@typescript-eslint/parser": "latest",
-		"builtin-modules": "3.3.0",
-		"dedent": "^1.5.1",
-		"dotenv": "^16.4.5",
-		"esbuild": "latest",
-		"eslint": "latest",
-		"fs-extra": "^11.2.0",
-		"obsidian": "latest",
-		"obsidian-typings": "latest",
-		"semver": "^7.6.0",
-		"tslib": "2.4.0",
-		"typescript": "^5.8.2"
-	}
+  "name": "obsidian-plugin-config",
+  "version": "1.0.0",
+  "description": "Centralized configuration for Obsidian plugin development",
+  "type": "module",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./modals": "./src/modals/index.ts",
+    "./scripts/*": "./scripts/*"
+  },
+  "devDependencies": {
+    "obsidian": "latest",
+    "obsidian-typings": "latest",
+    "typescript": "^5.8.2",
+    "@types/node": "latest"
+  },
+  "peerDependencies": {
+    "obsidian": "*"
+  }
 }

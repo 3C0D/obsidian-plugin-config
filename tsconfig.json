@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "strictPropertyInitialization": false,
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "importHelpers": true,
+    "lib": [
+      "DOM",
+      "ES2023"
+    ],
+    "isolatedModules": true,
+    "module": "NodeNext",
+    "moduleResolution": "nodenext",
+    "resolveJsonModule": true,
+    "noEmit": true,
+    "target": "ESNext",
+    "types": [
+      "node",
+      "obsidian-typings"
+    ],
+    "verbatimModuleSyntax": true
+  },
+  "include": [
+    "./src/**/*.ts",
+    "./scripts/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
