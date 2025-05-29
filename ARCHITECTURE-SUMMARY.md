@@ -129,6 +129,57 @@ const entryPoints = [mainTsPath]; // ✅ Absolu vers le plugin
 ### Principe Clé : `process.cwd()`
 Le script s'exécute depuis le repo centralisé mais doit travailler sur les fichiers du plugin qui l'appelle. `process.cwd()` donne le répertoire du plugin.
 
+## 🔍 Résolution des Dépendances - Mécanisme Intelligent
+
+### **Mystère résolu : Pourquoi ça marche sans node_modules dans le repo centralisé ?**
+
+#### **Observation :**
+- ❓ Le repo `obsidian-plugin-config` n'a **PAS** de dossier `node_modules`
+- ✅ Pourtant les scripts centralisés fonctionnent parfaitement
+- ✅ `tsx`, `esbuild`, `fs-extra` etc. sont trouvés automatiquement
+
+#### **Explication :**
+
+**Quand vous lancez** `yarn dev` depuis le template :
+```bash
+# Dans obsidian-sample-plugin-modif/
+yarn dev  # → tsx ../obsidian-plugin-config/scripts/esbuild.config.ts
+```
+
+**Voici ce qui se passe :**
+1. **Yarn utilise le tsx du template** : `obsidian-sample-plugin-modif/node_modules/.bin/tsx`
+2. **Node.js resolution algorithm** : Remonte l'arborescence pour trouver `node_modules`
+3. **Trouve les dépendances** dans le template, pas dans le repo centralisé
+
+#### **Schéma de résolution :**
+```
+obsidian-sample-plugin-modif/
+├── node_modules/              ← TOUTES les dépendances ICI
+│   ├── .bin/tsx              ← Exécutable utilisé
+│   ├── esbuild/              ← Dépendance trouvée ici
+│   └── fs-extra/             ← Dépendance trouvée ici
+├── package.json
+└── yarn dev → tsx ../obsidian-plugin-config/scripts/esbuild.config.ts
+                    ↑
+obsidian-plugin-config/        │
+├── scripts/                   │
+│   └── esbuild.config.ts ←────┘ Script exécuté ICI
+└── (PAS de node_modules)         mais dépendances trouvées LÀ-HAUT
+```
+
+#### **Avantages de ce mécanisme :**
+- ✅ **Pas de duplication** - Une seule installation de dépendances
+- ✅ **Scripts centralisés** - Code maintenu une seule fois
+- ✅ **Résolution automatique** - Node.js trouve les bonnes dépendances
+- ✅ **Architecture optimale** - Efficace et élégante
+
+#### **Pourquoi c'est génial :**
+Cette architecture combine le meilleur des deux mondes :
+- **Centralisation** des scripts (maintenance)
+- **Décentralisation** des dépendances (performance)
+
+**C'est plus intelligent qu'une architecture classique !** 🚀
+
 ### Package.json Template
 ```json
 {
