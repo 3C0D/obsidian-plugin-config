@@ -14,9 +14,19 @@
     "./scripts/*": "./scripts/*"
   },
   "devDependencies": {
+    "@types/eslint": "latest",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "latest",
+    "@types/semver": "^7.5.8",
+    "builtin-modules": "3.3.0",
+    "dedent": "^1.5.1",
+    "dotenv": "^16.4.5",
+    "esbuild": "latest",
+    "fs-extra": "^11.2.0",
     "obsidian": "latest",
     "obsidian-typings": "latest",
+    "semver": "^7.6.0",
+    "tslib": "2.4.0",
     "tsx": "^4.19.4",
     "typescript": "^5.8.2"
   },

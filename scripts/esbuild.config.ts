@@ -3,9 +3,14 @@ import process from "process";
 import builtins from "builtin-modules";
 import { config } from "dotenv";
 import path from "path";
-import manifest from "../manifest.json" with { type: "json" };
+import { readFileSync } from "fs";
 import { rm } from "fs/promises";
 import { isValidPath, copyFilesToTargetDir } from "./utils.ts";
+
+// Determine the plugin directory (where the script is called from)
+const pluginDir = process.cwd();
+const manifestPath = path.join(pluginDir, "manifest.json");
+const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
 
 config();
 
@@ -32,18 +37,19 @@ if you want to view the source, please visit the github repository of this plugi
 */`;
 
 async function validateEnvironment(): Promise<void> {
-  if (!await isValidPath("./src/main.ts")) {
+  const srcMainPath = path.join(pluginDir, "src/main.ts");
+  if (!await isValidPath(srcMainPath)) {
     throw new Error("Invalid path for src/main.ts. main.ts must be in the src directory");
   }
-  if (!await isValidPath("./manifest.json")) {
+  if (!await isValidPath(manifestPath)) {
     throw new Error("Invalid path for manifest.json");
   }
 }
 
 function getBuildPath(isProd: boolean): string {
-  // If production build without redirection, return "./"
+  // If production build without redirection, return plugin directory
   if (isProd && !process.argv.includes("-r")) {
-    return "./";
+    return pluginDir;
   }
 
   // Determine which path to use
@@ -52,7 +58,7 @@ function getBuildPath(isProd: boolean): string {
 
   // If empty or undefined, we're already in the plugin folder
   if (!vaultPath) {
-    return "./";
+    return pluginDir;
   }
 
   // Check if the path already contains the plugins directory path
@@ -80,7 +86,7 @@ async function createBuildContext(buildPath: string, isProd: boolean, entryPoint
     sourcemap: isProd ? false : "inline",
     treeShaking: true,
     outdir: buildPath,
-    outbase: "src",
+    outbase: path.join(pluginDir, "src"),
     plugins: [
       // Plugin pour gérer les alias de chemin
       {
@@ -134,11 +140,14 @@ async function main(): Promise<void> {
     await validateEnvironment();
     const isProd = process.argv[2] === "production";
     const buildPath = getBuildPath(isProd);
-    console.log(buildPath === "./"
+    console.log(buildPath === pluginDir
       ? "Building in initial folder"
       : `Building in ${buildPath}`);
-    const stylePath = await isValidPath("src/styles.css") ? "src/styles.css" : await isValidPath("styles.css") ? "styles.css" : "";
-    const entryPoints = stylePath ? ["src/main.ts", stylePath] : ["src/main.ts"];
+    const srcStylesPath = path.join(pluginDir, "src/styles.css");
+    const rootStylesPath = path.join(pluginDir, "styles.css");
+    const stylePath = await isValidPath(srcStylesPath) ? srcStylesPath : await isValidPath(rootStylesPath) ? rootStylesPath : "";
+    const mainTsPath = path.join(pluginDir, "src/main.ts");
+    const entryPoints = stylePath ? [mainTsPath, stylePath] : [mainTsPath];
     const context = await createBuildContext(buildPath, isProd, entryPoints);
 
     if (isProd) {
