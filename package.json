@@ -5,7 +5,8 @@
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
-    "update": "git add -A && git commit -m \"Update centralized config\" && git push origin main"
+    "acp": "git add -A && git commit -m \"Update centralized config\" && git push origin main",
+    "update": "yarn upgrade"
   },
   "exports": {
     ".": "./src/index.ts",
