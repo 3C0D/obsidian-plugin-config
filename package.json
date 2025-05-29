@@ -4,16 +4,21 @@
   "description": "Centralized configuration for Obsidian plugin development",
   "type": "module",
   "main": "src/index.ts",
+  "scripts": {
+    "acp": "tsx scripts/acp.ts",
+    "update": "git add . && git commit -m \"Update centralized config\" && git push origin main"
+  },
   "exports": {
     ".": "./src/index.ts",
     "./modals": "./src/modals/index.ts",
     "./scripts/*": "./scripts/*"
   },
   "devDependencies": {
+    "@types/node": "latest",
     "obsidian": "latest",
     "obsidian-typings": "latest",
-    "typescript": "^5.8.2",
-    "@types/node": "latest"
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.2"
   },
   "peerDependencies": {
     "obsidian": "*"
