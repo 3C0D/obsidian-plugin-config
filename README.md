@@ -4,11 +4,25 @@ Centralized configuration and reusable components for Obsidian plugin developmen
 
 ## 📦 Installation
 
+### For New Plugins
+Use the `obsidian-sample-plugin-modif` template which already includes this configuration.
+
+### For Existing Plugins
+Add the dependency directly in your `package.json`:
+
+```json
+{
+  "dependencies": {
+    "obsidian-plugin-config": "file:../obsidian-plugin-config"
+  }
+}
+```
+
+Then run:
 ```bash
-# In your plugin directory
-npm install ../obsidian-plugin-config
+yarn install
 # or
-yarn add file:../obsidian-plugin-config
+npm install
 ```
 
 ## 🛠️ Available Commands
@@ -97,9 +111,75 @@ obsidian-plugin-config/
 └── README.md            # This file
 ```
 
+## 🔄 Migrating Existing Plugins
+
+To migrate an existing plugin to use this centralized architecture:
+
+### Step 1: Add Dependency
+Add to your plugin's `package.json`:
+```json
+{
+  "dependencies": {
+    "obsidian-plugin-config": "file:../obsidian-plugin-config"
+  }
+}
+```
+
+### Step 2: Copy Scripts
+Copy the entire `scripts/` folder from `obsidian-sample-plugin-modif` to your plugin directory.
+
+### Step 3: Update Package Scripts
+Update your `package.json` scripts section:
+```json
+{
+  "scripts": {
+    "start": "yarn install && yarn dev",
+    "dev": "tsx scripts/esbuild.config.ts",
+    "build": "tsx scripts/esbuild.config.ts production",
+    "real": "tsx scripts/esbuild.config.ts production -r",
+    "acp": "tsx scripts/acp.ts",
+    "bacp": "tsx scripts/acp.ts -b",
+    "release": "tsx scripts/release.ts",
+    "update-version": "tsx scripts/update-version.ts"
+  }
+}
+```
+
+### Step 4: Update TypeScript Config
+Make sure your `tsconfig.json` includes the path mapping:
+```json
+{
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./node_modules/*"]
+    }
+  }
+}
+```
+
+### Step 5: Install Dependencies
+```bash
+yarn install  # This will install the config dependency
+```
+
+### Step 6: Update Imports
+Replace any existing modal imports with:
+```typescript
+import { GenericConfirmModal } from '@/obsidian-plugin-config/modals';
+```
+
+### Future: Automated Migration Script
+*Coming soon: A script to automate these migration steps for existing plugins.*
+
 ## 🎯 Integration with Plugin Template
 
 This config is designed to work with the `obsidian-sample-plugin-modif` template, which contains all the build scripts and development tools.
+
+The template provides:
+- ✅ All build and development scripts
+- ✅ Pre-configured package.json
+- ✅ TypeScript configuration with path mapping
+- ✅ Ready-to-use project structure
 
 ## 📄 License
 
