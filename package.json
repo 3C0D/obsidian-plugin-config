@@ -10,12 +10,14 @@
   },
   "exports": {
     ".": "./src/index.ts",
-    "./modals": "./src/modals/index.ts"
+    "./modals": "./src/modals/index.ts",
+    "./scripts/*": "./scripts/*"
   },
   "devDependencies": {
     "@types/node": "latest",
     "obsidian": "latest",
     "obsidian-typings": "latest",
+    "tsx": "^4.19.4",
     "typescript": "^5.8.2"
   },
   "peerDependencies": {
