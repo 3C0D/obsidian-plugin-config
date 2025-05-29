@@ -1,118 +1,106 @@
-# Obsidian Plugin Configuration
+# Obsidian Plugin Config
 
-Centralized configuration for Obsidian plugin development.
+Centralized configuration and reusable components for Obsidian plugin development.
 
-## Overview
-
-This repository contains shared configuration files and scripts for developing Obsidian plugins. It helps maintain consistency across multiple plugin projects and simplifies updates to build processes, linting rules, and TypeScript configurations.
-
-## Features
-
-- TypeScript configuration
-- ESLint rules
-- Build scripts using esbuild
-- Release automation
-- Utility scripts for development workflow
-
-## Usage
-
-### Installation
-
-Add this repository as a dependency in your Obsidian plugin project:
+## 📦 Installation
 
 ```bash
-# Using npm
-npm install --save-dev github:3C0D/obsidian-plugin-config#main
-
-# Using yarn
-yarn add --dev github:3C0D/obsidian-plugin-config#main
+# In your plugin directory
+npm install ../obsidian-plugin-config
+# or
+yarn add file:../obsidian-plugin-config
 ```
 
-Or add it directly to your `package.json`:
+## 🛠️ Available Commands
 
-```json
-{
-  "devDependencies": {
-    "obsidian-plugin-config": "github:3C0D/obsidian-plugin-config#main"
-  }
-}
+### Update Dependencies
+```bash
+# All these commands update dependencies:
+yarn update         # Our alias (= yarn upgrade)
+npm update          # Native npm command
+yarn upgrade        # Native yarn command
 ```
 
-### TypeScript Configuration
-
-Extend the base TypeScript configuration in your `tsconfig.json`:
-
-```json
-{
-  "extends": "./node_modules/obsidian-plugin-config/tsconfig/plugin.json"
-}
+### Commit & Push Changes
+```bash
+yarn acp           # Add, commit, and push changes
+# or
+npm run acp        # Same as above
 ```
 
-### ESLint Configuration
+## 🚀 Usage
 
-Use the shared ESLint configuration:
+### Generic Confirm Modal
 
-```js
-// eslint.config.js
-import baseConfig from './node_modules/obsidian-plugin-config/eslint/plugin.js';
-export default baseConfig;
+```typescript
+import { GenericConfirmModal } from '@/obsidian-plugin-config/modals';
+
+// Use the modal in your plugin
+const modal = new GenericConfirmModal(
+    this.app,
+    "Confirm Action",
+    "Are you sure you want to proceed?",
+    () => {
+        // Callback for confirmation
+        console.log("User confirmed");
+    }
+);
+modal.open();
 ```
 
-### Scripts
+## 📋 Components
 
-Update your `package.json` scripts to use the shared build and release scripts:
+- **GenericConfirmModal**: A reusable confirmation modal for user interactions
 
-```json
-{
-  "scripts": {
-    "start": "yarn install && yarn dev",
-    "dev": "tsx obsidian-plugin-config/scripts/esbuild.config.ts",
-    "build": "tsx obsidian-plugin-config/scripts/esbuild.config.ts production",
-    "real": "tsx obsidian-plugin-config/scripts/esbuild.config.ts production -r",
-    "acp": "tsx obsidian-plugin-config/scripts/acp.ts",
-    "bacp": "tsx obsidian-plugin-config/scripts/acp.ts -b",
-    "release": "tsx obsidian-plugin-config/scripts/release.ts"
-  }
-}
-```
+## 🔧 Maintenance
 
-## Available Scripts
+### For Repository Maintainers
 
-- `dev`: Start development mode with hot reloading
-- `build`: Build the plugin for production
-- `real`: Build and install the plugin in your Obsidian vault
-- `acp`: Add, commit, and push changes to GitHub
-- `bacp`: Build, add, commit, and push changes to GitHub
-- `release`: Create a new release with version bump
+When you need to update this centralized config:
 
-## Structure
+1. **Update dependencies** (if needed):
+   ```bash
+   yarn update    # or npm update, or yarn upgrade
+   ```
+
+2. **Make your changes** to components/configs
+
+3. **Commit and push**:
+   ```bash
+   yarn acp       # Automatically commits with "Update centralized config"
+   ```
+
+### Troubleshooting
+
+- **Version conflicts**: If you get Obsidian version errors, run `yarn update` to sync with the latest versions
+- **Import errors**: Make sure you're using the correct import paths with `@/obsidian-plugin-config/`
+
+## 🏗️ Architecture
+
+This repository provides:
+- ✅ Reusable UI components (modals, etc.)
+- ✅ Centralized configuration
+- ✅ Easy maintenance with simple commands
+- ✅ Compatible with both npm and yarn
+
+## 📁 Structure
 
 ```
 obsidian-plugin-config/
-├── tsconfig/
-│   ├── base.json         # Base TypeScript configuration
-│   └── plugin.json       # Plugin-specific TypeScript configuration
-├── eslint/
-│   ├── base.js           # Base ESLint rules
-│   └── plugin.js         # Plugin-specific ESLint configuration
-├── scripts/
-│   ├── esbuild.config.ts # Build script
-│   ├── release.ts        # Release automation
-│   ├── acp.ts            # Add-commit-push script
-│   └── utils.ts          # Shared utilities
-└── templates/
-    └── plugin/           # Template for new plugins
+├── src/
+│   ├── index.ts          # Main exports
+│   └── modals/
+│       ├── index.ts      # Modal exports
+│       └── GenericConfirmModal.ts
+├── package.json          # Dependencies and scripts
+├── tsconfig.json         # TypeScript configuration
+└── README.md            # This file
 ```
 
-## Environment Variables
+## 🎯 Integration with Plugin Template
 
-For development outside the Obsidian vault, create a `.env` file with:
+This config is designed to work with the `obsidian-sample-plugin-modif` template, which contains all the build scripts and development tools.
 
-```
-TEST_VAULT=path/to/test/vault/.obsidian/plugins
-REAL_VAULT=path/to/real/vault/.obsidian/plugins
-```
-
-## License
+## 📄 License
 
 MIT
