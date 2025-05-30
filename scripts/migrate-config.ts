@@ -280,10 +280,9 @@ async function performMigration(pluginPath: string): Promise<void> {
   // Replace all scripts with centralized ones
   packageJson.scripts = centralConfig.scripts;
 
-  // Clean redundant devDependencies
+  // Clean redundant devDependencies (only esbuild since it's provided by centralized config)
   const redundantDeps = [
-    '@types/fs-extra', '@types/semver', 'builtin-modules', 'cross-env',
-    'dedent', 'dotenv', 'esbuild', 'fs-extra', 'semver', 'tsx'
+    'esbuild'
   ];
 
   if (packageJson.devDependencies) {
@@ -307,8 +306,23 @@ async function performMigration(pluginPath: string): Promise<void> {
   if (!isDryRun) {
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
     console.log('  ✅ Updated package.json');
+
+    // Install dependencies if node_modules was removed
+    if (!alreadyMigrated && !fs.existsSync(nodeModulesPath)) {
+      console.log('📦 Installing dependencies...');
+      try {
+        const { execSync } = require('child_process');
+        execSync('yarn install', { cwd: pluginPath, stdio: 'inherit' });
+        console.log('  ✅ Dependencies installed');
+      } catch (error) {
+        console.log('  ⚠️  Failed to install dependencies automatically. Please run "yarn install" manually.');
+      }
+    }
   } else {
     console.log('  🔍 Would update package.json');
+    if (!alreadyMigrated && !fs.existsSync(nodeModulesPath)) {
+      console.log('  🔍 Would install dependencies after node_modules removal');
+    }
   }
 
   // Step 3: Smart update of configuration files
