@@ -41,11 +41,19 @@ async function updateJsonFile(filename: string, updateFn: (json: any) => void): 
   }
 }
 
-async function updatePackageVersion(targetVersion: string): Promise<void> {
+async function updateManifestVersions(targetVersion: string): Promise<void> {
   try {
-    await updateJsonFile("package.json", json => json.version = targetVersion);
+    const manifest = JSON.parse(await readFile("manifest.json", "utf8"));
+    const { minAppVersion } = manifest;
+
+    await Promise.all([
+      updateJsonFile("manifest.json", json => json.version = targetVersion),
+      updateJsonFile("versions.json", json => json[targetVersion] = minAppVersion),
+      updateJsonFile("package.json", json => json.version = targetVersion),
+      // updateJsonFile("package-lock.json", json => json.version = targetVersion)
+    ]);
   } catch (error) {
-    console.error("Error updating package version:", error instanceof Error ? error.message : String(error));
+    console.error("Error updating manifest versions:", error instanceof Error ? error.message : String(error));
     throw error;
   }
 }
@@ -62,11 +70,11 @@ async function updateVersion(): Promise<void> {
 
     try {
       // Update all files first
-      await updatePackageVersion(targetVersion);
-      console.log(`Package updated to version ${targetVersion}`);
-
+      await updateManifestVersions(targetVersion);
+      console.log(`Files updated to version ${targetVersion}`);
+      
       // Add files to git
-      gitExec("git add package.json");
+      gitExec("git add manifest.json package.json versions.json");
       gitExec(`git commit -m "Updated to version ${targetVersion}"`);
       console.log("Changes committed");
     } catch (error) {
