@@ -480,8 +480,8 @@ async function main(): Promise<void> {
         process.exit(0);
       }
 
-      // Create backup
-      createBackup(pluginPath);
+      // Create backup - DISABLED in production
+      // createBackup(pluginPath);
     }
 
     console.log('\n🔄 Starting migration...');
