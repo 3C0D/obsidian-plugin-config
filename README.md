@@ -1,6 +1,14 @@
 # Obsidian Plugin Config
 
-Centralized configuration and reusable components for Obsidian plugin development.
+🚀 **Professional-grade centralized architecture** for Obsidian plugin development with automatic dependency management.
+
+## ✨ Key Features
+
+- 🎯 **Zero Configuration** - Works like a real NPM package
+- 🔧 **Automatic Dependencies** - All libraries installed automatically
+- 📦 **Centralized Scripts** - Build, release, and development tools
+- 🧩 **Reusable Components** - Rich UI components with external libraries
+- 🛠️ **Professional Architecture** - Industry-standard package management
 
 ## 📦 Installation
 
@@ -8,7 +16,7 @@ Centralized configuration and reusable components for Obsidian plugin developmen
 Use the `obsidian-sample-plugin-modif` template which already includes this configuration.
 
 ### For Existing Plugins
-Add the dependency directly in your `package.json`:
+Simply add the dependency to your `package.json`:
 
 ```json
 {
@@ -25,21 +33,25 @@ yarn install
 npm install
 ```
 
+**That's it!** All dependencies (esbuild, tsx, lodash, fs-extra, etc.) are installed automatically. 🎉
+
 ## 🛠️ Available Commands
 
-### Update Dependencies
+### In Your Plugin (Template)
 ```bash
-# All these commands update dependencies:
-yarn update         # Our alias (= yarn upgrade)
-npm update          # Native npm command
-yarn upgrade        # Native yarn command
+yarn start         # Bootstrap: install + dev mode
+yarn dev           # Build in development mode (watch)
+yarn build         # Production build
+yarn real          # Build + install in real Obsidian vault
+yarn acp           # Add-commit-push (centralized script)
+yarn bacp          # Build + add-commit-push
+yarn release       # Release automation (centralized script)
 ```
 
-### Commit & Push Changes
+### In Centralized Config (Maintenance)
 ```bash
-yarn acp           # Add, commit, and push changes
-# or
-npm run acp        # Same as above
+yarn acp           # Commit + push config changes
+yarn update        # Update dependencies (= yarn upgrade)
 ```
 
 ## 🚀 Usage
@@ -49,22 +61,40 @@ npm run acp        # Same as above
 ```typescript
 import { GenericConfirmModal } from '@/obsidian-plugin-config/modals';
 
-// Use the modal in your plugin
-const modal = new GenericConfirmModal(
-    this.app,
-    "Confirm Action",
-    "Are you sure you want to proceed?",
-    () => {
-        // Callback for confirmation
-        console.log("User confirmed");
+// Simple usage
+new GenericConfirmModal(this.app, {
+    title: "Delete File",
+    message: "Are you sure you want to delete this file?",
+    confirmText: "Delete",
+    cancelText: "Cancel",
+    onConfirm: () => {
+        // Delete the file
+        console.log("File deleted");
+    },
+    onCancel: () => {
+        console.log("Cancelled");
     }
-);
-modal.open();
+}).open();
+```
+
+### Centralized Scripts
+
+All build and development scripts are centralized. Your plugin just needs to call them:
+
+```json
+{
+  "scripts": {
+    "dev": "tsx ../obsidian-plugin-config/scripts/esbuild.config.ts",
+    "acp": "tsx ../obsidian-plugin-config/scripts/acp.ts"
+  }
+}
 ```
 
 ## 📋 Components
 
-- **GenericConfirmModal**: A reusable confirmation modal for user interactions
+- **GenericConfirmModal**: A reusable confirmation modal with lodash integration
+- **Centralized Scripts**: Build, release, and development automation
+- **Automatic Dependencies**: All required libraries installed transparently
 
 ## 🔧 Maintenance
 
@@ -91,29 +121,49 @@ When you need to update this centralized config:
 
 ## 🏗️ Architecture
 
-This repository provides:
-- ✅ Reusable UI components (modals, etc.)
-- ✅ Centralized configuration
-- ✅ Easy maintenance with simple commands
-- ✅ Compatible with both npm and yarn
+### Professional Package Management
+This repository works exactly like a professional NPM package:
+
+- ✅ **Automatic dependency resolution** - All libraries installed transparently
+- ✅ **Centralized scripts** - Build, release, and development tools
+- ✅ **Rich components** - UI components can use any external library
+- ✅ **Zero configuration** - Users don't need to know internal dependencies
+- ✅ **Industry standard** - Uses Node.js native resolution mechanisms
+
+### How It Works
+```
+Your Plugin:
+├── package.json          ← Declares "obsidian-plugin-config": "file:../..."
+├── yarn install          ← Automatically installs ALL dependencies
+└── node_modules/         ← Contains esbuild, tsx, lodash, fs-extra, etc.
+
+Centralized Config:
+├── scripts/              ← Build and development scripts
+├── src/modals/           ← UI components using external libraries
+└── package.json          ← Defines ALL required dependencies
+```
 
 ## 📁 Structure
 
 ```
 obsidian-plugin-config/
 ├── src/
-│   ├── index.ts          # Main exports
+│   ├── index.ts                    # Main exports
 │   └── modals/
-│       ├── index.ts      # Modal exports
-│       └── GenericConfirmModal.ts
-├── package.json          # Dependencies and scripts
-├── tsconfig.json         # TypeScript configuration
-└── README.md            # This file
+│       ├── index.ts                # Modal exports
+│       └── GenericConfirmModal.ts  # Uses lodash automatically
+├── scripts/                        # Centralized build scripts
+│   ├── esbuild.config.ts          # Build configuration
+│   ├── acp.ts                     # Add-commit-push automation
+│   └── release.ts                 # Release automation
+├── package.json                   # ALL dependencies defined here
+├── tsconfig.json                  # TypeScript configuration
+└── README.md                      # This file
 ```
 
 ## 🔄 Migrating Existing Plugins
 
-To migrate an existing plugin to use this centralized architecture:
+**Super Simple Migration** - The new architecture makes migration much easier!
 
 ### Step 1: Add Dependency
 Add to your plugin's `package.json`:
@@ -125,61 +175,64 @@ Add to your plugin's `package.json`:
 }
 ```
 
-### Step 2: Copy Scripts
-Copy the entire `scripts/` folder from `obsidian-sample-plugin-modif` to your plugin directory.
+### Step 2: Remove Local Scripts
+```bash
+rm -rf scripts/  # Delete your local scripts folder
+```
 
 ### Step 3: Update Package Scripts
-Update your `package.json` scripts section:
+Update your `package.json` scripts to use centralized scripts:
 ```json
 {
   "scripts": {
     "start": "yarn install && yarn dev",
-    "dev": "tsx scripts/esbuild.config.ts",
-    "build": "tsx scripts/esbuild.config.ts production",
-    "real": "tsx scripts/esbuild.config.ts production -r",
-    "acp": "tsx scripts/acp.ts",
-    "bacp": "tsx scripts/acp.ts -b",
-    "release": "tsx scripts/release.ts",
-    "update-version": "tsx scripts/update-version.ts"
+    "dev": "tsx ../obsidian-plugin-config/scripts/esbuild.config.ts",
+    "build": "tsx ../obsidian-plugin-config/scripts/esbuild.config.ts production",
+    "real": "tsx ../obsidian-plugin-config/scripts/esbuild.config.ts production -r",
+    "acp": "tsx ../obsidian-plugin-config/scripts/acp.ts",
+    "bacp": "tsx ../obsidian-plugin-config/scripts/acp.ts -b",
+    "release": "tsx ../obsidian-plugin-config/scripts/release.ts"
   }
 }
 ```
 
-### Step 4: Update TypeScript Config
-Make sure your `tsconfig.json` includes the path mapping:
-```json
-{
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./node_modules/*"]
-    }
-  }
-}
-```
-
-### Step 5: Install Dependencies
+### Step 4: Clean Dependencies
+Remove duplicate dependencies from your `package.json` (they'll be installed automatically):
 ```bash
-yarn install  # This will install the config dependency
+# Remove these if present: esbuild, tsx, fs-extra, semver, builtin-modules, etc.
 ```
 
-### Step 6: Update Imports
-Replace any existing modal imports with:
-```typescript
-import { GenericConfirmModal } from '@/obsidian-plugin-config/modals';
+### Step 5: Install
+```bash
+yarn install  # Automatically installs ALL dependencies!
 ```
+
+### Step 6: Test
+```bash
+yarn start     # Should work immediately!
+```
+
+### Key Advantage
+**You don't need to know what dependencies to install** - everything is automatic! 🎉
 
 ### Future: Automated Migration Script
 *Coming soon: A script to automate these migration steps for existing plugins.*
 
 ## 🎯 Integration with Plugin Template
 
-This config is designed to work with the `obsidian-sample-plugin-modif` template, which contains all the build scripts and development tools.
+This config is designed to work seamlessly with the `obsidian-sample-plugin-modif` template.
 
-The template provides:
-- ✅ All build and development scripts
-- ✅ Pre-configured package.json
-- ✅ TypeScript configuration with path mapping
-- ✅ Ready-to-use project structure
+### Template Benefits:
+- ✅ **Zero setup** - Everything pre-configured
+- ✅ **Automatic dependencies** - All libraries installed transparently
+- ✅ **Centralized scripts** - Build, release, and development tools
+- ✅ **Professional architecture** - Industry-standard package management
+- ✅ **Rich components** - UI components with external library support
+
+### Perfect Synergy:
+- **Template** = Your plugin structure + package.json configuration
+- **Config** = Centralized scripts + reusable components + dependencies
+- **Result** = Professional development experience with zero configuration! 🚀
 
 ## 📄 License
 

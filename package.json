@@ -1,54 +1,52 @@
 {
-	"name": "obsidian-plugin-config",
-	"version": "1.0.1",
-	"description": "Centralized configuration for Obsidian plugin development",
-	"type": "module",
-	"main": "src/index.ts",
-	"keywords": [
-		"obsidian",
-		"obsidian-plugin",
-		"typescript",
-		"shared-config",
-		"centralized-config",
-		"plugin-utilities",
-		"modular-architecture",
-		"development-tools"
-	],
-	"scripts": {
-		"start": "yarn install && yarn run update-exports",
-		"update-exports": "node scripts/update-exports.js",
-		"acp": "yarn run update-exports && git add -A && git commit -m \"Update centralized config\" && git push origin main",
-		"update-version": "tsx scripts/update-version.ts",
-		"v": "tsx scripts/update-version.ts",
-		"release": "tsx scripts/release.ts",
-		"r": "tsx scripts/release.ts"
-	},
-	"exports": {
-		".": "./src/index.ts",
-		"./scripts/*": "./scripts/*",
-		"./modals": "./src/modals/index.ts",
-		"./tools": "./src/tools/index.ts",
-		"./utils": "./src/utils/index.ts"
-	},
-	"devDependencies": {
-		"@types/node": "^22.15.26",
-		"@types/semver": "^7.7.0",
-		"builtin-modules": "3.3.0",
-		"dedent": "^1.6.0",
-		"dotenv": "^16.4.5",
-		"esbuild": "latest",
-		"fs-extra": "^11.2.0",
-		"obsidian": "*",
-		"semver": "^7.7.2",
-		"typescript": "^5.8.2",
-		"tsx": "^4.19.4"
-	},
-	"dependencies": {
-		"@types/lodash": "^4.17.17",
-		"lodash": "^4.17.21"
-	},
-	"engines": {
-		"npm": "please-use-yarn",
-		"yarn": ">=1.22.0"
-	}
+  "name": "obsidian-plugin-config",
+  "version": "1.0.1",
+  "description": "Centralized configuration for Obsidian plugin development",
+  "type": "module",
+  "main": "src/index.ts",
+  "keywords": [
+    "obsidian",
+    "obsidian-plugin",
+    "typescript",
+    "shared-config",
+    "centralized-config",
+    "plugin-utilities",
+    "modular-architecture",
+    "development-tools"
+  ],
+  "scripts": {
+    "start": "yarn install && yarn run update-exports",
+    "update-exports": "node scripts/update-exports.js",
+    "acp": "yarn run update-exports && git add -A && git commit -m \"Update centralized config\" && git push origin main",
+    "update-version": "tsx scripts/update-version.ts",
+    "v": "tsx scripts/update-version.ts"
+  },
+  "exports": {
+    ".": "./src/index.ts",
+    "./scripts/*": "./scripts/*",
+    "./modals": "./src/modals/index.ts",
+    "./tools": "./src/tools/index.ts",
+    "./utils": "./src/utils/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.26",
+    "@types/semver": "^7.7.0",
+    "builtin-modules": "3.3.0",
+    "dedent": "^1.6.0",
+    "dotenv": "^16.4.5",
+    "esbuild": "latest",
+    "fs-extra": "^11.2.0",
+    "obsidian": "*",
+    "semver": "^7.7.2",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "@types/lodash": "^4.17.17",
+    "lodash": "^4.17.21"
+  },
+  "engines": {
+    "npm": "please-use-yarn",
+    "yarn": ">=1.22.0"
+  }
 }

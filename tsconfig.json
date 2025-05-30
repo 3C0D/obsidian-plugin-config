@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
     "strict": true,
     "strictPropertyInitialization": false,
     "allowImportingTsExtensions": true,
@@ -11,17 +12,18 @@
       "DOM",
       "ES2023"
     ],
+    "types": [
+      "node"
+    ],
     "isolatedModules": true,
     "module": "NodeNext",
-    "moduleResolution": "nodenext",
+    "moduleResolution": "NodeNext",
     "resolveJsonModule": true,
     "noEmit": true,
     "target": "ESNext",
-    "types": [
-      "node",
-      "obsidian-typings"
-    ],
-    "verbatimModuleSyntax": true
+    // can cause problems with esModuleInterop
+    // "verbatimModuleSyntax": true,
+    "skipLibCheck": true
   },
   "include": [
     "./src/**/*.ts",

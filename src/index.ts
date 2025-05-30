@@ -1,7 +1,6 @@
-// Main entry point for obsidian-plugin-config
-export * from './modals/index.js';
+// Auto-generated exports - DO NOT EDIT MANUALLY
+// Run 'npm run update-exports' to regenerate this file
 
-// You can add more exports here as you create more shared components
-// export * from './settings';
-// export * from './utils';
-// export * from './commands';
+export * from './modals/index.js';
+export * from './tools/index.js';
+export * from './utils/index.js';

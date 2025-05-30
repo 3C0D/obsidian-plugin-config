@@ -1,6 +1,7 @@
 # Dependencies
 node_modules/
-yarn.lock
+package-lock.json
+# yarn.lock - keep for version consistency
 
 # Build outputs
 dist/
@@ -11,7 +12,8 @@ build/
 .env.local
 
 # IDE files
-.vscode/
+.vscode/*
+!.vscode/settings.json
 .idea/
 
 # OS files
