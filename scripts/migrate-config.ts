@@ -76,6 +76,89 @@ function isAlreadyMigrated(pluginPath: string): boolean {
   return packageJson.dependencies?.['obsidian-plugin-config'] !== undefined;
 }
 
+// Smart file update functions
+function mergeGitignore(existingPath: string, templatePath: string): string {
+  const existing = fs.existsSync(existingPath) ? fs.readFileSync(existingPath, 'utf8') : '';
+  const template = fs.readFileSync(templatePath, 'utf8');
+
+  if (!existing) return template;
+
+  const existingLines = new Set(existing.split('\n').map(line => line.trim()).filter(line => line && !line.startsWith('#')));
+  const templateLines = template.split('\n');
+
+  // Add only template lines that don't exist in current file
+  const newLines = templateLines.filter(line => {
+    const trimmed = line.trim();
+    // Skip empty lines and comments, or lines that already exist
+    if (!trimmed || trimmed.startsWith('#')) return false;
+    return !existingLines.has(trimmed);
+  });
+
+  if (newLines.length === 0) return existing;
+
+  let result = existing;
+  if (!result.endsWith('\n')) result += '\n';
+  result += '\n# Added by centralized config\n';
+  result += newLines.join('\n');
+
+  return result;
+}
+
+function mergeEnvFile(existingPath: string, templatePath: string): string {
+  const existing = fs.existsSync(existingPath) ? fs.readFileSync(existingPath, 'utf8') : '';
+  const template = fs.readFileSync(templatePath, 'utf8');
+
+  // Extract required variables from template
+  const requiredVars = ['TEST_VAULT', 'REAL_VAULT'];
+  const existingVars = new Set();
+
+  // Parse existing variables
+  existing.split('\n').forEach(line => {
+    const match = line.match(/^([A-Z_]+)=/);
+    if (match) existingVars.add(match[1]);
+  });
+
+  // Add missing required variables
+  let result = existing;
+  requiredVars.forEach(varName => {
+    if (!existingVars.has(varName)) {
+      if (result && !result.endsWith('\n')) result += '\n';
+      result += `${varName}=\n`;
+    }
+  });
+
+  return result || template;
+}
+
+function mergeVSCodeSettings(existingPath: string, templatePath: string): string {
+  const template = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
+
+  if (!fs.existsSync(existingPath)) {
+    return JSON.stringify(template, null, 2);
+  }
+
+  const existing = JSON.parse(fs.readFileSync(existingPath, 'utf8'));
+
+  // Merge settings, template takes precedence for our specific settings
+  const merged = { ...existing, ...template };
+
+  return JSON.stringify(merged, null, 2);
+}
+
+function shouldUpdateFile(filePath: string, templatePath: string, fileName: string): boolean {
+  // Always update these files
+  const alwaysUpdate = ['.npmrc'];
+  if (alwaysUpdate.includes(fileName)) return true;
+
+  // Never overwrite these files if they exist
+  const neverOverwrite = ['tsconfig.json', 'eslint.config.ts'];
+  if (neverOverwrite.includes(fileName) && fs.existsSync(filePath)) {
+    return false;
+  }
+
+  return true;
+}
+
 // Analyze plugin for migration
 function analyzePlugin(pluginPath: string) {
   const packageJsonPath = path.join(pluginPath, 'package.json');
@@ -99,7 +182,18 @@ function analyzePlugin(pluginPath: string) {
   console.log(`🗑️  Redundant dependencies: ${redundantDeps.length}`);
   console.log(`📁 Local scripts folder: ${fs.existsSync(scriptsPath) ? 'Yes' : 'No'}`);
   console.log(`📦 NPM lock file: ${fs.existsSync(packageLockPath) ? 'Yes (will be removed)' : 'No'}`);
-  console.log(`📁 node_modules: ${fs.existsSync(nodeModulesPath) ? 'Yes (will be removed)' : 'No'}`);
+
+  const hasNodeModules = fs.existsSync(nodeModulesPath);
+  const hasPackageLock = fs.existsSync(packageLockPath);
+  if (hasNodeModules) {
+    if (hasPackageLock) {
+      console.log(`📁 node_modules: Yes (will be removed - npm/yarn conflict)`);
+    } else {
+      console.log(`📁 node_modules: Yes (will be preserved)`);
+    }
+  } else {
+    console.log(`📁 node_modules: No`);
+  }
 
   return {
     totalDeps,
@@ -142,12 +236,14 @@ async function performMigration(pluginPath: string): Promise<void> {
       console.log('  ✅ Removed scripts/ folder');
     }
 
-    // Only remove node_modules if not already migrated
-    if (!alreadyMigrated && fs.existsSync(nodeModulesPath)) {
+    // Only remove node_modules if package-lock.json exists (npm/yarn conflict) AND not already migrated
+    if (!alreadyMigrated && fs.existsSync(packageLockPath) && fs.existsSync(nodeModulesPath)) {
       fs.removeSync(nodeModulesPath);
-      console.log('  ✅ Removed node_modules/ folder');
+      console.log('  ✅ Removed node_modules/ folder (npm/yarn conflict detected)');
     } else if (alreadyMigrated && fs.existsSync(nodeModulesPath)) {
       console.log('  ⏭️  Skipped node_modules/ (already migrated)');
+    } else if (!fs.existsSync(packageLockPath) && fs.existsSync(nodeModulesPath)) {
+      console.log('  ⏭️  Kept node_modules/ (no package manager conflict)');
     }
 
     if (fs.existsSync(packageLockPath)) {
@@ -156,10 +252,12 @@ async function performMigration(pluginPath: string): Promise<void> {
     }
   } else {
     if (fs.existsSync(scriptsPath)) console.log('  🔍 Would remove scripts/ folder');
-    if (!alreadyMigrated && fs.existsSync(nodeModulesPath)) {
-      console.log('  🔍 Would remove node_modules/ folder');
+    if (!alreadyMigrated && fs.existsSync(packageLockPath) && fs.existsSync(nodeModulesPath)) {
+      console.log('  🔍 Would remove node_modules/ folder (npm/yarn conflict detected)');
     } else if (alreadyMigrated && fs.existsSync(nodeModulesPath)) {
       console.log('  🔍 Would skip node_modules/ (already migrated)');
+    } else if (!fs.existsSync(packageLockPath) && fs.existsSync(nodeModulesPath)) {
+      console.log('  🔍 Would keep node_modules/ (no package manager conflict)');
     }
     if (fs.existsSync(packageLockPath)) console.log('  🔍 Would remove package-lock.json');
   }
@@ -213,20 +311,26 @@ async function performMigration(pluginPath: string): Promise<void> {
     console.log('  🔍 Would update package.json');
   }
 
-  // Step 3: Copy configuration templates
-  console.log('📋 Copying configuration templates...');
+  // Step 3: Smart update of configuration files
+  console.log('📋 Updating configuration files...');
 
   const templateFiles = [
-    { source: 'templates/eslint.config.ts', target: 'eslint.config.ts' },
-    { source: 'templates/tsconfig.json', target: 'tsconfig.json' },
-    { source: 'templates/.npmrc', target: '.npmrc' },
-    { source: 'templates/.vscode/settings.json', target: '.vscode/settings.json' },
-    { source: 'templates/.gitignore', target: '.gitignore' }
+    { source: 'templates/eslint.config.ts', target: 'eslint.config.ts', merge: false },
+    { source: 'templates/tsconfig.json', target: 'tsconfig.json', merge: false },
+    { source: 'templates/.npmrc', target: '.npmrc', merge: false },
+    { source: 'templates/.vscode/settings.json', target: '.vscode/settings.json', merge: 'vscode' },
+    { source: 'templates/.gitignore', target: '.gitignore', merge: 'gitignore' }
   ];
 
   for (const file of templateFiles) {
     const sourcePath = path.join(configRoot, file.source);
     const targetPath = path.join(pluginPath, file.target);
+    const fileName = path.basename(file.target);
+
+    if (!shouldUpdateFile(targetPath, sourcePath, fileName)) {
+      console.log(`  ⏭️  Skipped ${file.target} (preserving existing)`);
+      continue;
+    }
 
     if (!isDryRun) {
       // Create target directory if needed
@@ -235,37 +339,52 @@ async function performMigration(pluginPath: string): Promise<void> {
         fs.mkdirSync(targetDir, { recursive: true });
       }
 
-      fs.copyFileSync(sourcePath, targetPath);
-      console.log(`  ✅ Copied ${file.target}`);
+      let content: string;
+      if (file.merge === 'gitignore') {
+        content = mergeGitignore(targetPath, sourcePath);
+      } else if (file.merge === 'vscode') {
+        content = mergeVSCodeSettings(targetPath, sourcePath);
+      } else {
+        content = fs.readFileSync(sourcePath, 'utf8');
+      }
+
+      fs.writeFileSync(targetPath, content);
+
+      if (fs.existsSync(targetPath) && file.merge) {
+        console.log(`  ✅ Merged ${file.target}`);
+      } else {
+        console.log(`  ✅ Updated ${file.target}`);
+      }
     } else {
-      console.log(`  🔍 Would copy ${file.target}`);
+      if (file.merge && fs.existsSync(targetPath)) {
+        console.log(`  🔍 Would merge ${file.target}`);
+      } else {
+        console.log(`  🔍 Would update ${file.target}`);
+      }
     }
   }
 
-  // Step 4: Handle .env file
-  if (!fs.existsSync(envPath)) {
-    console.log('📝 Creating .env file...');
+  // Step 4: Smart update of .env file
+  console.log('📝 Updating .env file...');
 
-    if (!isDryRun) {
-      const envContent = `# Environment variables for plugin development
-# Update these paths to match your setup
+  const envTemplatePath = path.join(configRoot, 'templates/.env');
 
-# Path to test vault (for development)
-TEST_VAULT=
+  if (!isDryRun) {
+    const envContent = mergeEnvFile(envPath, envTemplatePath);
+    fs.writeFileSync(envPath, envContent);
 
-# Path to real vault (for production testing)
-REAL_VAULT=
-
-# Note: Run 'yarn version' to update these paths interactively
-`;
-      fs.writeFileSync(envPath, envContent);
+    if (fs.existsSync(envPath)) {
+      console.log('  ✅ Updated .env file (preserved existing variables)');
+    } else {
       console.log('  ✅ Created .env file');
-      console.log('  ⚠️  Please update .env with your vault paths');
+    }
+    console.log('  ⚠️  Please verify .env contains your vault paths');
+  } else {
+    if (fs.existsSync(envPath)) {
+      console.log('  🔍 Would update .env file (preserving existing variables)');
     } else {
       console.log('  🔍 Would create .env file');
     }
-  } else {
-    console.log('  ✅ .env file already exists');
   }
 }
 
@@ -313,10 +432,18 @@ async function main(): Promise<void> {
     console.log('\n🎯 Migration Plan:');
     console.log('  ✅ Add centralized dependency');
     console.log('  ✅ Update package.json scripts');
-    console.log('  ✅ Copy configuration templates');
+    console.log('  ✅ Smart update configuration files (preserve customizations)');
     if (analysis.hasScripts) console.log('  🗑️  Remove local scripts/ folder');
-    if (!alreadyMigrated && analysis.hasNodeModules) console.log('  🗑️  Remove node_modules/ folder');
-    if (alreadyMigrated && analysis.hasNodeModules) console.log('  ⏭️  Keep node_modules/ (already migrated)');
+
+    // Node modules logic
+    if (!alreadyMigrated && analysis.hasPackageLock && analysis.hasNodeModules) {
+      console.log('  🗑️  Remove node_modules/ (npm/yarn conflict detected)');
+    } else if (alreadyMigrated && analysis.hasNodeModules) {
+      console.log('  ⏭️  Keep node_modules/ (already migrated)');
+    } else if (!analysis.hasPackageLock && analysis.hasNodeModules) {
+      console.log('  ⏭️  Keep node_modules/ (no package manager conflict)');
+    }
+
     if (analysis.hasPackageLock) console.log('  🗑️  Remove package-lock.json');
     console.log(`  🗑️  Remove ${analysis.redundantDeps} redundant dependencies`);
 
