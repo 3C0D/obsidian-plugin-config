@@ -1,5 +1,38 @@
 # Architecture Centralisée - État Actuel et Prochaines Étapes
 
+## 📁 Context et Organisation des Projets
+
+Cette architecture centralisée s'appuie sur **deux repositories principaux** situés en amont du projet actuel :
+
+### Structure des Repositories
+```
+mes repos new/
+├── obsidian-plugin-config/          # 🏗️ REPO CENTRALISÉ
+│   ├── src/                         # Composants partagés (modals, utils, tools)
+│   ├── scripts/                     # Scripts de build centralisés
+│   └── MIGRATION-HISTORY.md         # Synthèses de migration
+├── obsidian-sample-plugin-modif/    # 📋 TEMPLATE MODERNISÉ
+│   ├── src/                         # Code template démonstratif
+│   └── ARCHITECTURE-SUMMARY.md      # Ce document
+└── [plugin-à-migrer]/               # 🎯 PLUGIN CIBLE (variable)
+    ├── src/                         # Code métier du plugin
+    └── MIGRATION-HISTORY.md         # Analyse de migration (si créé)
+```
+
+### 🔄 Workflow de Développement
+1. **obsidian-plugin-config** = Source de vérité pour la configuration centralisée
+2. **obsidian-sample-plugin-modif** = Template démontrant l'architecture moderne
+3. **Plugin sélectionné** = Candidat à la migration vers l'architecture centralisée
+
+**Note** : À chaque sélection d'un nouveau plugin, cette structure reste identique - seul le plugin cible change. Les deux repos en amont restent les références constantes.
+
+### 🎯 Objectif de cette Documentation
+Ce document sert de **mémoire collective** pour :
+- Comprendre rapidement l'architecture sans re-analyser tous les fichiers
+- Référencer les solutions déjà validées
+- Guider les migrations futures
+- Éviter la perte de contexte entre les sessions
+
 ## 🎯 État Actuel de l'Architecture
 
 ### ✅ **Ce Qui Fonctionne Parfaitement**

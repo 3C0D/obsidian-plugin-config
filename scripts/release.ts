@@ -6,6 +6,7 @@ import { execSync } from "child_process";
 import dedent from "dedent";
 import {
   askQuestion,
+  askConfirmation,
   createReadlineInterface
 } from "./utils.ts";
 
@@ -28,11 +29,13 @@ async function createReleaseNotesFile(tagMessage: string, tag: string): Promise<
 }
 
 async function handleExistingTag(tag: string): Promise<boolean> {
-  const answer = await askQuestion(`Tag ${tag} already exists. Do you want to replace it? (Yes/No): `, rl);
-  if (answer.toLowerCase() !== "yes" && answer.toLowerCase() !== "y") {
+  const confirmed = await askConfirmation(`Tag ${tag} already exists. Do you want to replace it?`, rl);
+
+  if (!confirmed) {
     console.log("Operation aborted");
     return false;
   }
+
   execSync(`git tag -d ${tag}`);
   execSync(`git push origin :refs/tags/${tag}`);
   console.log(`Deleted existing tag ${tag} locally and remotely.`);

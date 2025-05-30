@@ -24,6 +24,31 @@ export const askQuestion = async (question: string, rl: readline.Interface): Pro
   }
 };
 
+/**
+ * Ask a yes/no confirmation question with standardized logic
+ * Accepts: y, yes, Y, YES, or empty (default to yes)
+ * Rejects: n, no, N, NO
+ * Invalid input defaults to no for safety
+ */
+export const askConfirmation = async (question: string, rl: readline.Interface): Promise<boolean> => {
+  const answer = await askQuestion(`${question} [Y/n]: `, rl);
+  const response = answer.toLowerCase();
+
+  // Accept: y, yes, Y, YES, or empty (default to yes)
+  // Reject: n, no, N, NO
+  const isYes = response === '' || response === 'y' || response === 'yes';
+  const isNo = response === 'n' || response === 'no';
+
+  if (isNo) {
+    return false;
+  } else if (isYes) {
+    return true;
+  } else {
+    console.log("Please answer Y (yes) or n (no). Defaulting to no for safety.");
+    return false;
+  }
+};
+
 export const cleanInput = (inputStr: string): string => {
   if (!inputStr) return "";
   return inputStr.trim().replace(/["`]/g, "'").replace(/\r\n/g, "\n");
