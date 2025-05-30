@@ -17,10 +17,11 @@
   "scripts": {
     "start": "yarn install && yarn run update-exports",
     "update-exports": "node scripts/update-exports.js",
-    "acp": "yarn run update-exports && git add -A && git commit -m \"Update centralized config\" && git push origin main",
+    "acp": "tsx scripts/acp.ts",
     "update-version": "tsx scripts/update-version-config.ts",
     "v": "tsx scripts/update-version-config.ts",
     "migrate-config": "tsx scripts/migrate-config.ts",
+    "migrate": "tsx scripts/migrate-config.ts",
     "m": "tsx scripts/migrate-config.ts",
     "help": "tsx scripts/help.ts",
     "h": "tsx scripts/help.ts"

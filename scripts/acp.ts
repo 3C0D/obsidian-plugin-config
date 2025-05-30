@@ -16,6 +16,12 @@ async function main(): Promise<void> {
       console.log("Build successful.");
     }
 
+    if (!process.argv.includes("-ne") && !process.argv.includes("--no-exports")) {
+      console.log("Updating exports...");
+      gitExec("yarn run update-exports");
+      console.log("Exports updated.");
+    }
+
     const input: string = await askQuestion("Enter commit message: ", rl);
 
     const cleanedInput = cleanInput(input);

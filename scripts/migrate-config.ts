@@ -12,9 +12,9 @@ const configRoot = path.dirname(__dirname);
 
 // CLI arguments
 const args = process.argv.slice(2);
-const isInteractive = args.includes('--interactive');
+const isInteractive = args.includes('--interactive') || args.includes('-i');
 const isDryRun = args.includes('--dry-run');
-const targetPath = args.find(arg => !arg.startsWith('--'));
+const targetPath = args.find(arg => !arg.startsWith('--') && arg !== '-i');
 
 console.log('🚀 Obsidian Plugin Migration Tool');
 
@@ -279,8 +279,8 @@ async function main(): Promise<void> {
       pluginPath = targetPath;
     } else {
       console.log('❌ Please provide a plugin path or use --interactive');
-      console.log('Usage: yarn migrate-config <path> [--dry-run]');
-      console.log('       yarn migrate-config --interactive');
+      console.log('Usage: yarn migrate <path> [--dry-run]');
+      console.log('       yarn migrate -i, --interactive');
       process.exit(1);
     }
 
