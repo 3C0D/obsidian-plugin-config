@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-plugin-config",
-	"version": "1.0.3",
+	"version": "1.0.4",
 	"description": "Centralized configuration for Obsidian plugin development",
 	"type": "module",
 	"main": "src/index.ts",
@@ -19,7 +19,8 @@
 		"update-exports": "node scripts/update-exports.js",
 		"acp": "yarn run update-exports && git add -A && git commit -m \"Update centralized config\" && git push origin main",
 		"update-version": "tsx scripts/update-version.ts",
-		"v": "tsx scripts/update-version.ts"
+		"v": "tsx scripts/update-version-config.ts",
+		"update-version-config": "tsx scripts/update-version-config.ts"
 	},
 	"exports": {
 		".": "./src/index.ts",
