@@ -1,8 +1,10 @@
 import { execSync } from "child_process";
-import { askQuestion,
+import {
+  askQuestion,
   cleanInput,
   createReadlineInterface,
-  gitExec } from "./utils.ts";
+  gitExec
+} from "./utils.ts";
 
 const rl = createReadlineInterface();
 
@@ -10,7 +12,7 @@ async function main(): Promise<void> {
   try {
     if (process.argv.includes("-b")) {
       console.log("Building...");
-      gitExec("npm run build");
+      gitExec("yarn build");
       console.log("Build successful.");
     }
 
