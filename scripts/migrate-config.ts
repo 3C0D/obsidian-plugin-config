@@ -150,8 +150,31 @@ function shouldUpdateFile(filePath: string, templatePath: string, fileName: stri
   const alwaysUpdate = ['.npmrc'];
   if (alwaysUpdate.includes(fileName)) return true;
 
-  // Never overwrite these files if they exist
-  const neverOverwrite = ['tsconfig.json', 'eslint.config.ts'];
+  // Special logic for tsconfig.json: update if target < ES2018
+  if (fileName === 'tsconfig.json' && fs.existsSync(filePath)) {
+    try {
+      const existingConfig = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      const target = existingConfig.compilerOptions?.target;
+
+      // List of targets that are < ES2018
+      const oldTargets = ['ES3', 'ES5', 'ES6', 'ES2015', 'ES2016', 'ES2017'];
+
+      if (target && oldTargets.includes(target.toUpperCase())) {
+        console.log(`  ⚠️  Updating tsconfig.json: target "${target}" → "ES2018" (required for modern regex support)`);
+        return true;
+      }
+
+      // If target is ES2018+ or not specified, preserve existing
+      return false;
+    } catch (error) {
+      // If we can't parse the existing tsconfig, update it
+      console.log(`  ⚠️  Updating tsconfig.json: invalid JSON detected`);
+      return true;
+    }
+  }
+
+  // Never overwrite these files if they exist (except tsconfig.json handled above)
+  const neverOverwrite = ['eslint.config.ts'];
   if (neverOverwrite.includes(fileName) && fs.existsSync(filePath)) {
     return false;
   }
