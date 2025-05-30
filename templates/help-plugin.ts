@@ -18,9 +18,6 @@ GIT OPERATIONS:
   yarn acp                         Add, commit, and push changes
   yarn bacp                        Build + add, commit, and push
 
-MAINTENANCE:
-  yarn update-exports              Update package.json exports when importing from plugin-config
-
 USAGE EXAMPLES:
   yarn start                       # First time setup
   yarn dev                         # Daily development

@@ -11,7 +11,6 @@ MIGRATION:
 
 MAINTENANCE:
   yarn start                       Install dependencies and update exports
-  yarn update-exports              Update package.json exports
   yarn acp                         Add, commit, and push changes (with exports update)
   yarn acp -ne, --no-exports       Add, commit, and push without updating exports
   yarn update-version, v           Update version in centralized config
