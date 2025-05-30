@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-plugin-config",
-	"version": "1.0.4",
+	"version": "1.0.0",
 	"description": "Centralized configuration for Obsidian plugin development",
 	"type": "module",
 	"main": "src/index.ts",
