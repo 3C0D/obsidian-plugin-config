@@ -220,7 +220,9 @@ async function updatePackageJson(targetPath: string): Promise<void> {
   }
 
   try {
+    console.log(`   🔍 Reading package.json from: ${packageJsonPath}`);
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+    console.log(`   🔍 Original package name: ${packageJson.name}`);
 
     // Update scripts
     packageJson.scripts = {
@@ -284,12 +286,20 @@ async function updatePackageJson(targetPath: string): Promise<void> {
     packageJson.engines.npm = "please-use-yarn";
     packageJson.engines.yarn = ">=1.22.0";
 
+    // Ensure ESM module type for modern configuration
+    packageJson.type = "module";
+
     // Write updated package.json
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');
     console.log(`   ✅ Updated package.json (${addedDeps} new, ${updatedDeps} updated dependencies)`);
 
     // Debug: verify package.json was written correctly
     console.log(`   🔍 Package name: ${packageJson.name}`);
+
+    // CRITICAL DEBUG: Re-read the file to verify what was actually written
+    const verifyContent = fs.readFileSync(packageJsonPath, 'utf8');
+    const verifyJson = JSON.parse(verifyContent);
+    console.log(`   🔍 VERIFICATION - File actually contains: ${verifyJson.name}`);
 
   } catch (error) {
     console.error(`   ❌ Failed to update package.json: ${error}`);
@@ -416,6 +426,12 @@ export async function performInjection(targetPath: string): Promise<void> {
 
     // Step 5: Install dependencies
     await runYarnInstall(targetPath);
+
+    // FINAL DEBUG: Check package.json one last time
+    const finalPackageJsonPath = path.join(targetPath, "package.json");
+    const finalContent = fs.readFileSync(finalPackageJsonPath, 'utf8');
+    const finalJson = JSON.parse(finalContent);
+    console.log(`\n🔍 FINAL CHECK - Package name at end: ${finalJson.name}`);
 
     console.log(`\n✅ Injection completed successfully!`);
     console.log(`\n📋 Next steps:`);

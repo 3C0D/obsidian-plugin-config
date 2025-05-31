@@ -249,6 +249,9 @@ async function updatePackageJson(targetPath: string): Promise<void> {
     packageJson.engines.npm = "please-use-yarn";
     packageJson.engines.yarn = ">=1.22.0";
 
+    // Ensure ESM module type for modern configuration
+    packageJson.type = "module";
+
     // Write updated package.json
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');
     console.log(`   ✅ Updated package.json (${addedDeps} new, ${updatedDeps} updated dependencies)`);
