@@ -49,6 +49,8 @@ Test injection locale:
   # Corriger TOUS les imports dans scripts/
   # Changer .ts → .js dans les imports
   # Exemple: "./utils.ts" → "./utils.js"
+  # Corriger imports ESM dans plugins cibles si nécessaire
+  # Exemple: "./CommentHelper" → "./CommentHelper.js"
 
 ÉTAPE 3 - Build NPM:
   yarn build-npm                  # Corrige automatiquement
@@ -158,5 +160,5 @@ Résultat:
 - Utiliser yarn (protection intégrée)
 
 COMPTE NPM: 3c0d (connecté)
-VERSION: 1.0.4
+VERSION: 1.0.6
 `);
