@@ -129,6 +129,24 @@ function findPluginConfigRoot(): string {
     return parentPath;
   }
 
+  // Option 5: Check if we're running from NPM package (global installation)
+  // Get the directory of this script file
+  const scriptDir = path.dirname(new URL(import.meta.url).pathname);
+  const npmPackageRoot = path.resolve(scriptDir, "..");
+
+  // Check if we're in an NPM package structure
+  const npmPackageJson = path.join(npmPackageRoot, "package.json");
+  if (fs.existsSync(npmPackageJson)) {
+    try {
+      const packageContent = JSON.parse(fs.readFileSync(npmPackageJson, 'utf8'));
+      if (packageContent.name === "obsidian-plugin-config") {
+        return npmPackageRoot;
+      }
+    } catch (error) {
+      // Ignore parsing errors
+    }
+  }
+
   // Fallback to current directory (original behavior)
   return process.cwd();
 }
