@@ -1,6 +1,6 @@
 {
 	"name": "obsidian-plugin-config",
-	"version": "1.0.4",
+	"version": "1.0.5",
 	"description": "Système d'injection pour plugins Obsidian autonomes",
 	"type": "module",
 	"main": "src/index.ts",
