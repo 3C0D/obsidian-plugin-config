@@ -8,7 +8,7 @@ import {
   askQuestion,
   askConfirmation,
   createReadlineInterface
-} from "./utils.ts";
+} from "./utils.js";
 
 const rl = createReadlineInterface();
 

@@ -5,26 +5,14 @@ import { config } from "dotenv";
 import path from "path";
 import { readFileSync } from "fs";
 import { rm } from "fs/promises";
-import readline from "readline";
-import { isValidPath, copyFilesToTargetDir } from "./utils.ts";
+import fs from "fs";
+import { isValidPath, copyFilesToTargetDir, askQuestion, createReadlineInterface } from "./utils.js";
 
 // Determine the plugin directory (where the script is called from)
 const pluginDir = process.cwd();
 
-// Interactive prompt functions
-function askQuestion(question: string): Promise<string> {
-  const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-  });
-
-  return new Promise((resolve) => {
-    rl.question(question, (answer) => {
-      rl.close();
-      resolve(answer.trim());
-    });
-  });
-}
+// Create readline interface for prompts
+const rl = createReadlineInterface();
 
 async function promptForVaultPath(envKey: string): Promise<string> {
   const vaultType = envKey === "REAL_VAULT" ? "real" : "test";
@@ -33,7 +21,7 @@ async function promptForVaultPath(envKey: string): Promise<string> {
     : "for development and testing";
 
   console.log(`❓ ${envKey} path is required ${usage}`);
-  const path = await askQuestion(`📝 Enter your ${vaultType} vault path (or Ctrl+C to cancel): `);
+  const path = await askQuestion(`📝 Enter your ${vaultType} vault path (or Ctrl+C to cancel): `, rl);
 
   if (!path) {
     console.log('❌ No path provided, exiting...');
@@ -50,13 +38,13 @@ async function promptForBothVaults(): Promise<void> {
 
   let confirmed = false;
   while (!confirmed) {
-    const testPath = await askQuestion(`📝 Enter your test vault path: `);
+    const testPath = await askQuestion(`📝 Enter your test vault path: `, rl);
     if (!testPath) {
       console.log('❌ No test vault path provided, exiting...');
       process.exit(1);
     }
 
-    const realPath = await askQuestion(`📝 Enter your real vault path: `);
+    const realPath = await askQuestion(`📝 Enter your real vault path: `, rl);
     if (!realPath) {
       console.log('❌ No real vault path provided, exiting...');
       process.exit(1);
@@ -67,7 +55,7 @@ async function promptForBothVaults(): Promise<void> {
     console.log(`   TEST_VAULT: ${testPath}`);
     console.log(`   REAL_VAULT: ${realPath}`);
 
-    const confirm = await askQuestion(`✅ Are these paths correct? (y/n): `);
+    const confirm = await askQuestion(`✅ Are these paths correct? (y/n): `, rl);
     if (confirm.toLowerCase() === 'y' || confirm.toLowerCase() === 'yes') {
       await updateEnvFile("TEST_VAULT", testPath);
       await updateEnvFile("REAL_VAULT", realPath);
@@ -115,6 +103,14 @@ function getVaultPath(vaultPath: string): string {
   }
 }
 const manifestPath = path.join(pluginDir, "manifest.json");
+
+// Check if manifest exists (for plugin-config itself, it might not exist)
+if (!fs.existsSync(manifestPath)) {
+  console.log("⚠️  No manifest.json found - this script is designed for Obsidian plugins");
+  console.log("   If you're building plugin-config itself, use 'tsc' instead");
+  process.exit(0);
+}
+
 const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
 
 config();
@@ -226,7 +222,7 @@ async function getBuildPath(isProd: boolean): Promise<string> {
   }
 
   // If we reach here, use the vault path directly
-  return getVaultPath(vaultPath);
+  return vaultPath ? getVaultPath(vaultPath) : pluginDir;
 }
 
 async function createBuildContext(buildPath: string, isProd: boolean, entryPoints: string[]): Promise<esbuild.BuildContext> {
@@ -309,12 +305,14 @@ async function main(): Promise<void> {
 
     if (isProd) {
       await context.rebuild();
+      rl.close();
       process.exit(0);
     } else {
       await context.watch();
     }
   } catch (error) {
     console.error("Build failed:", error);
+    rl.close();
     process.exit(1);
   }
 }

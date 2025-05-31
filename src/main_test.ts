@@ -5,8 +5,8 @@ import {
   Setting,
   Notice
 } from "obsidian";
-import { showConfirmModal } from "./modals/GenericConfirmModal.ts";
-import { showTestMessage, getRandomEmoji } from "obsidian-plugin-config/tools";
+import { showConfirmModal } from "./modals/GenericConfirmModal.js";
+// import { showTestMessage, getRandomEmoji } from "obsidian-plugin-config/tools";
 
 interface MyPluginSettings {
   mySetting: string;
@@ -39,9 +39,9 @@ export default class MyPlugin extends Plugin {
       id: 'test-tools',
       name: 'Test Centralized Tools',
       callback: () => {
-        const message = showTestMessage();
-        const emoji = getRandomEmoji();
-        new Notice(`${emoji} ${message}`);
+        // const message = showTestMessage();
+        // const emoji = getRandomEmoji();
+        new Notice(`🎯 Test centralized tools (commented for autonomous mode)`);
       }
     });
 

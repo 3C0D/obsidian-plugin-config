@@ -7,7 +7,7 @@
 
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, isAbsolute, resolve } from 'path';
 import fs from 'fs';
 
 // Get the directory of this script
@@ -64,9 +64,15 @@ function main() {
     process.exit(1);
   }
 
-  // Determine target path
-  let targetPath = args[0] || process.cwd();
-  
+  // Determine target path (resolve relative to user's current directory)
+  const userCwd = process.cwd();
+  let targetPath = args[0] || userCwd;
+
+  // If relative path, resolve from user's current directory
+  if (args[0] && !isAbsolute(args[0])) {
+    targetPath = resolve(userCwd, args[0]);
+  }
+
   console.log(`🎯 Obsidian Plugin Config - Injection Globale`);
   console.log(`📁 Cible: ${targetPath}`);
   console.log(`📦 Depuis: ${packageRoot}\n`);
@@ -74,10 +80,10 @@ function main() {
   try {
     // Execute the injection script with tsx
     const command = `npx tsx "${injectScriptPath}" "${targetPath}"`;
-    
-    execSync(command, { 
+
+    execSync(command, {
       stdio: 'inherit',
-      cwd: packageRoot
+      cwd: userCwd  // Use user's current directory, not package directory
     });
     
     console.log(`\n✅ Injection terminée avec succès !`);

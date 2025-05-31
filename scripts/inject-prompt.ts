@@ -3,16 +3,12 @@
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import dotenv from "dotenv";
 import {
   askQuestion,
   askConfirmation,
   createReadlineInterface,
   isValidPath
 } from "./utils.js";
-
-// Load environment variables from .env file
-dotenv.config();
 
 const rl = createReadlineInterface();
 
@@ -71,7 +67,7 @@ async function analyzePlugin(pluginPath: string): Promise<InjectionPlan> {
 /**
  * Display injection plan and ask for confirmation
  */
-async function showInjectionPlan(plan: InjectionPlan, autoConfirm: boolean = false): Promise<boolean> {
+async function showInjectionPlan(plan: InjectionPlan): Promise<boolean> {
   console.log(`\n🎯 Injection Plan for: ${plan.targetPath}`);
   console.log(`📁 Target: ${path.basename(plan.targetPath)}`);
   console.log(`📦 Package.json: ${plan.hasPackageJson ? '✅' : '❌'}`);
@@ -90,11 +86,6 @@ async function showInjectionPlan(plan: InjectionPlan, autoConfirm: boolean = fal
   console.log(`   ✅ Required dependencies`);
   console.log(`   🔍 Analyze centralized imports (manual commenting may be needed)`);
 
-  if (autoConfirm) {
-    console.log(`\n✅ Auto-confirming injection...`);
-    return true;
-  }
-
   return await askConfirmation(`\nProceed with injection?`, rl);
 }
 
@@ -102,34 +93,13 @@ async function showInjectionPlan(plan: InjectionPlan, autoConfirm: boolean = fal
  * Find plugin-config root directory
  */
 function findPluginConfigRoot(): string {
-  const envPath = process.env.PLUGIN_CONFIG_PATH?.trim();
-
-  // Option 1: local - check parent directory
-  if (envPath === "local") {
-    const parentPath = path.resolve(process.cwd(), "../obsidian-plugin-config");
-    if (fs.existsSync(parentPath)) {
-      return parentPath;
-    }
-    throw new Error("obsidian-plugin-config not found in parent directory");
-  }
-
-  // Option 2: prompt - skip auto-detection
-  if (envPath === "prompt") {
-    throw new Error("PROMPT_REQUIRED");
-  }
-
-  // Option 3: specific path
-  if (envPath && fs.existsSync(envPath)) {
-    return envPath;
-  }
-
-  // Option 4: auto-detect parent, fallback to current
+  // Auto-detect parent, fallback to current
   const parentPath = path.resolve(process.cwd(), "../obsidian-plugin-config");
   if (fs.existsSync(parentPath)) {
     return parentPath;
   }
 
-  // Fallback to current directory (original behavior)
+  // Fallback to current directory
   return process.cwd();
 }
 
@@ -262,11 +232,6 @@ async function updatePackageJson(targetPath: string): Promise<void> {
       "typescript": "^5.8.2"
     };
 
-    // Force update TypeScript to compatible version
-    if (packageJson.devDependencies.typescript && packageJson.devDependencies.typescript !== "^5.8.2") {
-      console.log(`   🔄 Updating TypeScript from ${packageJson.devDependencies.typescript} to ^5.8.2`);
-    }
-
     let addedDeps = 0;
     let updatedDeps = 0;
     for (const [dep, version] of Object.entries(requiredDeps)) {
@@ -288,90 +253,8 @@ async function updatePackageJson(targetPath: string): Promise<void> {
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');
     console.log(`   ✅ Updated package.json (${addedDeps} new, ${updatedDeps} updated dependencies)`);
 
-    // Debug: verify package.json was written correctly
-    console.log(`   🔍 Package name: ${packageJson.name}`);
-
   } catch (error) {
     console.error(`   ❌ Failed to update package.json: ${error}`);
-  }
-}
-
-/**
- * Analyze centralized imports in source files (without modifying)
- */
-async function analyzeCentralizedImports(targetPath: string): Promise<void> {
-  const srcPath = path.join(targetPath, "src");
-
-  if (!await isValidPath(srcPath)) {
-    console.log(`   ℹ️  No src directory found`);
-    return;
-  }
-
-  console.log(`\n🔍 Analyzing centralized imports...`);
-
-  try {
-    // Find all TypeScript files recursively
-    const findTsFiles = (dir: string): string[] => {
-      const files: string[] = [];
-      const items = fs.readdirSync(dir);
-
-      for (const item of items) {
-        const fullPath = path.join(dir, item);
-        const stat = fs.statSync(fullPath);
-
-        if (stat.isDirectory()) {
-          files.push(...findTsFiles(fullPath));
-        } else if (item.endsWith('.ts') || item.endsWith('.tsx')) {
-          files.push(fullPath);
-        }
-      }
-
-      return files;
-    };
-
-    const tsFiles = findTsFiles(srcPath);
-    let filesWithImports = 0;
-
-    for (const filePath of tsFiles) {
-      try {
-        const content = fs.readFileSync(filePath, 'utf8');
-
-        // Check for imports from obsidian-plugin-config
-        const importRegex = /import\s+.*from\s+["']obsidian-plugin-config[^"']*["']/g;
-        if (importRegex.test(content)) {
-          filesWithImports++;
-          console.log(`   ⚠️  ${path.relative(targetPath, filePath)} - contains centralized imports`);
-        }
-      } catch (error) {
-        console.warn(`   ⚠️  Could not analyze ${path.relative(targetPath, filePath)}: ${error}`);
-      }
-    }
-
-    if (filesWithImports === 0) {
-      console.log(`   ✅ No centralized imports found`);
-    } else {
-      console.log(`   ⚠️  Found ${filesWithImports} files with centralized imports`);
-      console.log(`   💡 You may need to manually comment these imports for the plugin to work`);
-    }
-
-  } catch (error) {
-    console.error(`   ❌ Failed to analyze imports: ${error}`);
-  }
-}
-
-/**
- * Create required directories
- */
-async function createRequiredDirectories(targetPath: string): Promise<void> {
-  const directories = [
-    path.join(targetPath, ".github", "workflows")
-  ];
-
-  for (const dir of directories) {
-    if (!await isValidPath(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-      console.log(`   📁 Created ${path.relative(targetPath, dir)}`);
-    }
   }
 }
 
@@ -394,9 +277,9 @@ async function runYarnInstall(targetPath: string): Promise<void> {
 }
 
 /**
- * Main injection function
+ * Direct injection function (without argument parsing)
  */
-export async function performInjection(targetPath: string): Promise<void> {
+async function performInjectionDirect(targetPath: string): Promise<void> {
   console.log(`\n🚀 Starting injection process...`);
 
   try {
@@ -407,14 +290,7 @@ export async function performInjection(targetPath: string): Promise<void> {
     console.log(`\n📦 Updating package.json...`);
     await updatePackageJson(targetPath);
 
-    // Step 3: Analyze centralized imports (without modifying)
-    await analyzeCentralizedImports(targetPath);
-
-    // Step 4: Create required directories
-    console.log(`\n📁 Creating required directories...`);
-    await createRequiredDirectories(targetPath);
-
-    // Step 5: Install dependencies
+    // Step 3: Install dependencies
     await runYarnInstall(targetPath);
 
     console.log(`\n✅ Injection completed successfully!`);
@@ -431,49 +307,85 @@ export async function performInjection(targetPath: string): Promise<void> {
 }
 
 /**
+ * Ask user for target directory path
+ */
+async function promptForTargetPath(): Promise<string> {
+  console.log(`\n📁 Select target plugin directory:`);
+  console.log(`   Common paths (copy-paste ready):`);
+  console.log(`   - ../test-sample-plugin`);
+  console.log(`   - ../sample-plugin-modif`);
+  console.log(`   - ../my-obsidian-plugin`);
+  console.log(`   💡 Tip: You can paste paths with or without quotes`);
+
+  while (true) {
+    const rawInput = await askQuestion(`\nEnter plugin directory path: `, rl);
+
+    if (!rawInput.trim()) {
+      console.log(`❌ Please enter a valid path`);
+      continue;
+    }
+
+    // Remove quotes if present and trim
+    const cleanPath = rawInput.trim().replace(/^["']|["']$/g, '');
+    const resolvedPath = path.resolve(cleanPath);
+
+    if (!await isValidPath(resolvedPath)) {
+      console.log(`❌ Directory not found: ${resolvedPath}`);
+      const retry = await askConfirmation(`Try again?`, rl);
+      if (!retry) {
+        throw new Error("User cancelled");
+      }
+      continue;
+    }
+
+    console.log(`📁 Target directory: ${resolvedPath}`);
+    return resolvedPath;
+  }
+}
+
+/**
  * Main function
  */
 async function main(): Promise<void> {
   try {
-    console.log(`🎯 Obsidian Plugin Config - Local Injection Tool`);
-    console.log(`📥 Inject autonomous configuration from local files\n`);
+    console.log(`🎯 Obsidian Plugin Config - Interactive Injection Tool`);
+    console.log(`📥 Inject autonomous configuration with prompts\n`);
 
-    // Parse command line arguments
+    // Check if path provided as argument
     const args = process.argv.slice(2);
-    const autoConfirm = args.includes('--yes') || args.includes('-y');
-    const targetPath = args.find(arg => !arg.startsWith('-'));
+    let targetPath: string;
 
-    if (!targetPath) {
-      console.error(`❌ Usage: yarn inject-path <plugin-directory> [--yes]`);
-      console.error(`   Example: yarn inject-path ../my-obsidian-plugin`);
-      console.error(`   Options: --yes, -y  Auto-confirm injection`);
-      process.exit(1);
+    if (args.length > 0) {
+      // Use provided argument
+      const rawPath = args[0];
+      const cleanPath = rawPath.trim().replace(/^["']|["']$/g, '');
+      targetPath = path.resolve(cleanPath);
+
+      if (!await isValidPath(targetPath)) {
+        console.error(`❌ Directory not found: ${targetPath}`);
+        process.exit(1);
+      }
+
+      console.log(`📁 Using provided path: ${targetPath}`);
+    } else {
+      // Prompt for target directory
+      targetPath = await promptForTargetPath();
     }
-
-    // Resolve and validate path
-    const resolvedPath = path.resolve(targetPath);
-
-    if (!await isValidPath(resolvedPath)) {
-      console.error(`❌ Directory not found: ${resolvedPath}`);
-      process.exit(1);
-    }
-
-    console.log(`📁 Target directory: ${resolvedPath}`);
 
     // Analyze the plugin
     console.log(`\n🔍 Analyzing plugin...`);
-    const plan = await analyzePlugin(resolvedPath);
+    const plan = await analyzePlugin(targetPath);
 
     // Show plan and ask for confirmation
-    const confirmed = await showInjectionPlan(plan, autoConfirm);
+    const confirmed = await showInjectionPlan(plan);
 
     if (!confirmed) {
       console.log(`❌ Injection cancelled by user`);
       process.exit(0);
     }
 
-    // Perform injection
-    await performInjection(resolvedPath);
+    // Perform injection directly
+    await performInjectionDirect(targetPath);
 
   } catch (error) {
     console.error(`💥 Error: ${error instanceof Error ? error.message : String(error)}`);

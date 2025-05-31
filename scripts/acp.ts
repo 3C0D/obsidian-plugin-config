@@ -6,7 +6,7 @@ import {
   cleanInput,
   createReadlineInterface,
   gitExec
-} from "./utils.ts";
+} from "./utils.js";
 
 const rl = createReadlineInterface();
 
