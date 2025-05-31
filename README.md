@@ -2,6 +2,11 @@
 
 🎯 Système d'injection pour plugins Obsidian autonomes.
 
+[![NPM Version](https://img.shields.io/npm/v/obsidian-plugin-config)](https://www.npmjs.com/package/obsidian-plugin-config)
+[![License](https://img.shields.io/npm/l/obsidian-plugin-config)](LICENSE)
+
+**Version actuelle : 1.0.6**
+
 ## Installation Globale
 
 ```bash
@@ -33,10 +38,24 @@ obsidian-inject --help
 ## Ce qui est injecté
 
 - ✅ **Scripts locaux autonomes** : `esbuild.config.ts`, `acp.ts`, `update-version.ts`, `utils.ts`, `help.ts`, `release.ts`
-- ✅ **Configuration package.json** : scripts, dépendances, protection yarn obligatoire
-- ✅ **Template tsconfig.json** : configuration TypeScript optimisée
+- ✅ **Configuration package.json** : scripts, dépendances, protection yarn obligatoire, `"type": "module"` pour ESM
+- ✅ **Template tsconfig.json** : configuration TypeScript moderne optimisée
 - ✅ **Installation automatique** des dépendances avec yarn
 - ✅ **Analyse des imports centralisés** avec avertissements
+
+## ⚠️ Configuration ESM Moderne
+
+Le système utilise une configuration TypeScript moderne avec ESM. Si votre plugin a des imports relatifs, vous devrez peut-être les corriger :
+
+```typescript
+// ❌ Ancien format
+import { helper } from "./MyHelper";
+
+// ✅ Format ESM requis
+import { helper } from "./MyHelper.js";
+```
+
+Cette correction est nécessaire une seule fois après l'injection.
 
 ## Commandes disponibles après injection
 
@@ -67,15 +86,45 @@ Le plugin devient **100% AUTONOME** après injection :
 
 ## Développement Local (pour contributeurs)
 
+### Installation
+
 ```bash
 git clone https://github.com/3C0D/obsidian-plugin-config
 cd obsidian-plugin-config
 yarn install
+```
 
-# Test injection locale
+### Test injection locale
+
+```bash
+# Injection automatique
 yarn inject ../mon-plugin --yes
-yarn inject-prompt "../mon-plugin"
 
-# Build package NPM
+# Injection avec prompts
+yarn inject-prompt "../mon-plugin"
+```
+
+### Workflow complet : Local → NPM
+
+```bash
+# 1. Développement local
+yarn inject ../test-plugin --yes
+
+# 2. Corriger imports ESM si nécessaire
+# Exemple: "./utils.ts" → "./utils.js"
+
+# 3. Build et publication NPM
 yarn build-npm
+yarn update-version
+npm login
+npm publish
+```
+
+### Commandes de maintenance
+
+```bash
+yarn acp                # Add, commit, push
+yarn update-version     # Mise à jour version
+yarn build-npm         # Build package NPM
+yarn help              # Aide complète
 ```
