@@ -4,6 +4,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import readline from 'readline';
+import { execSync } from 'child_process';
 
 // Get the directory of this script
 const __filename = fileURLToPath(import.meta.url);
@@ -130,6 +131,40 @@ function mergeEnvFile(existingPath: string, templatePath: string): string {
   return result || template;
 }
 
+function validateEnvFile(envPath: string): void {
+  if (!fs.existsSync(envPath)) {
+    console.log('  ❌ ERROR: .env file was not created');
+    throw new Error('Migration failed: .env file missing');
+  }
+
+  const envContent = fs.readFileSync(envPath, 'utf8');
+  const requiredVars = ['TEST_VAULT', 'REAL_VAULT'];
+  const missingOrEmpty: string[] = [];
+
+  requiredVars.forEach(varName => {
+    const match = envContent.match(new RegExp(`^${varName}=(.*)$`, 'm'));
+    if (!match || !match[1] || match[1].trim() === '') {
+      missingOrEmpty.push(varName);
+    }
+  });
+
+  if (missingOrEmpty.length > 0) {
+    console.log('  ❌ ERROR: Required vault paths are not configured in .env:');
+    missingOrEmpty.forEach(varName => {
+      console.log(`     - ${varName} is missing or empty`);
+    });
+    console.log('');
+    console.log('  📝 Please edit .env file and add your vault paths:');
+    console.log('     TEST_VAULT=C:/path/to/your/test/vault');
+    console.log('     REAL_VAULT=C:/path/to/your/real/vault');
+    console.log('');
+    console.log('  🔄 Then run the migration again.');
+    throw new Error('Migration failed: vault paths not configured');
+  }
+
+  console.log('  ✅ Vault paths are properly configured');
+}
+
 function mergeVSCodeSettings(existingPath: string, templatePath: string): string {
   const template = JSON.parse(fs.readFileSync(templatePath, 'utf8'));
 
@@ -150,13 +185,18 @@ function shouldUpdateFile(filePath: string, templatePath: string, fileName: stri
   const alwaysUpdate = ['.npmrc'];
   if (alwaysUpdate.includes(fileName)) return true;
 
-  // Special logic for tsconfig.json: update if target < ES2018
-  if (fileName === 'tsconfig.json' && fs.existsSync(filePath)) {
+  // Special logic for tsconfig.json: update if incompatible with centralized config or missing
+  if (fileName === 'tsconfig.json') {
+    if (!fs.existsSync(filePath)) {
+      console.log(`  ⚠️  Creating tsconfig.json: file missing`);
+      return true;
+    }
     try {
       const existingConfig = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      const target = existingConfig.compilerOptions?.target;
+      const compilerOptions = existingConfig.compilerOptions || {};
 
-      // List of targets that are < ES2018
+      // Check for target < ES2018
+      const target = compilerOptions.target;
       const oldTargets = ['ES3', 'ES5', 'ES6', 'ES2015', 'ES2016', 'ES2017'];
 
       if (target && oldTargets.includes(target.toUpperCase())) {
@@ -164,7 +204,13 @@ function shouldUpdateFile(filePath: string, templatePath: string, fileName: stri
         return true;
       }
 
-      // If target is ES2018+ or not specified, preserve existing
+      // Check for strict mode that may cause compatibility issues
+      if (compilerOptions.strict === true) {
+        console.log(`  ⚠️  Updating tsconfig.json: strict mode → permissive mode (better plugin compatibility)`);
+        return true;
+      }
+
+      // If configuration is compatible, preserve existing
       return false;
     } catch (error) {
       // If we can't parse the existing tsconfig, update it
@@ -330,11 +376,10 @@ async function performMigration(pluginPath: string): Promise<void> {
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2) + '\n');
     console.log('  ✅ Updated package.json');
 
-    // Install dependencies if node_modules was removed
-    if (!alreadyMigrated && !fs.existsSync(nodeModulesPath)) {
+    // Install dependencies if needed (new migration or package.json updated)
+    if (!fs.existsSync(nodeModulesPath) || !alreadyMigrated) {
       console.log('📦 Installing dependencies...');
       try {
-        const { execSync } = require('child_process');
         execSync('yarn install', { cwd: pluginPath, stdio: 'inherit' });
         console.log('  ✅ Dependencies installed');
       } catch (error) {
@@ -415,7 +460,9 @@ async function performMigration(pluginPath: string): Promise<void> {
     } else {
       console.log('  ✅ Created .env file');
     }
-    console.log('  ⚠️  Please verify .env contains your vault paths');
+
+    // Validate that vault paths are configured
+    validateEnvFile(envPath);
   } else {
     if (fs.existsSync(envPath)) {
       console.log('  🔍 Would update .env file (preserving existing variables)');

@@ -1,0 +1,38 @@
+{
+  "name": "test-plugin",
+  "version": "1.0.0",
+  "description": "Plugin de test pour injection",
+  "main": "main.js",
+  "scripts": {
+    "dev": "tsx scripts/esbuild.config.ts",
+    "build": "tsc -noEmit -skipLibCheck && tsx scripts/esbuild.config.ts production",
+    "start": "yarn install && yarn dev",
+    "real": "tsx scripts/esbuild.config.ts production real",
+    "acp": "tsx scripts/acp.ts",
+    "bacp": "tsx scripts/acp.ts -b",
+    "update-version": "tsx scripts/update-version.ts",
+    "v": "tsx scripts/update-version.ts",
+    "release": "tsx scripts/release.ts",
+    "r": "tsx scripts/release.ts",
+    "help": "tsx scripts/help.ts",
+    "h": "tsx scripts/help.ts"
+  },
+  "keywords": [],
+  "author": "3C0D",
+  "license": "MIT",
+  "devDependencies": {
+    "obsidian": "latest",
+    "typescript": "4.7.4",
+    "esbuild": "0.17.3",
+    "dedent": "^1.5.3",
+    "semver": "^7.6.3",
+    "@types/semver": "^7.5.8",
+    "dotenv": "^16.4.5",
+    "builtin-modules": "^4.0.0",
+    "tsx": "^4.19.4"
+  },
+  "engines": {
+    "npm": "please-use-yarn",
+    "yarn": ">=1.22.0"
+  }
+}

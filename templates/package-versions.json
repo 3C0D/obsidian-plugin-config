@@ -3,6 +3,7 @@
     "@types/node": "^16.11.6",
     "eslint": "^9.0.0",
     "obsidian": "latest",
+    "obsidian-typings": "latest",
     "typescript": "^5.8.2",
     "tsx": "^4.19.4"
   },

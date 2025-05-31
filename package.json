@@ -1,18 +1,22 @@
 {
   "name": "obsidian-plugin-config",
   "version": "1.0.2",
-  "description": "Centralized configuration for Obsidian plugin development",
+  "description": "Système d'injection pour plugins Obsidian autonomes",
   "type": "module",
   "main": "src/index.ts",
+  "bin": {
+    "obsidian-inject": "./bin/obsidian-inject.js"
+  },
+  "license": "MIT",
   "keywords": [
     "obsidian",
     "obsidian-plugin",
     "typescript",
-    "shared-config",
-    "centralized-config",
-    "plugin-utilities",
-    "modular-architecture",
-    "development-tools"
+    "injection",
+    "autonomous",
+    "cli",
+    "development-tools",
+    "plugin-utilities"
   ],
   "scripts": {
     "start": "yarn install && yarn run update-exports",
@@ -23,8 +27,16 @@
     "migrate-config": "tsx scripts/migrate-config.ts",
     "migrate": "tsx scripts/migrate-config.ts",
     "m": "tsx scripts/migrate-config.ts",
+    "inject-path": "tsx scripts/inject-path.ts",
+    "inject": "tsx scripts/inject-path.ts",
     "help": "tsx scripts/help.ts",
-    "h": "tsx scripts/help.ts"
+    "h": "tsx scripts/help.ts",
+    "dev": "tsx scripts/esbuild.config.ts",
+    "build": "tsc -noEmit -skipLibCheck && tsx scripts/esbuild.config.ts production",
+    "real": "tsx scripts/esbuild.config.ts production real",
+    "bacp": "tsx scripts/acp.ts -b",
+    "release": "tsx scripts/release.ts",
+    "r": "tsx scripts/release.ts"
   },
   "exports": {
     ".": "./src/index.ts",
@@ -42,6 +54,7 @@
     "esbuild": "latest",
     "fs-extra": "^11.2.0",
     "obsidian": "*",
+    "obsidian-typings": "^3.9.5",
     "semver": "^7.7.2",
     "tsx": "^4.19.4",
     "typescript": "^5.8.2"
@@ -52,6 +65,12 @@
   },
   "engines": {
     "npm": "please-use-yarn",
-    "yarn": ">=1.22.0"
-  }
+    "yarn": ">=1.22.0",
+    "node": ">=16.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3C0D/obsidian-plugin-config.git"
+  },
+  "author": "3C0D"
 }

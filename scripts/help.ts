@@ -2,28 +2,45 @@
 
 console.log(`
 Obsidian Plugin Config - Command Reference
-(Run these commands from obsidian-plugin-config directory)
+Système d'injection pour plugins Obsidian autonomes
 
-MIGRATION:
-  yarn migrate, m <path>           Migrate plugin to centralized architecture
-  yarn migrate --dry-run           Preview changes without applying (debugging)
-  yarn migrate -i, --interactive   Interactive plugin selection
+STRATÉGIE NPM GLOBAL:
+  npm install -g obsidian-plugin-config    # Installation globale (une seule fois)
+  obsidian-inject                          # Injection depuis n'importe où
+  obsidian-inject /chemin/vers/plugin      # Injection par chemin
+
+INJECTION LOCALE (développement):
+  yarn inject-path <chemin>        Injection par chemin depuis plugin-config
+  yarn inject <chemin>             Alias pour inject-path
+
+MIGRATION (développement):
+  yarn migrate, m <chemin>         Migration plugin vers architecture centralisée
+  yarn migrate --dry-run           Aperçu des changements sans appliquer
 
 MAINTENANCE:
-  yarn start                       Install dependencies and update exports
-  yarn acp                         Add, commit, and push changes (with exports update)
-  yarn acp -ne, --no-exports       Add, commit, and push without updating exports
-  yarn update-version, v           Update version in centralized config
-  yarn help, h                     Show this help
+  yarn acp                         Add, commit, and push changes
+  yarn update-version, v           Update version
+  yarn help, h                     Afficher cette aide
 
-USAGE EXAMPLES:
-  yarn migrate "C:\\Users\\dev\\plugins\\my-plugin"
-  yarn migrate ../existing-plugin --dry-run
-  yarn m -i                        # Short interactive mode
+EXEMPLES D'UTILISATION:
+  # Installation globale (recommandée)
+  npm install -g obsidian-plugin-config
+  cd mon-plugin && obsidian-inject
 
-PATH CONVENTIONS:
-  - Windows absolute paths: Use quotes "C:\\path\\to\\plugin"
-  - Relative paths: No quotes needed ../plugin-name
+  # Développement local
+  yarn inject-path "../mon-plugin"
+  yarn inject "C:\\Users\\dev\\plugins\\mon-plugin"
 
-For detailed documentation: ARCHITECTURE-SUMMARY.md
+CE QUI EST INJECTÉ:
+  ✅ Scripts locaux (esbuild.config.ts, acp.ts, utils.ts, etc.)
+  ✅ Configuration package.json (scripts, dépendances)
+  ✅ Protection yarn obligatoire
+  ✅ Installation automatique des dépendances
+
+ARCHITECTURE:
+  - Plugin devient AUTONOME avec scripts locaux
+  - Aucune dépendance externe requise après injection
+  - Mise à jour possible via re-injection
+
+COMPTE NPM: 3c0d (connecté)
 `);

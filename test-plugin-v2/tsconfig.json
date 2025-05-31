@@ -1,13 +1,8 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
-    "strict": false,
+    "strict": true,
     "strictPropertyInitialization": false,
-    "noImplicitAny": false,
-    "noImplicitThis": false,
-    "noImplicitReturns": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
     "allowJs": true,
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
@@ -17,8 +12,7 @@
       "ES2020"
     ],
     "types": [
-      "node",
-      "obsidian-typings"
+      "node"
     ],
     "isolatedModules": true,
     "module": "ESNext",
@@ -29,8 +23,7 @@
     "skipLibCheck": true
   },
   "include": [
-    "./src/**/*.ts",
-    "./scripts/**/*.ts"
+    "./src/**/*.ts"
   ],
   "exclude": [
     "node_modules"
