@@ -32,7 +32,7 @@
     "help": "tsx scripts/help.ts",
     "h": "tsx scripts/help.ts",
     "dev": "tsx scripts/esbuild.config.ts",
-    "build": "tsc -noEmit -skipLibCheck && tsx scripts/esbuild.config.ts production",
+    "build": "tsc -noEmit -skipLibCheck",
     "real": "tsx scripts/esbuild.config.ts production real",
     "bacp": "tsx scripts/acp.ts -b",
     "release": "tsx scripts/release.ts",
