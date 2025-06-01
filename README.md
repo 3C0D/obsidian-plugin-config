@@ -1,5 +1,7 @@
 # Obsidian Plugin Config
 
+<!-- Test modification pour vérifier auto-commit -->
+
 🎯 Système d'injection pour plugins Obsidian autonomes.
 
 [![NPM Version](https://img.shields.io/npm/v/obsidian-plugin-config)](https://www.npmjs.com/package/obsidian-plugin-config)

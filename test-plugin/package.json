@@ -15,24 +15,35 @@
     "release": "tsx scripts/release.ts",
     "r": "tsx scripts/release.ts",
     "help": "tsx scripts/help.ts",
-    "h": "tsx scripts/help.ts"
+    "h": "tsx scripts/help.ts",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix"
   },
   "keywords": [],
   "author": "3C0D",
   "license": "MIT",
   "devDependencies": {
-    "obsidian": "latest",
-    "typescript": "4.7.4",
-    "esbuild": "0.17.3",
-    "dedent": "^1.5.3",
-    "semver": "^7.6.3",
-    "@types/semver": "^7.5.8",
+    "obsidian": "*",
+    "typescript": "^5.8.2",
+    "esbuild": "latest",
+    "dedent": "^1.6.0",
+    "semver": "^7.7.2",
+    "@types/semver": "^7.7.0",
     "dotenv": "^16.4.5",
-    "builtin-modules": "^4.0.0",
-    "tsx": "^4.19.4"
+    "builtin-modules": "3.3.0",
+    "tsx": "^4.19.4",
+    "@types/eslint": "latest",
+    "@types/node": "^22.15.26",
+    "@typescript-eslint/eslint-plugin": "latest",
+    "@typescript-eslint/parser": "latest",
+    "eslint": "latest",
+    "eslint-import-resolver-typescript": "latest",
+    "jiti": "latest",
+    "obsidian-typings": "^3.9.5"
   },
   "engines": {
     "npm": "please-use-yarn",
     "yarn": ">=1.22.0"
-  }
+  },
+  "type": "module"
 }

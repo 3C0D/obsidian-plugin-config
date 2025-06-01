@@ -5,10 +5,9 @@ import {
 import { execSync } from "child_process";
 import dedent from "dedent";
 import {
-  askQuestion,
   askConfirmation,
   createReadlineInterface
-} from "./utils.ts";
+} from "./utils.js";
 
 const rl = createReadlineInterface();
 

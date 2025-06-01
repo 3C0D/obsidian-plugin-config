@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "fs/promises";
 import dedent from "dedent";
 import { inc, valid } from "semver";
-import { askQuestion, createReadlineInterface, gitExec } from "./utils.ts";
+import { askQuestion, createReadlineInterface, gitExec } from "./utils.js";
 
 const rl = createReadlineInterface();
 
@@ -72,7 +72,7 @@ async function updateVersion(): Promise<void> {
       // Update all files first
       await updateManifestVersions(targetVersion);
       console.log(`Files updated to version ${targetVersion}`);
-      
+
       // Add files to git
       gitExec("git add manifest.json package.json versions.json");
       gitExec(`git commit -m "Updated to version ${targetVersion}"`);
