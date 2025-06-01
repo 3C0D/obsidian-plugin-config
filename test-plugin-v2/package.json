@@ -15,7 +15,9 @@
     "release": "tsx scripts/release.ts",
     "r": "tsx scripts/release.ts",
     "help": "tsx scripts/help.ts",
-    "h": "tsx scripts/help.ts"
+    "h": "tsx scripts/help.ts",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix"
   },
   "keywords": [],
   "author": "3C0D",
@@ -31,10 +33,17 @@
     "dotenv": "^16.4.5",
     "obsidian-typings": "^3.9.5",
     "semver": "^7.7.2",
-    "tsx": "^4.19.4"
+    "tsx": "^4.19.4",
+    "@types/eslint": "latest",
+    "@typescript-eslint/eslint-plugin": "latest",
+    "@typescript-eslint/parser": "latest",
+    "eslint": "latest",
+    "eslint-import-resolver-typescript": "latest",
+    "jiti": "latest"
   },
   "engines": {
     "npm": "please-use-yarn",
     "yarn": ">=1.22.0"
-  }
+  },
+  "type": "module"
 }

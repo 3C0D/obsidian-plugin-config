@@ -192,6 +192,11 @@ async function injectScripts(targetPath: string): Promise<void> {
     "templates/.gitignore"
   ];
 
+  const workflowFiles = [
+    "templates/.github/workflows/release.yml",
+    "templates/.github/workflows/release-body.md"
+  ];
+
   console.log(`\n📥 Copying scripts from local files...`);
 
   for (const scriptFile of scriptFiles) {
@@ -228,6 +233,27 @@ async function injectScripts(targetPath: string): Promise<void> {
       console.log(`   ✅ ${fileName}`);
     } catch (error) {
       console.error(`   ❌ Failed to inject ${configFile}: ${error}`);
+    }
+  }
+
+  console.log(`\n📥 Copying GitHub workflows from local files...`);
+
+  for (const workflowFile of workflowFiles) {
+    try {
+      const content = copyFromLocal(workflowFile);
+      const relativePath = workflowFile.replace('templates/', '');
+      const targetFile = path.join(targetPath, relativePath);
+
+      // Ensure directory exists
+      const targetDir = path.dirname(targetFile);
+      if (!await isValidPath(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+
+      fs.writeFileSync(targetFile, content, 'utf8');
+      console.log(`   ✅ ${relativePath}`);
+    } catch (error) {
+      console.error(`   ❌ Failed to inject ${workflowFile}: ${error}`);
     }
   }
 }
