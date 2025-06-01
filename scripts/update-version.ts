@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "fs/promises";
 import dedent from "dedent";
 import { inc, valid } from "semver";
-import { askQuestion, createReadlineInterface, gitExec } from "./utils.js";
+import { askQuestion, createReadlineInterface, gitExec, ensureGitSync } from "./utils.js";
 
 const rl = createReadlineInterface();
 
@@ -84,6 +84,9 @@ async function updateVersion(): Promise<void> {
     }
 
     try {
+      // Ensure Git is synchronized before pushing
+      await ensureGitSync();
+
       gitExec("git push");
       console.log(`Version successfully updated to ${targetVersion} and pushed.`);
     } catch (pushError) {
