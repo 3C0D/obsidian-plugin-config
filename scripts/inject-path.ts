@@ -299,8 +299,7 @@ async function injectScripts(targetPath: string): Promise<void> {
   const configFiles = [
     "templates/tsconfig-template.json",
     "templates/.gitignore",
-    "templates/eslint.config.ts",
-    "templates/eslint.config.cjs"
+    "templates/eslint.config.mts"
   ];
 
   const workflowFiles = [
