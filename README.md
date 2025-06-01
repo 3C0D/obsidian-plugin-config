@@ -32,7 +32,7 @@ obsidian-inject "C:\chemin\vers\plugin"
 ### Vérification (sans injection)
 
 ```bash
-# Vérifier si un plugin est déjà injecté
+# Vérifier si un plugin est déjà injecté (avec info de version)
 yarn check-plugin ../mon-plugin
 yarn verify-plugin ../mon-plugin  # alias
 ```
@@ -50,6 +50,23 @@ obsidian-inject --help
 - ✅ **Template tsconfig.json** : configuration TypeScript moderne optimisée
 - ✅ **Installation automatique** des dépendances avec yarn
 - ✅ **Analyse des imports centralisés** avec avertissements
+- ✅ **Fichier de traçabilité** : `.injection-info.json` (version, date d'injection)
+
+## 📋 Suivi des versions d'injection
+
+Le système crée un fichier `.injection-info.json` dans chaque plugin injecté pour tracer :
+
+- **Version de l'injecteur** utilisée
+- **Date d'injection**
+- **Nom de l'injecteur** (`obsidian-plugin-config`)
+
+> ⚠️ **Important** : Le fichier `.injection-info.json` est **commité avec le plugin** pour assurer la traçabilité sur GitHub et permettre de voir facilement qu'un plugin a été injecté et avec quelle version.
+
+### Statuts possibles lors de la vérification
+
+- ✅ **Plugin injecté** : Affiche version, date et détecte les mises à jour disponibles
+- ⚠️ **Plugin injecté (legacy)** : Injecté avec l'ancien système, re-injection recommandée
+- ❌ **Plugin non injecté** : Aucune injection détectée
 
 ## ⚠️ Configuration ESM Moderne
 

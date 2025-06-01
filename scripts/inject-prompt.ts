@@ -7,7 +7,8 @@ import {
   askQuestion,
   askConfirmation,
   createReadlineInterface,
-  isValidPath
+  isValidPath,
+  gitExec
 } from "./utils.js";
 
 const rl = createReadlineInterface();
@@ -90,6 +91,54 @@ async function showInjectionPlan(plan: InjectionPlan): Promise<boolean> {
 }
 
 /**
+ * Check if plugin-config repo is clean and commit if needed
+ */
+async function ensurePluginConfigClean(): Promise<void> {
+  const configRoot = findPluginConfigRoot();
+  const originalCwd = process.cwd();
+
+  try {
+    // Change to plugin-config directory
+    process.chdir(configRoot);
+
+    // Check git status
+    const gitStatus = execSync("git status --porcelain", { encoding: "utf8" }).trim();
+
+    if (gitStatus) {
+      console.log(`\n⚠️  Plugin-config has uncommitted changes:`);
+      console.log(gitStatus);
+      console.log(`\n🔧 Auto-committing changes with yarn bacp...`);
+
+      // Use yarn bacp with standard message
+      const commitMessage = "🔧 Update plugin-config templates and scripts";
+      gitExec("git add -A");
+      gitExec(`git commit -m "${commitMessage}"`);
+
+      // Try to push
+      try {
+        const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim();
+        gitExec(`git push origin ${currentBranch}`);
+        console.log(`✅ Changes committed and pushed successfully`);
+      } catch {
+        // Try setting upstream if it's a new branch
+        try {
+          const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim();
+          gitExec(`git push --set-upstream origin ${currentBranch}`);
+          console.log(`✅ New branch pushed with upstream set`);
+        } catch (pushError) {
+          console.log(`⚠️  Changes committed locally but push failed. Continue with injection.`);
+        }
+      }
+    } else {
+      console.log(`✅ Plugin-config repo is clean`);
+    }
+  } finally {
+    // Always restore original directory
+    process.chdir(originalCwd);
+  }
+}
+
+/**
  * Find plugin-config root directory
  */
 function findPluginConfigRoot(): string {
@@ -139,7 +188,8 @@ async function injectScripts(targetPath: string): Promise<void> {
   ];
 
   const configFiles = [
-    "templates/tsconfig.json"
+    "templates/tsconfig.json",
+    "templates/.gitignore"
   ];
 
   console.log(`\n📥 Copying scripts from local files...`);
@@ -165,9 +215,13 @@ async function injectScripts(targetPath: string): Promise<void> {
       const fileName = path.basename(configFile);
       const targetFile = path.join(targetPath, fileName);
 
-      // Force inject tsconfig.json to ensure correct template
-      if (fileName === 'tsconfig.json' && await isValidPath(targetFile)) {
-        console.log(`   🔄 ${fileName} exists, updating with template`);
+      // Handle existing config files
+      if (await isValidPath(targetFile)) {
+        if (fileName === 'tsconfig.json') {
+          console.log(`   🔄 ${fileName} exists, updating with template`);
+        } else if (fileName === '.gitignore') {
+          console.log(`   🔄 ${fileName} exists, updating with template (keeps .injection-info.json)`);
+        }
       }
 
       fs.writeFileSync(targetFile, content, 'utf8');
@@ -280,6 +334,32 @@ async function runYarnInstall(targetPath: string): Promise<void> {
 }
 
 /**
+ * Create injection info file
+ */
+async function createInjectionInfo(targetPath: string): Promise<void> {
+  const configRoot = findPluginConfigRoot();
+  const configPackageJsonPath = path.join(configRoot, "package.json");
+
+  let injectorVersion = "unknown";
+  try {
+    const configPackageJson = JSON.parse(fs.readFileSync(configPackageJsonPath, "utf8"));
+    injectorVersion = configPackageJson.version || "unknown";
+  } catch (error) {
+    console.warn("Warning: Could not read injector version");
+  }
+
+  const injectionInfo = {
+    injectorVersion,
+    injectionDate: new Date().toISOString(),
+    injectorName: "obsidian-plugin-config"
+  };
+
+  const infoPath = path.join(targetPath, ".injection-info.json");
+  fs.writeFileSync(infoPath, JSON.stringify(injectionInfo, null, 2));
+  console.log(`   ✅ Created injection info file (.injection-info.json)`);
+}
+
+/**
  * Direct injection function (without argument parsing)
  */
 async function performInjectionDirect(targetPath: string): Promise<void> {
@@ -295,6 +375,10 @@ async function performInjectionDirect(targetPath: string): Promise<void> {
 
     // Step 3: Install dependencies
     await runYarnInstall(targetPath);
+
+    // Step 4: Create injection info file
+    console.log(`\n📝 Creating injection info...`);
+    await createInjectionInfo(targetPath);
 
     console.log(`\n✅ Injection completed successfully!`);
     console.log(`\n📋 Next steps:`);
@@ -374,6 +458,10 @@ async function main(): Promise<void> {
       // Prompt for target directory
       targetPath = await promptForTargetPath();
     }
+
+    // Ensure plugin-config repo is clean before injection
+    console.log(`\n🔍 Checking plugin-config repository status...`);
+    await ensurePluginConfigClean();
 
     // Analyze the plugin
     console.log(`\n🔍 Analyzing plugin...`);

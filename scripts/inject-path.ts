@@ -5,10 +5,10 @@ import path from "path";
 import { execSync } from "child_process";
 import dotenv from "dotenv";
 import {
-  askQuestion,
   askConfirmation,
   createReadlineInterface,
-  isValidPath
+  isValidPath,
+  gitExec
 } from "./utils.js";
 
 // Load environment variables from .env file
@@ -47,7 +47,7 @@ async function analyzePlugin(pluginPath: string): Promise<InjectionPlan> {
     try {
       const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
       plan.isObsidianPlugin = !!(manifest.id && manifest.name && manifest.version);
-    } catch (error) {
+    } catch {
       console.warn("Warning: Could not parse manifest.json");
     }
   }
@@ -60,7 +60,7 @@ async function analyzePlugin(pluginPath: string): Promise<InjectionPlan> {
         ...Object.keys(packageJson.dependencies || {}),
         ...Object.keys(packageJson.devDependencies || {})
       ];
-    } catch (error) {
+    } catch {
       console.warn("Warning: Could not parse package.json");
     }
   }
@@ -96,6 +96,54 @@ async function showInjectionPlan(plan: InjectionPlan, autoConfirm: boolean = fal
   }
 
   return await askConfirmation(`\nProceed with injection?`, rl);
+}
+
+/**
+ * Check if plugin-config repo is clean and commit if needed
+ */
+async function ensurePluginConfigClean(): Promise<void> {
+  const configRoot = findPluginConfigRoot();
+  const originalCwd = process.cwd();
+
+  try {
+    // Change to plugin-config directory
+    process.chdir(configRoot);
+
+    // Check git status
+    const gitStatus = execSync("git status --porcelain", { encoding: "utf8" }).trim();
+
+    if (gitStatus) {
+      console.log(`\n⚠️  Plugin-config has uncommitted changes:`);
+      console.log(gitStatus);
+      console.log(`\n🔧 Auto-committing changes with yarn bacp...`);
+
+      // Use yarn bacp with standard message
+      const commitMessage = "🔧 Update plugin-config templates and scripts";
+      gitExec("git add -A");
+      gitExec(`git commit -m "${commitMessage}"`);
+
+      // Try to push
+      try {
+        const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim();
+        gitExec(`git push origin ${currentBranch}`);
+        console.log(`✅ Changes committed and pushed successfully`);
+      } catch {
+        // Try setting upstream if it's a new branch
+        try {
+          const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim();
+          gitExec(`git push --set-upstream origin ${currentBranch}`);
+          console.log(`✅ New branch pushed with upstream set`);
+        } catch (pushError) {
+          console.log(`⚠️  Changes committed locally but push failed. Continue with injection.`);
+        }
+      }
+    } else {
+      console.log(`✅ Plugin-config repo is clean`);
+    }
+  } finally {
+    // Always restore original directory
+    process.chdir(originalCwd);
+  }
 }
 
 /**
@@ -142,7 +190,7 @@ function findPluginConfigRoot(): string {
       if (packageContent.name === "obsidian-plugin-config") {
         return npmPackageRoot;
       }
-    } catch (error) {
+    } catch {
       // Ignore parsing errors
     }
   }
@@ -166,6 +214,51 @@ function copyFromLocal(filePath: string): string {
 }
 
 /**
+ * Clean old script files (remove .mts versions if .ts exists, and other obsolete files)
+ */
+async function cleanOldScripts(scriptsPath: string): Promise<void> {
+  const scriptNames = ["utils", "esbuild.config", "acp", "update-version", "release", "help"];
+
+  // Remove old .mts files when .ts exists
+  for (const scriptName of scriptNames) {
+    const mtsFile = path.join(scriptsPath, `${scriptName}.mts`);
+    const tsFile = path.join(scriptsPath, `${scriptName}.ts`);
+
+    if (await isValidPath(mtsFile) && await isValidPath(tsFile)) {
+      fs.unlinkSync(mtsFile);
+      console.log(`🗑️  Removed old ${scriptName}.mts (replaced by ${scriptName}.ts)`);
+    } else if (await isValidPath(mtsFile)) {
+      console.log(`ℹ️  Found old ${scriptName}.mts file (will be replaced by ${scriptName}.ts)`);
+    }
+  }
+
+  // Remove other obsolete files
+  const obsoleteFiles = ["start.mjs", "start.js"];
+  for (const fileName of obsoleteFiles) {
+    const filePath = path.join(scriptsPath, fileName);
+    if (await isValidPath(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`🗑️  Removed obsolete file: ${fileName}`);
+    }
+  }
+}
+
+/**
+ * Clean old lint files (remove old ESLint config when injecting new format)
+ */
+async function cleanOldLintFiles(targetPath: string): Promise<void> {
+  const oldLintFiles = [".eslintrc", ".eslintrc.js", ".eslintrc.json", ".eslintignore"];
+
+  for (const fileName of oldLintFiles) {
+    const filePath = path.join(targetPath, fileName);
+    if (await isValidPath(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`🗑️  Removed old ESLint file: ${fileName} (replaced by eslint.config.ts)`);
+    }
+  }
+}
+
+/**
  * Inject scripts from local files
  */
 async function injectScripts(targetPath: string): Promise<void> {
@@ -177,17 +270,26 @@ async function injectScripts(targetPath: string): Promise<void> {
     console.log(`📁 Created scripts directory`);
   }
 
+  // Clean old script files before injection
+  await cleanOldScripts(scriptsPath);
+
+  // Clean old lint files before injection
+  await cleanOldLintFiles(targetPath);
+
   const scriptFiles = [
-    "scripts/utils.ts",
-    "scripts/esbuild.config.ts",
-    "scripts/acp.ts",
-    "scripts/update-version.ts",
-    "scripts/release.ts",
-    "scripts/help.ts"
+    "templates/scripts/utils.ts",
+    "templates/scripts/esbuild.config.ts",
+    "templates/scripts/acp.ts",
+    "templates/scripts/update-version.ts",
+    "templates/scripts/release.ts",
+    "templates/scripts/help.ts"
   ];
 
   const configFiles = [
-    "templates/tsconfig.json"
+    "templates/tsconfig-template.json",
+    "templates/.gitignore",
+    "templates/eslint.config.ts",
+    "templates/eslint.config.cjs"
   ];
 
   console.log(`\n📥 Copying scripts from local files...`);
@@ -210,12 +312,24 @@ async function injectScripts(targetPath: string): Promise<void> {
   for (const configFile of configFiles) {
     try {
       const content = copyFromLocal(configFile);
-      const fileName = path.basename(configFile);
+      let fileName = path.basename(configFile);
+
+      // Handle template renaming
+      if (fileName === 'tsconfig-template.json') {
+        fileName = 'tsconfig.json';
+      }
+
       const targetFile = path.join(targetPath, fileName);
 
-      // Force inject tsconfig.json to ensure correct template
-      if (fileName === 'tsconfig.json' && await isValidPath(targetFile)) {
-        console.log(`   🔄 ${fileName} exists, updating with template`);
+
+
+      // Handle existing config files
+      if (await isValidPath(targetFile)) {
+        if (fileName === 'tsconfig.json') {
+          console.log(`   🔄 ${fileName} exists, updating with template`);
+        } else if (fileName === '.gitignore') {
+          console.log(`   🔄 ${fileName} exists, updating with template (keeps .injection-info.json)`);
+        }
       }
 
       fs.writeFileSync(targetFile, content, 'utf8');
@@ -256,7 +370,9 @@ async function updatePackageJson(targetPath: string): Promise<void> {
       "release": "tsx scripts/release.ts",
       "r": "tsx scripts/release.ts",
       "help": "tsx scripts/help.ts",
-      "h": "tsx scripts/help.ts"
+      "h": "tsx scripts/help.ts",
+      "lint": "eslint . --ext .ts",
+      "lint:fix": "eslint . --ext .ts --fix"
     };
 
     // Remove centralized dependency
@@ -269,12 +385,18 @@ async function updatePackageJson(targetPath: string): Promise<void> {
     if (!packageJson.devDependencies) packageJson.devDependencies = {};
 
     const requiredDeps = {
+      "@types/eslint": "latest",
       "@types/node": "^22.15.26",
       "@types/semver": "^7.7.0",
+      "@typescript-eslint/eslint-plugin": "latest",
+      "@typescript-eslint/parser": "latest",
       "builtin-modules": "3.3.0",
       "dedent": "^1.6.0",
       "dotenv": "^16.4.5",
       "esbuild": "latest",
+      "eslint": "latest",
+      "eslint-import-resolver-typescript": "latest",
+      "jiti": "latest",
       "obsidian": "*",
       "obsidian-typings": "^3.9.5",
       "semver": "^7.7.2",
@@ -404,6 +526,50 @@ async function createRequiredDirectories(targetPath: string): Promise<void> {
 }
 
 /**
+ * Create injection info file
+ */
+async function createInjectionInfo(targetPath: string): Promise<void> {
+  const configRoot = findPluginConfigRoot();
+  const configPackageJsonPath = path.join(configRoot, "package.json");
+
+  let injectorVersion = "unknown";
+  try {
+    const configPackageJson = JSON.parse(fs.readFileSync(configPackageJsonPath, "utf8"));
+    injectorVersion = configPackageJson.version || "unknown";
+  } catch {
+    console.warn("Warning: Could not read injector version");
+  }
+
+  const injectionInfo = {
+    injectorVersion,
+    injectionDate: new Date().toISOString(),
+    injectorName: "obsidian-plugin-config"
+  };
+
+  const infoPath = path.join(targetPath, ".injection-info.json");
+  fs.writeFileSync(infoPath, JSON.stringify(injectionInfo, null, 2));
+  console.log(`   ✅ Created injection info file (.injection-info.json)`);
+}
+
+/**
+ * Read injection info from target plugin
+ */
+function readInjectionInfo(targetPath: string): any | null {
+  const infoPath = path.join(targetPath, ".injection-info.json");
+
+  if (!fs.existsSync(infoPath)) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(infoPath, "utf8"));
+  } catch {
+    console.warn("Warning: Could not parse .injection-info.json");
+    return null;
+  }
+}
+
+/**
  * Run yarn install in target directory
  */
 async function runYarnInstall(targetPath: string): Promise<void> {
@@ -444,6 +610,10 @@ export async function performInjection(targetPath: string): Promise<void> {
 
     // Step 5: Install dependencies
     await runYarnInstall(targetPath);
+
+    // Step 6: Create injection info file
+    console.log(`\n📝 Creating injection info...`);
+    await createInjectionInfo(targetPath);
 
     // FINAL DEBUG: Check package.json one last time
     const finalPackageJsonPath = path.join(targetPath, "package.json");
@@ -524,22 +694,50 @@ async function main(): Promise<void> {
       console.log(`   ✅ Required dependencies`);
       console.log(`   🔍 Analyze centralized imports (manual commenting may be needed)`);
 
-      // Check for existing injection
-      const scriptsPath = path.join(resolvedPath, "scripts");
-      const hasInjectedScripts = fs.existsSync(path.join(scriptsPath, "utils.ts"));
+      // Check for existing injection using new system
+      const injectionInfo = readInjectionInfo(resolvedPath);
 
-      if (hasInjectedScripts) {
-        console.log(`\n✅ Status: Plugin appears to be already injected`);
-        console.log(`   Found: scripts/utils.ts (injection marker)`);
+      if (injectionInfo) {
+        console.log(`\n✅ Status: Plugin is already injected`);
+        console.log(`   📦 Injector: ${injectionInfo.injectorName || 'unknown'}`);
+        console.log(`   🏷️  Version: ${injectionInfo.injectorVersion || 'unknown'}`);
+        console.log(`   📅 Date: ${injectionInfo.injectionDate ? new Date(injectionInfo.injectionDate).toLocaleDateString() : 'unknown'}`);
+
+        // Check if current version is newer
+        const configRoot = findPluginConfigRoot();
+        const configPackageJsonPath = path.join(configRoot, "package.json");
+        try {
+          const configPackageJson = JSON.parse(fs.readFileSync(configPackageJsonPath, "utf8"));
+          const currentVersion = configPackageJson.version;
+          if (currentVersion && injectionInfo.injectorVersion && currentVersion !== injectionInfo.injectorVersion) {
+            console.log(`   🔄 Update available: ${injectionInfo.injectorVersion} → ${currentVersion}`);
+          }
+        } catch {
+          // Ignore version comparison errors
+        }
       } else {
-        console.log(`\n❌ Status: Plugin not yet injected`);
-        console.log(`   Missing: scripts/utils.ts`);
+        // Fallback: check for legacy injection (scripts/utils.ts exists)
+        const scriptsPath = path.join(resolvedPath, "scripts");
+        const hasInjectedScripts = fs.existsSync(path.join(scriptsPath, "utils.ts"));
+
+        if (hasInjectedScripts) {
+          console.log(`\n⚠️  Status: Plugin appears to be injected (legacy)`);
+          console.log(`   Found: scripts/utils.ts but no .injection-info.json`);
+          console.log(`   💡 Re-inject to add version tracking`);
+        } else {
+          console.log(`\n❌ Status: Plugin not yet injected`);
+          console.log(`   Missing: .injection-info.json`);
+        }
       }
 
       console.log(`\n🔍 Dry-run completed - no changes made`);
       console.log(`   To inject: yarn inject ${targetPath} --yes`);
       return;
     }
+
+    // Ensure plugin-config repo is clean before injection
+    console.log(`\n🔍 Checking plugin-config repository status...`);
+    await ensurePluginConfigClean();
 
     const confirmed = await showInjectionPlan(plan, autoConfirm);
 

@@ -1,10 +1,8 @@
 #!/usr/bin/env tsx
 
 import fs from "fs";
-import path from "path";
 import { execSync } from "child_process";
 import {
-  askQuestion,
   askConfirmation,
   createReadlineInterface
 } from "./utils.js";
@@ -20,10 +18,10 @@ async function buildNpmPackage(): Promise<void> {
   try {
     // Step 1: Verify all scripts are ready
     console.log(`\n📋 Verifying scripts...`);
-    
+
     const requiredScripts = [
       "scripts/inject-path.ts",
-      "scripts/inject-prompt.ts", 
+      "scripts/inject-prompt.ts",
       "scripts/utils.ts",
       "scripts/esbuild.config.ts",
       "scripts/acp.ts",
@@ -42,7 +40,7 @@ async function buildNpmPackage(): Promise<void> {
     // Step 2: Update bin/obsidian-inject.js if needed
     console.log(`\n📦 Checking bin/obsidian-inject.js...`);
     const binPath = "bin/obsidian-inject.js";
-    
+
     if (fs.existsSync(binPath)) {
       console.log(`   ✅ ${binPath} exists`);
     } else {
@@ -52,7 +50,7 @@ async function buildNpmPackage(): Promise<void> {
     // Step 3: Verify package.json is ready for NPM
     console.log(`\n📄 Verifying package.json for NPM...`);
     const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
-    
+
     const requiredFields = {
       name: packageJson.name,
       version: packageJson.version,
@@ -74,7 +72,7 @@ async function buildNpmPackage(): Promise<void> {
     try {
       const whoami = execSync('npm whoami', { encoding: 'utf8' }).trim();
       console.log(`   ✅ Logged in as: ${whoami}`);
-    } catch (error) {
+    } catch {
       console.log(`   ❌ Not logged into NPM`);
       console.log(`   💡 Run: npm login`);
       throw new Error("NPM authentication required");
@@ -85,15 +83,15 @@ async function buildNpmPackage(): Promise<void> {
     try {
       execSync('yarn build', { stdio: 'inherit' });
       console.log(`   ✅ Build test passed`);
-    } catch (error) {
+    } catch {
       throw new Error("Build test failed");
     }
 
     console.log(`\n✅ Package is ready for NPM publication!`);
-    
+
     // Step 6: Ask for confirmation
     const shouldPublish = await askConfirmation(`\nProceed with NPM publication?`, rl);
-    
+
     if (!shouldPublish) {
       console.log(`❌ Publication cancelled`);
       return;
@@ -102,7 +100,7 @@ async function buildNpmPackage(): Promise<void> {
     // Step 7: Publish to NPM
     console.log(`\n📤 Publishing to NPM...`);
     execSync('npm publish', { stdio: 'inherit' });
-    
+
     console.log(`\n🎉 Package published successfully!`);
     console.log(`\n📋 Next steps:`);
     console.log(`   1. npm install -g ${packageJson.name}`);
