@@ -119,6 +119,8 @@ Pour créer votre propre version:
 INJECTION:
   yarn inject <chemin> --yes      # Injection automatique
   yarn inject-prompt <chemin>     # Injection avec prompts
+  yarn check-plugin <chemin>      # Vérification sans injection
+  yarn verify-plugin <chemin>     # Alias pour check-plugin
 
 MAINTENANCE:
   yarn acp                        # Add, commit, push

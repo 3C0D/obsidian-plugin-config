@@ -475,12 +475,18 @@ async function main(): Promise<void> {
     // Parse command line arguments
     const args = process.argv.slice(2);
     const autoConfirm = args.includes('--yes') || args.includes('-y');
+    const dryRun = args.includes('--dry-run') || args.includes('--check');
     const targetPath = args.find(arg => !arg.startsWith('-'));
 
     if (!targetPath) {
-      console.error(`❌ Usage: yarn inject-path <plugin-directory> [--yes]`);
+      console.error(`❌ Usage: yarn inject-path <plugin-directory> [options]`);
       console.error(`   Example: yarn inject-path ../my-obsidian-plugin`);
-      console.error(`   Options: --yes, -y  Auto-confirm injection`);
+      console.error(`   Options:`);
+      console.error(`     --yes, -y       Auto-confirm injection`);
+      console.error(`     --dry-run       Check only (no injection)`);
+      console.error(`   Shortcuts:`);
+      console.error(`     yarn check-plugin ../plugin    # Verification only`);
+      console.error(`     yarn verify-plugin ../plugin   # Alias pour check-plugin`);
       process.exit(1);
     }
 
@@ -498,7 +504,43 @@ async function main(): Promise<void> {
     console.log(`\n🔍 Analyzing plugin...`);
     const plan = await analyzePlugin(resolvedPath);
 
-    // Show plan and ask for confirmation
+    // Show plan and ask for confirmation (or just show plan in dry-run mode)
+    if (dryRun) {
+      console.log(`\n🎯 Injection Plan for: ${plan.targetPath}`);
+      console.log(`📁 Target: ${path.basename(plan.targetPath)}`);
+      console.log(`📦 Package.json: ${plan.hasPackageJson ? '✅' : '❌'}`);
+      console.log(`📋 Manifest.json: ${plan.hasManifest ? '✅' : '❌'}`);
+      console.log(`📂 Scripts folder: ${plan.hasScriptsFolder ? '✅ (will be updated)' : '❌ (will be created)'}`);
+      console.log(`🔌 Obsidian plugin: ${plan.isObsidianPlugin ? '✅' : '❌'}`);
+
+      if (!plan.isObsidianPlugin) {
+        console.log(`\n⚠️  Warning: This doesn't appear to be a valid Obsidian plugin`);
+        console.log(`   Missing manifest.json or invalid structure`);
+      }
+
+      console.log(`\n📋 Would inject:`);
+      console.log(`   ✅ Local scripts (utils.ts, esbuild.config.ts, acp.ts, etc.)`);
+      console.log(`   ✅ Updated package.json scripts`);
+      console.log(`   ✅ Required dependencies`);
+      console.log(`   🔍 Analyze centralized imports (manual commenting may be needed)`);
+
+      // Check for existing injection
+      const scriptsPath = path.join(resolvedPath, "scripts");
+      const hasInjectedScripts = fs.existsSync(path.join(scriptsPath, "utils.ts"));
+
+      if (hasInjectedScripts) {
+        console.log(`\n✅ Status: Plugin appears to be already injected`);
+        console.log(`   Found: scripts/utils.ts (injection marker)`);
+      } else {
+        console.log(`\n❌ Status: Plugin not yet injected`);
+        console.log(`   Missing: scripts/utils.ts`);
+      }
+
+      console.log(`\n🔍 Dry-run completed - no changes made`);
+      console.log(`   To inject: yarn inject ${targetPath} --yes`);
+      return;
+    }
+
     const confirmed = await showInjectionPlan(plan, autoConfirm);
 
     if (!confirmed) {

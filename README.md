@@ -29,6 +29,14 @@ obsidian-inject ../mon-plugin
 obsidian-inject "C:\chemin\vers\plugin"
 ```
 
+### Vérification (sans injection)
+
+```bash
+# Vérifier si un plugin est déjà injecté
+yarn check-plugin ../mon-plugin
+yarn verify-plugin ../mon-plugin  # alias
+```
+
 ### Aide
 
 ```bash
