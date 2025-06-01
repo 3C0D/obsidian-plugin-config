@@ -1,32 +1,34 @@
 {
   "compilerOptions": {
-    "baseUrl": ".",
-    "strict": false,
-    "strictPropertyInitialization": false,
-    "noImplicitAny": false,
-    "noImplicitThis": false,
-    "noImplicitReturns": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "allowJs": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "importHelpers": true,
-    "lib": [
-      "DOM",
-      "ES2020"
-    ],
     "types": [
-      "node",
       "obsidian-typings"
     ],
+    "paths": {
+      "obsidian-typings/implementations": [
+        "./node_modules/obsidian-typings/dist/implementations.d.ts",
+        "./node_modules/obsidian-typings/dist/implementations.cjs"
+      ]
+    },
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "target": "ES2021",
+    "allowJs": true,
+    "noImplicitAny": true,
+    "importHelpers": true,
     "isolatedModules": true,
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "resolveJsonModule": true,
+    "allowImportingTsExtensions": true,
     "noEmit": true,
-    "target": "ES2018",
-    "skipLibCheck": true
+    "allowSyntheticDefaultImports": true,
+    "verbatimModuleSyntax": true,
+    "forceConsistentCasingInFileNames": true,
+    "strictNullChecks": true,
+    "resolveJsonModule": true,
+    "lib": [
+      "DOM",
+      "ES2021"
+    ]
   },
   "include": [
     "./src/**/*.ts",
@@ -34,7 +36,6 @@
   ],
   "exclude": [
     "node_modules",
-    "templates/**/*.ts",
-    "templates/**/*.json"
+    "eslint.config.ts"
   ]
 }
