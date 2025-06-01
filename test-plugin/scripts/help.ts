@@ -1,107 +1,51 @@
 #!/usr/bin/env tsx
 
 console.log(`
-🎯 Plugin Obsidian - Scripts Autonomes
-Configuration injectée par obsidian-plugin-config
+🎯 Obsidian Plugin - Aide Rapide
+Commandes disponibles dans ce plugin autonome
 
 ═══════════════════════════════════════════════════════════════════
 
-📋 COMMANDES DISPONIBLES
+📋 COMMANDES PRINCIPALES
 
 DÉVELOPPEMENT:
-  yarn start                      # Install + dev mode
-  yarn dev                        # Mode développement (watch)
-  yarn build                      # Build production
-  yarn real                       # Build + install dans vault réel
+  yarn start                       # Install dependencies + start dev
+  yarn dev                         # Build dev mode avec hot reload
+  yarn build                       # Build production
+  yarn real                        # Build + install dans vault réel
+  yarn lint, lint:fix             # ESLint vérification/correction
 
-GESTION VERSIONS:
-  yarn update-version, v          # Mise à jour version
-  yarn release, r                 # Release GitHub
+VERSION & RELEASE:
+  yarn v, update-version           # Update version (package.json + manifest.json)
+  yarn release, r                  # Create GitHub release avec tag
 
-MAINTENANCE:
-  yarn acp                        # Add, commit, push
-  yarn bacp                       # Build + add, commit, push
-  yarn help, h                    # Cette aide
-
-═══════════════════════════════════════════════════════════════════
-
-🚀 WORKFLOW DÉVELOPPEMENT
-
-PREMIÈRE UTILISATION:
-  yarn start                      # Configure tout automatiquement
-
-DÉVELOPPEMENT QUOTIDIEN:
-  yarn dev                        # Mode watch (rebuild automatique)
-  # Modifier src/main.ts
-  # Le plugin se recharge automatiquement dans Obsidian
-
-AVANT COMMIT:
-  yarn build                      # Vérifier que tout compile
-  yarn acp                        # Commit + push
-
-RELEASE:
-  yarn update-version             # Choisir nouvelle version
-  yarn release                    # Créer release GitHub
+GIT OPERATIONS:
+  yarn acp                         # Add, commit, push (avec Git sync)
+  yarn bacp                        # Build + add, commit, push
+  yarn run help, h                 # Cette aide
 
 ═══════════════════════════════════════════════════════════════════
 
-🔧 CONFIGURATION AUTOMATIQUE
+🚀 WORKFLOW TYPIQUE
 
-Variables d'environnement (.env):
-  TEST_VAULT=chemin/vers/vault/test     # Vault de développement
-  REAL_VAULT=chemin/vers/vault/réel     # Vault de production
-
-Ces chemins sont configurés automatiquement au premier lancement.
-
-═══════════════════════════════════════════════════════════════════
-
-📁 STRUCTURE DU PROJET
-
-src/
-  ├── main.ts                     # Point d'entrée principal
-  ├── styles.css                  # Styles (optionnel)
-  └── ...                         # Autres fichiers source
-
-scripts/                          # Scripts autonomes injectés
-  ├── esbuild.config.ts           # Configuration build
-  ├── acp.ts                      # Add-commit-push
-  ├── update-version.ts           # Gestion versions
-  ├── release.ts                  # Releases GitHub
-  ├── help.ts                     # Cette aide
-  └── utils.ts                    # Utilitaires
-
-Configuration:
-  ├── package.json                # Scripts et dépendances
-  ├── tsconfig.json               # Configuration TypeScript
-  ├── manifest.json               # Métadonnées plugin
-  └── .env                        # Variables d'environnement
+  1. yarn start                    # Setup initial
+  2. yarn dev                      # Développement quotidien
+  3. yarn build                    # Test build production
+  4. yarn v                        # Update version
+  5. yarn release                  # Publier release GitHub
 
 ═══════════════════════════════════════════════════════════════════
 
-🔄 MISE À JOUR DES SCRIPTS
+⚙️ CONFIGURATION
 
-Pour mettre à jour les scripts injectés:
+ENVIRONNEMENT:
+  - Éditer .env pour définir TEST_VAULT et REAL_VAULT
+  - Scripts autonomes (pas de dépendance externe)
+  - Vérification Git sync automatique avant push
 
-Via NPM global:
-  obsidian-inject                 # Dans le dossier du plugin
-  obsidian-inject .               # Même chose
-
-Via injection locale:
-  cd ../obsidian-plugin-config
-  yarn inject ../ce-plugin --yes
-
-⚠️  Sauvegardez vos modifications avant re-injection !
-
-═══════════════════════════════════════════════════════════════════
-
-✅ SCRIPTS AUTONOMES INJECTÉS
-
-Ce plugin contient des scripts 100% autonomes:
-  ✅ Aucune dépendance externe vers obsidian-plugin-config
-  ✅ Tous les utilitaires inclus localement
-  ✅ Configuration TypeScript optimisée
-  ✅ Build esbuild configuré pour Obsidian
-  ✅ Gestion automatique des vaults de développement
-
-Injecté par: obsidian-plugin-config
+PLUGIN AUTONOME:
+  ✅ Scripts locaux indépendants
+  ✅ Configuration TypeScript et ESLint intégrée
+  ✅ Workflows GitHub Actions avec Yarn
+  ✅ Aucune dépendance vers obsidian-plugin-config
 `);

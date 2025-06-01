@@ -248,12 +248,23 @@ async function cleanOldScripts(scriptsPath: string): Promise<void> {
  */
 async function cleanOldLintFiles(targetPath: string): Promise<void> {
   const oldLintFiles = [".eslintrc", ".eslintrc.js", ".eslintrc.json", ".eslintignore"];
+  const conflictingLintFiles = ["eslint.config.ts", "eslint.config.cjs", "eslint.config.js", "eslint.config.mjs"];
 
+  // Remove old format ESLint files
   for (const fileName of oldLintFiles) {
     const filePath = path.join(targetPath, fileName);
     if (await isValidPath(filePath)) {
       fs.unlinkSync(filePath);
       console.log(`🗑️  Removed old ESLint file: ${fileName} (replaced by eslint.config.ts)`);
+    }
+  }
+
+  // Remove conflicting new format ESLint files to avoid duplicates
+  for (const fileName of conflictingLintFiles) {
+    const filePath = path.join(targetPath, fileName);
+    if (await isValidPath(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`🗑️  Removed existing ESLint file: ${fileName} (will be replaced by injection)`);
     }
   }
 }
