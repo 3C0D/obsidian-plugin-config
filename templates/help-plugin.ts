@@ -1,39 +1,51 @@
 #!/usr/bin/env tsx
 
 console.log(`
-Obsidian Plugin Development - Command Reference
-(Run these commands from your plugin directory)
+🎯 Obsidian Plugin - Aide Rapide
+Commandes disponibles dans ce plugin autonome
 
-DEVELOPMENT:
-  yarn start                       Install dependencies and start development
-  yarn dev                         Build in development mode with hot reload
-  yarn build                       Build for production
-  yarn real                        Build and install in real Obsidian vault
+═══════════════════════════════════════════════════════════════════
 
-VERSION MANAGEMENT:
-  yarn update-version, v           Update plugin version in package.json and manifest.json
-  yarn release, r                  Create release with automated changelog
+📋 COMMANDES PRINCIPALES
+
+DÉVELOPPEMENT:
+  yarn start                       # Install dependencies + start dev
+  yarn dev                         # Build dev mode avec hot reload
+  yarn build                       # Build production
+  yarn real                        # Build + install dans vault réel
+  yarn lint, lint:fix             # ESLint vérification/correction
+
+VERSION & RELEASE:
+  yarn v, update-version           # Update version (package.json + manifest.json)
+  yarn release, r                  # Create GitHub release avec tag
 
 GIT OPERATIONS:
-  yarn acp                         Add, commit, and push changes
-  yarn bacp                        Build + add, commit, and push
+  yarn acp                         # Add, commit, push (avec Git sync)
+  yarn bacp                        # Build + add, commit, push
+  yarn run help, h                 # Cette aide
 
-USAGE EXAMPLES:
-  yarn start                       # First time setup
-  yarn dev                         # Daily development
-  yarn real                        # Build and test in real vault
-  yarn update-version              # Update version before release
-  yarn release                     # Publish new version
+═══════════════════════════════════════════════════════════════════
 
-ENVIRONMENT:
-  - Edit .env file to set TEST_VAULT and REAL_VAULT paths
-  - All scripts use centralized configuration from obsidian-plugin-config
+🚀 WORKFLOW TYPIQUE
 
-CENTRALIZED ARCHITECTURE:
-  - Scripts are centralized in obsidian-plugin-config repository
-  - Configuration files (tsconfig, eslint) extend centralized templates
-  - Dependencies are managed centrally for consistency
-  - Run 'cd ../obsidian-plugin-config && yarn help' for migration commands
+  1. yarn start                    # Setup initial
+  2. yarn dev                      # Développement quotidien
+  3. yarn build                    # Test build production
+  4. yarn v                        # Update version
+  5. yarn release                  # Publier release GitHub
 
-For detailed documentation: ../obsidian-plugin-config/ARCHITECTURE-SUMMARY.md
+═══════════════════════════════════════════════════════════════════
+
+⚙️ CONFIGURATION
+
+ENVIRONNEMENT:
+  - Éditer .env pour définir TEST_VAULT et REAL_VAULT
+  - Scripts autonomes (pas de dépendance externe)
+  - Vérification Git sync automatique avant push
+
+PLUGIN AUTONOME:
+  ✅ Scripts locaux indépendants
+  ✅ Configuration TypeScript et ESLint intégrée
+  ✅ Workflows GitHub Actions avec Yarn
+  ✅ Aucune dépendance vers obsidian-plugin-config
 `);
