@@ -1,7 +1,34 @@
 import { readFile, writeFile } from "fs/promises";
 import dedent from "dedent";
-import * as semver from "semver";
 import { askQuestion, createReadlineInterface, gitExec, ensureGitSync } from "./utils.js";
+
+// Simple version increment functions to avoid semver compatibility issues
+function incrementVersion(version: string, type: 'patch' | 'minor' | 'major'): string {
+  const parts = version.split('.').map(Number);
+  if (parts.length !== 3) return '';
+
+  switch (type) {
+    case 'patch':
+      parts[2]++;
+      break;
+    case 'minor':
+      parts[1]++;
+      parts[2] = 0;
+      break;
+    case 'major':
+      parts[0]++;
+      parts[1] = 0;
+      parts[2] = 0;
+      break;
+  }
+
+  return parts.join('.');
+}
+
+function isValidVersion(version: string): boolean {
+  const versionRegex = /^\d+\.\d+\.\d+$/;
+  return versionRegex.test(version);
+}
 
 const rl = createReadlineInterface();
 
@@ -18,15 +45,16 @@ async function getTargetVersion(currentVersion: string): Promise<string> {
   switch (updateType.trim()) {
     case "p":
     case "1":
-      return semver.inc(currentVersion, "patch") || "";
+      return incrementVersion(currentVersion, "patch");
     case "min":
     case "2":
-      return semver.inc(currentVersion, "minor") || "";
+      return incrementVersion(currentVersion, "minor");
     case "maj":
     case "3":
-      return semver.inc(currentVersion, "major") || "";
+      return incrementVersion(currentVersion, "major");
     default:
-      return semver.valid(updateType.trim()) || "";
+      const trimmed = updateType.trim();
+      return isValidVersion(trimmed) ? trimmed : "";
   }
 }
 
