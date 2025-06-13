@@ -651,6 +651,69 @@ async function ensureTsxAvailable(targetPath: string): Promise<void> {
 }
 
 /**
+ * Clean NPM artifacts to avoid conflicts with Yarn
+ */
+async function cleanNpmArtifacts(targetPath: string): Promise<void> {
+  console.log(`\n🧹 Cleaning NPM artifacts...`);
+
+  const packageLockPath = path.join(targetPath, "package-lock.json");
+  const nodeModulesPath = path.join(targetPath, "node_modules");
+
+  try {
+    // Remove package-lock.json if it exists
+    if (fs.existsSync(packageLockPath)) {
+      fs.unlinkSync(packageLockPath);
+      console.log(`   🗑️  Removed package-lock.json (NPM lock file)`);
+    }
+
+    // Remove node_modules if it exists
+    if (fs.existsSync(nodeModulesPath)) {
+      fs.rmSync(nodeModulesPath, { recursive: true, force: true });
+      console.log(`   🗑️  Removed node_modules (will be reinstalled with Yarn)`);
+    }
+
+    if (!fs.existsSync(packageLockPath) && !fs.existsSync(nodeModulesPath)) {
+      console.log(`   ✅ No NPM artifacts found`);
+    }
+
+  } catch (error) {
+    console.error(`   ❌ Failed to clean NPM artifacts: ${error}`);
+    console.log(`   💡 You may need to manually remove package-lock.json and node_modules`);
+  }
+}
+
+/**
+ * Clean NPM artifacts if package-lock.json is found (evidence of NPM usage)
+ */
+async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<void> {
+  const packageLockPath = path.join(targetPath, "package-lock.json");
+
+  // Only clean if package-lock.json exists (proof of NPM installation)
+  if (fs.existsSync(packageLockPath)) {
+    console.log(`\n🧹 NPM installation detected, cleaning artifacts...`);
+
+    try {
+      // Remove package-lock.json
+      fs.unlinkSync(packageLockPath);
+      console.log(`   🗑️  Removed package-lock.json`);
+
+      // Remove node_modules if it exists
+      const nodeModulesPath = path.join(targetPath, "node_modules");
+      if (fs.existsSync(nodeModulesPath)) {
+        fs.rmSync(nodeModulesPath, { recursive: true, force: true });
+        console.log(`   🗑️  Removed node_modules (will be reinstalled with Yarn)`);
+      }
+
+      console.log(`   ✅ NPM artifacts cleaned to avoid Yarn conflicts`);
+
+    } catch (error) {
+      console.error(`   ❌ Failed to clean NPM artifacts: ${error}`);
+      console.log(`   💡 You may need to manually remove package-lock.json and node_modules`);
+    }
+  }
+}
+
+/**
  * Check if tsx is installed locally and install it if needed
  */
 async function ensureTsxInstalled(targetPath: string): Promise<void> {
@@ -711,24 +774,27 @@ export async function performInjection(targetPath: string): Promise<void> {
   console.log(`\n🚀 Starting injection process...`);
 
   try {
-    // Step 1: Ensure tsx is installed
+    // Step 1: Clean NPM artifacts if needed
+    await cleanNpmArtifactsIfNeeded(targetPath);
+
+    // Step 2: Ensure tsx is installed
     await ensureTsxInstalled(targetPath);
 
-    // Step 2: Inject scripts
+    // Step 3: Inject scripts
     await injectScripts(targetPath);
 
-    // Step 3: Update package.json
+    // Step 4: Update package.json
     console.log(`\n📦 Updating package.json...`);
     await updatePackageJson(targetPath);
 
-    // Step 4: Analyze centralized imports (without modifying)
+    // Step 5: Analyze centralized imports (without modifying)
     await analyzeCentralizedImports(targetPath);
 
-    // Step 5: Create required directories
+    // Step 6: Create required directories
     console.log(`\n📁 Creating required directories...`);
     await createRequiredDirectories(targetPath);
 
-    // Step 6: Install dependencies
+    // Step 7: Install dependencies
     await runYarnInstall(targetPath);
 
     // Step 6: Create injection info file

@@ -86,6 +86,31 @@ function main() {
       process.exit(1);
     }
 
+    // Clean NPM artifacts if package-lock.json exists
+    const packageLockPath = join(targetPath, 'package-lock.json');
+    if (fs.existsSync(packageLockPath)) {
+      console.log(`🧹 Installation NPM détectée, nettoyage...`);
+
+      try {
+        // Remove package-lock.json
+        fs.unlinkSync(packageLockPath);
+        console.log(`   🗑️  package-lock.json supprimé`);
+
+        // Remove node_modules if it exists
+        const nodeModulesPath = join(targetPath, 'node_modules');
+        if (fs.existsSync(nodeModulesPath)) {
+          fs.rmSync(nodeModulesPath, { recursive: true, force: true });
+          console.log(`   🗑️  node_modules supprimé (sera réinstallé avec Yarn)`);
+        }
+
+        console.log(`   ✅ Artefacts NPM nettoyés pour éviter les conflits Yarn`);
+
+      } catch (cleanError) {
+        console.error(`   ❌ Échec du nettoyage:`, cleanError.message);
+        console.log(`   💡 Supprimez manuellement package-lock.json et node_modules`);
+      }
+    }
+
     // Check if tsx is available locally in target
     let tsxCommand = 'npx tsx';
     try {
