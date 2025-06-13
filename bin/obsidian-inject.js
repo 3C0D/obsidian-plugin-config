@@ -78,16 +78,49 @@ function main() {
   console.log(`📦 Depuis: ${packageRoot}\n`);
 
   try {
+    // Check if target directory has package.json
+    const targetPackageJson = join(targetPath, 'package.json');
+    if (!fs.existsSync(targetPackageJson)) {
+      console.error(`❌ Erreur: package.json non trouvé dans ${targetPath}`);
+      console.error(`   Assurez-vous que c'est un projet Node.js valide.`);
+      process.exit(1);
+    }
+
+    // Check if tsx is available locally in target
+    let tsxCommand = 'npx tsx';
+    try {
+      execSync('npx tsx --version', {
+        cwd: targetPath,
+        stdio: 'pipe'
+      });
+      console.log(`✅ tsx disponible localement`);
+    } catch {
+      console.log(`⚠️  tsx non trouvé, installation en cours...`);
+
+      // Install tsx locally in target directory
+      try {
+        execSync('yarn add -D tsx', {
+          cwd: targetPath,
+          stdio: 'inherit'
+        });
+        console.log(`✅ tsx installé avec succès`);
+      } catch (installError) {
+        console.error(`❌ Échec de l'installation de tsx:`, installError.message);
+        console.error(`   Essayez d'installer tsx manuellement: cd "${targetPath}" && yarn add -D tsx`);
+        process.exit(1);
+      }
+    }
+
     // Execute the injection script with tsx
     const command = `npx tsx "${injectScriptPath}" "${targetPath}"`;
 
     execSync(command, {
       stdio: 'inherit',
-      cwd: userCwd  // Use user's current directory, not package directory
+      cwd: targetPath  // Use target directory to ensure tsx is available
     });
-    
+
     console.log(`\n✅ Injection terminée avec succès !`);
-    
+
   } catch (error) {
     console.error(`\n❌ Erreur lors de l'injection:`, error.message);
     process.exit(1);

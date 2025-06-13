@@ -606,6 +606,87 @@ function readInjectionInfo(targetPath: string): any | null {
 }
 
 /**
+ * Check if tsx is available and install it if needed
+ */
+async function ensureTsxAvailable(targetPath: string): Promise<void> {
+  console.log(`\n🔍 Checking tsx availability...`);
+
+  try {
+    // Check if tsx is available globally
+    try {
+      execSync('tsx --version', { stdio: 'pipe' });
+      console.log(`   ✅ tsx is available globally`);
+      return;
+    } catch {
+      // tsx not available globally, continue to check locally
+    }
+
+    // Check if tsx is available locally in target
+    try {
+      execSync('npx tsx --version', {
+        cwd: targetPath,
+        stdio: 'pipe'
+      });
+      console.log(`   ✅ tsx is available locally`);
+      return;
+    } catch {
+      // tsx not available locally, need to install
+    }
+
+    console.log(`   ⚠️  tsx not found, installing as dev dependency...`);
+
+    // Install tsx as dev dependency
+    execSync('yarn add -D tsx', {
+      cwd: targetPath,
+      stdio: 'inherit'
+    });
+
+    console.log(`   ✅ tsx installed successfully`);
+
+  } catch (error) {
+    console.error(`   ❌ Failed to install tsx: ${error}`);
+    console.log(`   💡 You may need to install tsx manually: yarn add -D tsx`);
+    throw new Error('tsx installation failed');
+  }
+}
+
+/**
+ * Check if tsx is installed locally and install it if needed
+ */
+async function ensureTsxInstalled(targetPath: string): Promise<void> {
+  console.log(`\n🔍 Checking tsx installation...`);
+
+  const packageJsonPath = path.join(targetPath, "package.json");
+
+  try {
+    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+    const devDependencies = packageJson.devDependencies || {};
+    const dependencies = packageJson.dependencies || {};
+
+    // Check if tsx is already installed
+    if (devDependencies.tsx || dependencies.tsx) {
+      console.log(`   ✅ tsx is already installed`);
+      return;
+    }
+
+    console.log(`   ⚠️  tsx not found, installing as dev dependency...`);
+
+    // Install tsx as dev dependency
+    execSync('yarn add -D tsx', {
+      cwd: targetPath,
+      stdio: 'inherit'
+    });
+
+    console.log(`   ✅ tsx installed successfully`);
+
+  } catch (error) {
+    console.error(`   ❌ Failed to install tsx: ${error}`);
+    console.log(`   💡 You may need to install tsx manually: yarn add -D tsx`);
+    throw new Error('tsx installation failed');
+  }
+}
+
+/**
  * Run yarn install in target directory
  */
 async function runYarnInstall(targetPath: string): Promise<void> {
@@ -630,21 +711,24 @@ export async function performInjection(targetPath: string): Promise<void> {
   console.log(`\n🚀 Starting injection process...`);
 
   try {
-    // Step 1: Inject scripts
+    // Step 1: Ensure tsx is installed
+    await ensureTsxInstalled(targetPath);
+
+    // Step 2: Inject scripts
     await injectScripts(targetPath);
 
-    // Step 2: Update package.json
+    // Step 3: Update package.json
     console.log(`\n📦 Updating package.json...`);
     await updatePackageJson(targetPath);
 
-    // Step 3: Analyze centralized imports (without modifying)
+    // Step 4: Analyze centralized imports (without modifying)
     await analyzeCentralizedImports(targetPath);
 
-    // Step 4: Create required directories
+    // Step 5: Create required directories
     console.log(`\n📁 Creating required directories...`);
     await createRequiredDirectories(targetPath);
 
-    // Step 5: Install dependencies
+    // Step 6: Install dependencies
     await runYarnInstall(targetPath);
 
     // Step 6: Create injection info file

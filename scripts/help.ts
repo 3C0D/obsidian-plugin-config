@@ -1,61 +1,61 @@
 #!/usr/bin/env tsx
 
 console.log(`
-🎯 Obsidian Plugin Config - Aide Rapide
-Système d'injection pour plugins Obsidian autonomes
+🎯 Obsidian Plugin Config - Quick Help
+Injection system for autonomous Obsidian plugins
 
 ═══════════════════════════════════════════════════════════════════
 
-📋 COMMANDES PRINCIPALES
+📋 MAIN COMMANDS
 
 INJECTION:
-  yarn inject <chemin> --yes      # Injection automatique
-  yarn inject-prompt <chemin>     # Injection avec prompts
-  yarn check-plugin <chemin>      # Vérification sans injection
+  yarn inject <path> --yes        # Automatic injection
+  yarn inject-prompt <path>       # Injection with prompts
+  yarn check-plugin <path>        # Verification without injection
 
-DÉVELOPPEMENT:
-  yarn acp                        # Add, commit, push (avec Git sync)
+DEVELOPMENT:
+  yarn acp                        # Add, commit, push (with Git sync)
   yarn bacp                       # Build + add, commit, push
-  yarn v, update-version          # Mise à jour version
-  yarn release, r                 # Release GitHub avec tag
-  yarn build-npm                  # Build package NPM
-  yarn lint, lint:fix             # ESLint vérification/correction
-  yarn run help, h                # Cette aide
+  yarn v, update-version          # Update version
+  yarn release, r                 # GitHub release with tag
+  yarn build-npm                  # Build NPM package
+  yarn lint, lint:fix             # ESLint verification/correction
+  yarn run help, h                # This help
 
 ═══════════════════════════════════════════════════════════════════
 
-🔧 INJECTION LOCALE
+🔧 LOCAL INJECTION
 
-Structure recommandée:
-  mes-plugins/
-  ├── obsidian-plugin-config/     # Ce repo
-  ├── mon-plugin-1/
-  └── mon-plugin-2/
+Recommended structure:
+  my-plugins/
+  ├── obsidian-plugin-config/     # This repo
+  ├── my-plugin-1/
+  └── my-plugin-2/
 
-Utilisation:
-  yarn inject ../mon-plugin --yes
-  yarn check-plugin ../mon-plugin  # Vérification seulement
+Usage:
+  yarn inject ../my-plugin --yes
+  yarn check-plugin ../my-plugin  # Verification only
 
 ═══════════════════════════════════════════════════════════════════
 
-✅ CE QUI EST INJECTÉ
+✅ WHAT IS INJECTED
 
-Scripts autonomes:
+Autonomous scripts:
   ✅ utils.ts, acp.ts, release.ts, update-version.ts
   ✅ esbuild.config.ts, help.ts
-  ✅ Configuration TypeScript et ESLint
-  ✅ Workflows GitHub Actions (Yarn)
-  ✅ Vérification Git sync automatique
+  ✅ TypeScript and ESLint configuration
+  ✅ GitHub Actions workflows (Yarn)
+  ✅ Automatic Git sync verification
 
-Résultat: Plugin 100% autonome, aucune dépendance externe
+Result: 100% autonomous plugin, no external dependencies
 
 ═══════════════════════════════════════════════════════════════════
 
-📦 WORKFLOW NPM (quand stable)
+📦 NPM WORKFLOW (when stable)
 
   1. yarn build-npm               # Build package
   2. yarn v                       # Update version
-  3. npm publish                  # Publier (nécessite npm login)
+  3. npm publish                  # Publish (requires npm login)
 
-VERSION ACTUELLE: 1.0.6
+CURRENT VERSION: 1.0.6
 `);
