@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "fs/promises";
 import dedent from "dedent";
-import { inc, valid } from "semver";
+import * as semver from "semver";
 import { askQuestion, createReadlineInterface, gitExec, ensureGitSync } from "./utils.js";
 
 const rl = createReadlineInterface();
@@ -18,15 +18,15 @@ async function getTargetVersion(currentVersion: string): Promise<string> {
   switch (updateType.trim()) {
     case "p":
     case "1":
-      return inc(currentVersion, "patch") || "";
+      return semver.inc(currentVersion, "patch") || "";
     case "min":
     case "2":
-      return inc(currentVersion, "minor") || "";
+      return semver.inc(currentVersion, "minor") || "";
     case "maj":
     case "3":
-      return inc(currentVersion, "major") || "";
+      return semver.inc(currentVersion, "major") || "";
     default:
-      return valid(updateType.trim()) || "";
+      return semver.valid(updateType.trim()) || "";
   }
 }
 

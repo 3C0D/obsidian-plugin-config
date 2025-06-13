@@ -93,7 +93,23 @@ async function updateEnvFile(envKey: string, vaultPath: string): Promise<void> {
   console.log(`✅ Updated ${envKey} in .env file`);
 }
 
+function validateVaultPath(vaultPath: string): boolean {
+  // Check if the path contains .obsidian directory
+  const obsidianPath = path.join(vaultPath, ".obsidian");
+  const pluginsPath = path.join(vaultPath, ".obsidian", "plugins");
+
+  return fs.existsSync(obsidianPath) && fs.existsSync(pluginsPath);
+}
+
 function getVaultPath(vaultPath: string): string {
+  // Validate that this is a proper vault path
+  if (!validateVaultPath(vaultPath)) {
+    console.error(`❌ Invalid vault path: ${vaultPath}`);
+    console.error(`   The path must contain a .obsidian/plugins directory`);
+    console.error(`   Please enter a valid Obsidian vault path`);
+    process.exit(1);
+  }
+
   // Check if the path already contains the plugins directory path
   const pluginsPath = path.join(".obsidian", "plugins");
   if (vaultPath.includes(pluginsPath)) {
