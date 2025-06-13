@@ -3,16 +3,12 @@
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import dotenv from "dotenv";
 import {
   askConfirmation,
   createReadlineInterface,
   isValidPath,
   gitExec
 } from "./utils.js";
-
-// Load environment variables from .env file
-dotenv.config();
 
 const rl = createReadlineInterface();
 
@@ -133,7 +129,7 @@ async function ensurePluginConfigClean(): Promise<void> {
           const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim();
           gitExec(`git push --set-upstream origin ${currentBranch}`);
           console.log(`✅ New branch pushed with upstream set`);
-        } catch (pushError) {
+        } catch {
           console.log(`⚠️  Changes committed locally but push failed. Continue with injection.`);
         }
       }
@@ -150,34 +146,13 @@ async function ensurePluginConfigClean(): Promise<void> {
  * Find plugin-config root directory
  */
 function findPluginConfigRoot(): string {
-  const envPath = process.env.PLUGIN_CONFIG_PATH?.trim();
-
-  // Option 1: local - check parent directory
-  if (envPath === "local") {
-    const parentPath = path.resolve(process.cwd(), "../obsidian-plugin-config");
-    if (fs.existsSync(parentPath)) {
-      return parentPath;
-    }
-    throw new Error("obsidian-plugin-config not found in parent directory");
-  }
-
-  // Option 2: prompt - skip auto-detection
-  if (envPath === "prompt") {
-    throw new Error("PROMPT_REQUIRED");
-  }
-
-  // Option 3: specific path
-  if (envPath && fs.existsSync(envPath)) {
-    return envPath;
-  }
-
-  // Option 4: auto-detect parent, fallback to current
+  // Option 1: auto-detect parent directory
   const parentPath = path.resolve(process.cwd(), "../obsidian-plugin-config");
   if (fs.existsSync(parentPath)) {
     return parentPath;
   }
 
-  // Option 5: Check if we're running from NPM package (global installation)
+  // Option 2: Check if we're running from NPM package (global installation)
   // Get the directory of this script file
   const scriptDir = path.dirname(new URL(import.meta.url).pathname);
   const npmPackageRoot = path.resolve(scriptDir, "..");
@@ -214,21 +189,20 @@ function copyFromLocal(filePath: string): string {
 }
 
 /**
- * Clean old script files (remove .mts versions if .ts exists, and other obsolete files)
+ * Clean old script files (remove existing scripts to ensure clean injection)
  */
 async function cleanOldScripts(scriptsPath: string): Promise<void> {
   const scriptNames = ["utils", "esbuild.config", "acp", "update-version", "release", "help"];
+  const extensions = [".ts", ".mts", ".js", ".mjs"];
 
-  // Remove old .mts files when .ts exists
+  // Remove all existing script files with any extension
   for (const scriptName of scriptNames) {
-    const mtsFile = path.join(scriptsPath, `${scriptName}.mts`);
-    const tsFile = path.join(scriptsPath, `${scriptName}.ts`);
-
-    if (await isValidPath(mtsFile) && await isValidPath(tsFile)) {
-      fs.unlinkSync(mtsFile);
-      console.log(`🗑️  Removed old ${scriptName}.mts (replaced by ${scriptName}.ts)`);
-    } else if (await isValidPath(mtsFile)) {
-      console.log(`ℹ️  Found old ${scriptName}.mts file (will be replaced by ${scriptName}.ts)`);
+    for (const ext of extensions) {
+      const scriptFile = path.join(scriptsPath, `${scriptName}${ext}`);
+      if (await isValidPath(scriptFile)) {
+        fs.unlinkSync(scriptFile);
+        console.log(`🗑️  Removed existing ${scriptName}${ext} (will be replaced)`);
+      }
     }
   }
 
@@ -605,82 +579,7 @@ function readInjectionInfo(targetPath: string): any | null {
   }
 }
 
-/**
- * Check if tsx is available and install it if needed
- */
-async function ensureTsxAvailable(targetPath: string): Promise<void> {
-  console.log(`\n🔍 Checking tsx availability...`);
 
-  try {
-    // Check if tsx is available globally
-    try {
-      execSync('tsx --version', { stdio: 'pipe' });
-      console.log(`   ✅ tsx is available globally`);
-      return;
-    } catch {
-      // tsx not available globally, continue to check locally
-    }
-
-    // Check if tsx is available locally in target
-    try {
-      execSync('npx tsx --version', {
-        cwd: targetPath,
-        stdio: 'pipe'
-      });
-      console.log(`   ✅ tsx is available locally`);
-      return;
-    } catch {
-      // tsx not available locally, need to install
-    }
-
-    console.log(`   ⚠️  tsx not found, installing as dev dependency...`);
-
-    // Install tsx as dev dependency
-    execSync('yarn add -D tsx', {
-      cwd: targetPath,
-      stdio: 'inherit'
-    });
-
-    console.log(`   ✅ tsx installed successfully`);
-
-  } catch (error) {
-    console.error(`   ❌ Failed to install tsx: ${error}`);
-    console.log(`   💡 You may need to install tsx manually: yarn add -D tsx`);
-    throw new Error('tsx installation failed');
-  }
-}
-
-/**
- * Clean NPM artifacts to avoid conflicts with Yarn
- */
-async function cleanNpmArtifacts(targetPath: string): Promise<void> {
-  console.log(`\n🧹 Cleaning NPM artifacts...`);
-
-  const packageLockPath = path.join(targetPath, "package-lock.json");
-  const nodeModulesPath = path.join(targetPath, "node_modules");
-
-  try {
-    // Remove package-lock.json if it exists
-    if (fs.existsSync(packageLockPath)) {
-      fs.unlinkSync(packageLockPath);
-      console.log(`   🗑️  Removed package-lock.json (NPM lock file)`);
-    }
-
-    // Remove node_modules if it exists
-    if (fs.existsSync(nodeModulesPath)) {
-      fs.rmSync(nodeModulesPath, { recursive: true, force: true });
-      console.log(`   🗑️  Removed node_modules (will be reinstalled with Yarn)`);
-    }
-
-    if (!fs.existsSync(packageLockPath) && !fs.existsSync(nodeModulesPath)) {
-      console.log(`   ✅ No NPM artifacts found`);
-    }
-
-  } catch (error) {
-    console.error(`   ❌ Failed to clean NPM artifacts: ${error}`);
-    console.log(`   💡 You may need to manually remove package-lock.json and node_modules`);
-  }
-}
 
 /**
  * Clean NPM artifacts if package-lock.json is found (evidence of NPM usage)

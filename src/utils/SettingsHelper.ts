@@ -167,7 +167,7 @@ export class SettingsHelper {
         arrow.style.marginRight = "8px";
         arrow.style.fontSize = "0.8em";
         
-        const toggle = () => {
+        const toggle = () : void => {
             const isCurrentlyOpen = contentEl.style.display !== "none";
             contentEl.style.display = isCurrentlyOpen ? "none" : "block";
             arrow.setText(isCurrentlyOpen ? "▶" : "▼");

@@ -44,7 +44,7 @@ async function analyzePlugin(pluginPath: string): Promise<InjectionPlan> {
     try {
       const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
       plan.isObsidianPlugin = !!(manifest.id && manifest.name && manifest.version);
-    } catch (error) {
+    } catch {
       console.warn("Warning: Could not parse manifest.json");
     }
   }
@@ -57,7 +57,7 @@ async function analyzePlugin(pluginPath: string): Promise<InjectionPlan> {
         ...Object.keys(packageJson.dependencies || {}),
         ...Object.keys(packageJson.devDependencies || {})
       ];
-    } catch (error) {
+    } catch {
       console.warn("Warning: Could not parse package.json");
     }
   }
@@ -125,7 +125,7 @@ async function ensurePluginConfigClean(): Promise<void> {
           const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim();
           gitExec(`git push --set-upstream origin ${currentBranch}`);
           console.log(`✅ New branch pushed with upstream set`);
-        } catch (pushError) {
+        } catch {
           console.log(`⚠️  Changes committed locally but push failed. Continue with injection.`);
         }
       }
@@ -370,7 +370,7 @@ async function createInjectionInfo(targetPath: string): Promise<void> {
   try {
     const configPackageJson = JSON.parse(fs.readFileSync(configPackageJsonPath, "utf8"));
     injectorVersion = configPackageJson.version || "unknown";
-  } catch (error) {
+  } catch {
     console.warn("Warning: Could not read injector version");
   }
 
