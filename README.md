@@ -5,8 +5,6 @@
 [![NPM Version](https://img.shields.io/npm/v/obsidian-plugin-config)](https://www.npmjs.com/package/obsidian-plugin-config)
 [![License](https://img.shields.io/npm/l/obsidian-plugin-config)](LICENSE)
 
-**Current version: 1.1.5**
-
 ## Installation
 
 ```bash
