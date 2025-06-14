@@ -1,117 +1,97 @@
 # Obsidian Plugin Config
 
-<!-- Test modification pour vérifier auto-commit -->
-
-🎯 Système d'injection pour plugins Obsidian autonomes.
+🎯 Injection system for standalone Obsidian plugins.
 
 [![NPM Version](https://img.shields.io/npm/v/obsidian-plugin-config)](https://www.npmjs.com/package/obsidian-plugin-config)
 [![License](https://img.shields.io/npm/l/obsidian-plugin-config)](LICENSE)
 
-**Version actuelle : 1.0.6**
+**Current version: 1.1.5**
 
-## Installation Globale
+## Installation
 
 ```bash
 npm install -g obsidian-plugin-config
 ```
 
-## Utilisation
-
-### Injection dans le répertoire courant
+## Update
 
 ```bash
-cd votre-plugin-obsidian
+npm update -g obsidian-plugin-config
+```
+
+## Commands
+
+### For Plugin Config Development
+
+```bash
+# Development
+yarn start                # Install dependencies + update exports
+yarn build                # Build the project
+yarn dev                  # Development build
+yarn real                 # Build to real vault
+
+# Git Operations
+yarn acp                  # Add, commit, push
+yarn bacp                 # Build + add, commit, push
+yarn v                    # Update version
+
+# NPM Publishing
+yarn build-npm            # Build NPM package
+yarn publish-npm          # Publish to NPM
+
+# Help
+yarn help                 # Show help
+```
+
+### For Plugin Injection
+
+```bash
+# Interactive injection (recommended)
 obsidian-inject
+obsidian-inject ../my-plugin
+yarn inject-prompt "../my-plugin"
+
+# Automatic injection
+obsidian-inject ../my-plugin --yes
+yarn inject-path ../my-plugin --yes
+
+# Verification only
+yarn check-plugin ../my-plugin
 ```
 
-### Injection par chemin
+## What is injected
+
+- ✅ **Standalone local scripts**: `esbuild.config.ts`, `acp.ts`, `update-version.ts`, etc.
+- ✅ **package.json configuration**: scripts, dependencies, yarn protection
+- ✅ **tsconfig.json template**: modern optimized TypeScript configuration
+- ✅ **Automatic installation** of dependencies with yarn
+- ✅ **Traceability file**: `.injection-info.json` (version, injection date)
+
+## Commands available after injection
 
 ```bash
-obsidian-inject ../mon-plugin
-obsidian-inject "C:\chemin\vers\plugin"
-```
-
-### Vérification (sans injection)
-
-```bash
-# Vérifier si un plugin est déjà injecté (avec info de version)
-yarn check-plugin ../mon-plugin
-yarn verify-plugin ../mon-plugin  # alias
-```
-
-### Aide
-
-```bash
-obsidian-inject --help
-```
-
-## Ce qui est injecté
-
-- ✅ **Scripts locaux autonomes** : `esbuild.config.ts`, `acp.ts`, `update-version.ts`, `utils.ts`, `help.ts`, `release.ts`
-- ✅ **Configuration package.json** : scripts, dépendances, protection yarn obligatoire, `"type": "module"` pour ESM
-- ✅ **Template tsconfig.json** : configuration TypeScript moderne optimisée
-- ✅ **Installation automatique** des dépendances avec yarn
-- ✅ **Analyse des imports centralisés** avec avertissements
-- ✅ **Fichier de traçabilité** : `.injection-info.json` (version, date d'injection)
-
-## 📋 Suivi des versions d'injection
-
-Le système crée un fichier `.injection-info.json` dans chaque plugin injecté pour tracer :
-
-- **Version de l'injecteur** utilisée
-- **Date d'injection**
-- **Nom de l'injecteur** (`obsidian-plugin-config`)
-
-> ⚠️ **Important** : Le fichier `.injection-info.json` est **commité avec le plugin** pour assurer la traçabilité sur GitHub et permettre de voir facilement qu'un plugin a été injecté et avec quelle version.
-
-### Statuts possibles lors de la vérification
-
-- ✅ **Plugin injecté** : Affiche version, date et détecte les mises à jour disponibles
-- ⚠️ **Plugin injecté (legacy)** : Injecté avec l'ancien système, re-injection recommandée
-- ❌ **Plugin non injecté** : Aucune injection détectée
-
-## ⚠️ Configuration ESM Moderne
-
-Le système utilise une configuration TypeScript moderne avec ESM. Si votre plugin a des imports relatifs, vous devrez peut-être les corriger :
-
-```typescript
-// ❌ Ancien format
-import { helper } from "./MyHelper";
-
-// ✅ Format ESM requis
-import { helper } from "./MyHelper.js";
-```
-
-Cette correction est nécessaire une seule fois après l'injection.
-
-## Commandes disponibles après injection
-
-```bash
-yarn build          # Build production
-yarn dev            # Build développement + watch
-yarn start          # Alias pour dev
-yarn real           # Build vers vault réel (nécessite REAL_VAULT)
+yarn build          # Production build
+yarn dev            # Development build + watch
+yarn start          # Install dependencies + start dev
+yarn real           # Build to real vault
 yarn acp            # Add-commit-push
 yarn bacp           # Build + add-commit-push
-yarn update-version # Mise à jour version + commit + push
-yarn v              # Alias pour update-version
-yarn release        # Release GitHub
-yarn r              # Alias pour release
-yarn help           # Aide complète
-yarn h              # Alias pour help
+yarn v              # Update version
+yarn release        # GitHub release
+yarn help           # Full help
 ```
 
 ## Architecture
 
-Le plugin devient **100% AUTONOME** après injection :
+The plugin becomes **100% STANDALONE** after injection:
 
-- ❌ **Aucune dépendance externe** requise
-- ✅ **Scripts intégrés localement**
-- ✅ **Mise à jour possible** via re-injection
-- ✅ **Protection yarn** maintenue
-- ✅ **Compatible avec tous les plugins Obsidian**
+- ❌ **No external dependencies** required
+- ✅ **Scripts integrated locally**
+- ✅ **Updatable** via re-injection
+- ✅ **Yarn protection** maintained
+- ✅ **Compatible with all Obsidian plugins**
 
-## Développement Local (pour contributeurs)
+## Local Development (for contributors)
 
 ### Installation
 
@@ -121,37 +101,37 @@ cd obsidian-plugin-config
 yarn install
 ```
 
-### Test injection locale
+### Local injection test
 
 ```bash
-# Injection automatique
-yarn inject ../mon-plugin --yes
+# Automatic injection
+yarn inject ../my-plugin --yes
 
-# Injection avec prompts
-yarn inject-prompt "../mon-plugin"
+# Injection with prompts
+yarn inject-prompt "../my-plugin"
 ```
 
-### Workflow complet : Local → NPM
+### Full workflow: Local → NPM
 
 ```bash
-# 1. Développement local
+# 1. Local development
 yarn inject ../test-plugin --yes
 
-# 2. Corriger imports ESM si nécessaire
-# Exemple: "./utils.ts" → "./utils.js"
+# 2. Fix ESM imports if necessary
+# Example: "./utils.ts" → "./utils.js"
 
-# 3. Build et publication NPM
+# 3. Build and publish to NPM
 yarn build-npm
 yarn update-version
 npm login
 npm publish
 ```
 
-### Commandes de maintenance
+### Maintenance commands
 
 ```bash
 yarn acp                # Add, commit, push
-yarn update-version     # Mise à jour version
-yarn build-npm         # Build package NPM
-yarn help              # Aide complète
+yarn update-version     # Update version
+yarn build-npm         # Build NPM package
+yarn help              # Full help
 ```
