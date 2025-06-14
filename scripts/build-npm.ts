@@ -46,30 +46,30 @@ const injectScriptPath = join(packageRoot, 'scripts', 'inject-path.ts');
 function showHelp() {
   console.log(\`
 Obsidian Plugin Config - Global CLI
-Système d'injection pour plugins Obsidian autonomes
+Injection system for autonomous Obsidian plugins
 
-UTILISATION:
-  obsidian-inject                    # Injection dans le répertoire courant
-  obsidian-inject <chemin>           # Injection par chemin
-  obsidian-inject --help, -h         # Afficher cette aide
+USAGE:
+  obsidian-inject                    # Inject in current directory
+  obsidian-inject <path>             # Inject by path
+  obsidian-inject --help, -h         # Show this help
 
-EXEMPLES:
-  cd mon-plugin && obsidian-inject
-  obsidian-inject ../mon-autre-plugin
-  obsidian-inject "C:\\\\Users\\\\dev\\\\plugins\\\\mon-plugin"
+EXAMPLES:
+  cd my-plugin && obsidian-inject
+  obsidian-inject ../my-other-plugin
+  obsidian-inject "C:\\\\Users\\\\dev\\\\plugins\\\\my-plugin"
 
-CE QUI EST INJECTÉ:
-  ✅ Scripts locaux (esbuild.config.ts, acp.ts, utils.ts, etc.)
-  ✅ Configuration package.json (scripts, dépendances)
-  ✅ Protection yarn obligatoire
-  ✅ Installation automatique des dépendances
+WHAT IS INJECTED:
+  ✅ Local scripts (esbuild.config.ts, acp.ts, utils.ts, etc.)
+  ✅ Package.json configuration (scripts, dependencies)
+  ✅ Yarn protection enforced
+  ✅ Automatic dependency installation
 
 ARCHITECTURE:
-  - Plugin devient AUTONOME avec scripts locaux
-  - Aucune dépendance externe requise après injection
-  - Mise à jour possible via re-injection
+  - Plugin becomes AUTONOMOUS with local scripts
+  - No external dependencies required after injection
+  - Updates possible via re-injection
 
-Pour plus d'informations: https://github.com/3C0D/obsidian-plugin-config
+More info: https://github.com/3C0D/obsidian-plugin-config
 \`);
 }
 
@@ -84,8 +84,8 @@ function main() {
 
   // Check if injection script exists
   if (!fs.existsSync(injectScriptPath)) {
-    console.error(\`❌ Erreur: Script d'injection non trouvé à \${injectScriptPath}\`);
-    console.error(\`   Vérifiez que obsidian-plugin-config est correctement installé.\`);
+    console.error(\`❌ Error: Injection script not found at \${injectScriptPath}\`);
+    console.error(\`   Make sure obsidian-plugin-config is properly installed.\`);
     process.exit(1);
   }
 
@@ -98,41 +98,41 @@ function main() {
     targetPath = resolve(userCwd, args[0]);
   }
 
-  console.log(\`🎯 Obsidian Plugin Config - Injection Globale\`);
-  console.log(\`📁 Cible: \${targetPath}\`);
-  console.log(\`📦 Depuis: \${packageRoot}\\n\`);
+  console.log(\`🎯 Obsidian Plugin Config - Global Injection\`);
+  console.log(\`📁 Target: \${targetPath}\`);
+  console.log(\`📦 From: \${packageRoot}\\n\`);
 
   try {
     // Check if target directory has package.json
     const targetPackageJson = join(targetPath, 'package.json');
     if (!fs.existsSync(targetPackageJson)) {
-      console.error(\`❌ Erreur: package.json non trouvé dans \${targetPath}\`);
-      console.error(\`   Assurez-vous que c'est un projet Node.js valide.\`);
+      console.error(\`❌ Error: package.json not found in \${targetPath}\`);
+      console.error(\`   Make sure this is a valid Node.js project.\`);
       process.exit(1);
     }
 
     // Clean NPM artifacts if package-lock.json exists
     const packageLockPath = join(targetPath, 'package-lock.json');
     if (fs.existsSync(packageLockPath)) {
-      console.log(\`🧹 Installation NPM détectée, nettoyage...\`);
+      console.log(\`🧹 NPM installation detected, cleaning...\`);
 
       try {
         // Remove package-lock.json
         fs.unlinkSync(packageLockPath);
-        console.log(\`   🗑️  package-lock.json supprimé\`);
+        console.log(\`   🗑️  package-lock.json removed\`);
 
         // Remove node_modules if it exists
         const nodeModulesPath = join(targetPath, 'node_modules');
         if (fs.existsSync(nodeModulesPath)) {
           fs.rmSync(nodeModulesPath, { recursive: true, force: true });
-          console.log(\`   🗑️  node_modules supprimé (sera réinstallé avec Yarn)\`);
+          console.log(\`   🗑️  node_modules removed (will be reinstalled with Yarn)\`);
         }
 
-        console.log(\`   ✅ Artefacts NPM nettoyés pour éviter les conflits Yarn\`);
+        console.log(\`   ✅ NPM artifacts cleaned to avoid Yarn conflicts\`);
 
       } catch (cleanError) {
-        console.error(\`   ❌ Échec du nettoyage:\`, cleanError.message);
-        console.log(\`   💡 Supprimez manuellement package-lock.json et node_modules\`);
+        console.error(\`   ❌ Cleanup failed:\`, cleanError.message);
+        console.log(\`   💡 Manually remove package-lock.json and node_modules\`);
       }
     }
 
@@ -143,9 +143,9 @@ function main() {
         cwd: targetPath,
         stdio: 'pipe'
       });
-      console.log(\`✅ tsx disponible localement\`);
+      console.log(\`✅ tsx available locally\`);
     } catch {
-      console.log(\`⚠️  tsx non trouvé, installation en cours...\`);
+      console.log(\`⚠️  tsx not found, installing...\`);
 
       // Install tsx locally in target directory
       try {
@@ -153,10 +153,10 @@ function main() {
           cwd: targetPath,
           stdio: 'inherit'
         });
-        console.log(\`✅ tsx installé avec succès\`);
+        console.log(\`✅ tsx installed successfully\`);
       } catch (installError) {
-        console.error(\`❌ Échec de l'installation de tsx:\`, installError.message);
-        console.error(\`   Essayez d'installer tsx manuellement: cd "\${targetPath}" && yarn add -D tsx\`);
+        console.error(\`❌ tsx installation failed:\`, installError.message);
+        console.error(\`   Try installing tsx manually: cd "\${targetPath}" && yarn add -D tsx\`);
         process.exit(1);
       }
     }
@@ -169,10 +169,10 @@ function main() {
       cwd: targetPath  // Use target directory to ensure tsx is available
     });
 
-    console.log(\`\\n✅ Injection terminée avec succès !\`);
+    console.log(\`\\n✅ Injection completed successfully!\`);
 
   } catch (error) {
-    console.error(\`\\n❌ Erreur lors de l'injection:\`, error.message);
+    console.error(\`\\n❌ Injection error:\`, error.message);
     process.exit(1);
   }
 }
@@ -186,36 +186,48 @@ main();
 }
 
 /**
- * Build and publish NPM package - Complete workflow
+ * Complete NPM workflow - Version, Commit, Push, Publish
  */
 function buildAndPublishNpm(): void {
-  console.log(`🚀 Obsidian Plugin Config - NPM Build & Publish`);
-  console.log(`Complete workflow: exports → bin → verify → publish\n`);
+  console.log(`🚀 Obsidian Plugin Config - Complete NPM Workflow`);
+  console.log(`Full automation: version → commit → push → exports → bin → publish\n`);
 
   try {
-    // Step 1: Update exports automatically
-    console.log(`📦 Step 1/4: Updating exports...`);
+    // Step 1: Update version and push to GitHub
+    console.log(`📋 Step 1/6: Updating version...`);
+    execSync('echo 1 | tsx scripts/update-version-config.ts', { stdio: 'inherit' });
+
+    // Step 2: Commit and push any remaining changes
+    console.log(`\n📤 Step 2/6: Committing and pushing changes...`);
+    try {
+      execSync('echo "Prepare NPM package publication" | tsx scripts/acp.ts -b', { stdio: 'inherit' });
+    } catch (acpError) {
+      console.log(`   ℹ️  No additional changes to commit`);
+    }
+
+    // Step 3: Update exports automatically
+    console.log(`\n📦 Step 3/6: Updating exports...`);
     execSync('yarn update-exports', { stdio: 'inherit' });
 
-    // Step 2: Generate bin file
-    console.log(`\n🔧 Step 2/4: Generating bin/obsidian-inject.js...`);
+    // Step 4: Generate bin file
+    console.log(`\n🔧 Step 4/6: Generating bin/obsidian-inject.js...`);
     generateBinFile();
 
-    // Step 3: Verify package is ready
-    console.log(`\n📋 Step 3/4: Verifying package...`);
+    // Step 5: Verify package is ready
+    console.log(`\n📋 Step 5/6: Verifying package...`);
     verifyPackage();
 
-    // Step 4: Publish to NPM
-    console.log(`\n📤 Step 4/4: Publishing to NPM...`);
+    // Step 6: Publish to NPM
+    console.log(`\n📤 Step 6/6: Publishing to NPM...`);
     execSync('npm publish --registry https://registry.npmjs.org/', { stdio: 'inherit' });
 
-    console.log(`\n🎉 Package published successfully!`);
+    console.log(`\n🎉 Complete workflow successful!`);
     console.log(`\n📋 Next steps:`);
     console.log(`   1. npm install -g obsidian-plugin-config`);
     console.log(`   2. Test injection: cd any-plugin && obsidian-inject`);
 
   } catch (error) {
-    console.error(`\n❌ Build failed: ${error instanceof Error ? error.message : String(error)}`);
+    console.error(`\n❌ Workflow failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }

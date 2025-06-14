@@ -48,22 +48,27 @@ Usage:
 
 ═══════════════════════════════════════════════════════════════════
 
-🚀 COMPLETE WORKFLOW (Development → GitHub → NPM)
+🚀 COMPLETE WORKFLOWS
 
+DEVELOPMENT WORKFLOW (Manual control):
   1. Make changes to obsidian-plugin-config
   2. yarn lint:fix                 # Fix any linting issues
-  3. yarn v                        # Update version (package.json + versions.json + push)
-  4. yarn bacp                     # Commit and push changes to GitHub
-  5. yarn npm-publish              # Complete NPM workflow (exports + bin + publish)
-  6. npm install -g obsidian-plugin-config  # Update global package
-  7. Test injection: cd any-plugin && obsidian-inject
+  3. yarn v                        # Update version + commit + push GitHub
+  4. yarn bacp                     # Commit other changes + push GitHub
+  5. yarn npm-publish              # Complete NPM workflow
 
-SIMPLE NPM WORKFLOW:
-  yarn npm-publish                 # One command does everything:
+AUTOMATED WORKFLOW (One command):
+  yarn npm-publish                 # Does EVERYTHING automatically:
+                                   # → Update version (patch)
+                                   # → Commit and push to GitHub
                                    # → Update exports
                                    # → Generate bin/obsidian-inject.js
                                    # → Verify package
                                    # → Publish to NPM
+
+AFTER NPM PUBLISH:
+  npm install -g obsidian-plugin-config  # Update global package
+  Test injection: cd any-plugin && obsidian-inject
 
 ═══════════════════════════════════════════════════════════════════
 
