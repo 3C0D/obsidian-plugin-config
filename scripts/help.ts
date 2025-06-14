@@ -25,8 +25,8 @@ GIT & VERSION:
   yarn v, update-version          # Update version (package.json + versions.json)
 
 NPM PUBLISHING:
-  yarn publish                    # Complete NPM workflow (exports + bin + publish)
-  yarn build-npm                  # Alias for publish
+  yarn npm-publish                # Complete NPM workflow (exports + bin + publish)
+  yarn build-npm                  # Alias for npm-publish
 
 HELP:
   yarn run help, h                # This help
@@ -54,12 +54,12 @@ Usage:
   2. yarn lint:fix                 # Fix any linting issues
   3. yarn v                        # Update version (package.json + versions.json + push)
   4. yarn bacp                     # Commit and push changes to GitHub
-  5. yarn publish                  # Complete NPM workflow (exports + bin + publish)
+  5. yarn npm-publish              # Complete NPM workflow (exports + bin + publish)
   6. npm install -g obsidian-plugin-config  # Update global package
   7. Test injection: cd any-plugin && obsidian-inject
 
 SIMPLE NPM WORKFLOW:
-  yarn publish                     # One command does everything:
+  yarn npm-publish                 # One command does everything:
                                    # → Update exports
                                    # → Generate bin/obsidian-inject.js
                                    # → Verify package
