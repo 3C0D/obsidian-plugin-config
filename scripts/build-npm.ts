@@ -3,12 +3,6 @@
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import {
-  askConfirmation,
-  createReadlineInterface
-} from "./utils.js";
-
-const rl = createReadlineInterface();
 
 /**
  * Generate bin/obsidian-inject.js from template
@@ -192,140 +186,99 @@ main();
 }
 
 /**
- * Build NPM package from local development
+ * Build and publish NPM package - Complete workflow
  */
-async function buildNpmPackage(): Promise<void> {
-  console.log(`🏗️  Building NPM package from local development...`);
+function buildAndPublishNpm(): void {
+  console.log(`🚀 Obsidian Plugin Config - NPM Build & Publish`);
+  console.log(`Complete workflow: exports → bin → verify → publish\n`);
 
   try {
     // Step 1: Update exports automatically
-    console.log(`\n📦 Updating exports...`);
+    console.log(`📦 Step 1/4: Updating exports...`);
     execSync('yarn update-exports', { stdio: 'inherit' });
 
     // Step 2: Generate bin file
-    await generateBinFile();
+    console.log(`\n🔧 Step 2/4: Generating bin/obsidian-inject.js...`);
+    generateBinFile();
 
-    // Step 3: Verify all scripts are ready
-    console.log(`\n📋 Verifying scripts...`);
+    // Step 3: Verify package is ready
+    console.log(`\n📋 Step 3/4: Verifying package...`);
+    verifyPackage();
 
-    const requiredScripts = [
-      "scripts/inject-path.ts",
-      "scripts/inject-prompt.ts",
-      "scripts/utils.ts",
-      "scripts/esbuild.config.ts",
-      "scripts/acp.ts",
-      "scripts/update-version-config.ts",
-      "scripts/help.ts"
-    ];
-
-    for (const script of requiredScripts) {
-      if (!fs.existsSync(script)) {
-        throw new Error(`Missing required script: ${script}`);
-      }
-      console.log(`   ✅ ${script}`);
-    }
-
-    // Step 4: Verify package.json is ready for NPM
-    console.log(`\n📄 Verifying package.json for NPM...`);
-    const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
-
-    const requiredFields = {
-      name: packageJson.name,
-      version: packageJson.version,
-      description: packageJson.description,
-      bin: packageJson.bin,
-      repository: packageJson.repository,
-      author: packageJson.author
-    };
-
-    for (const [field, value] of Object.entries(requiredFields)) {
-      if (!value) {
-        throw new Error(`Missing required package.json field: ${field}`);
-      }
-      console.log(`   ✅ ${field}: ${typeof value === 'object' ? JSON.stringify(value) : value}`);
-    }
-
-    // Step 5: Sync versions.json with package.json
-    console.log(`\n🔄 Syncing versions.json...`);
-    const versionsPath = "versions.json";
-    let versions: Record<string, string> = {};
-
-    if (fs.existsSync(versionsPath)) {
-      versions = JSON.parse(fs.readFileSync(versionsPath, "utf8"));
-    }
-
-    // Add current version if not present
-    if (!versions[packageJson.version]) {
-      versions[packageJson.version] = "1.8.9"; // Default Obsidian version
-      fs.writeFileSync(versionsPath, JSON.stringify(versions, null, "\t"), "utf8");
-      console.log(`   ✅ Added version ${packageJson.version} to versions.json`);
-    } else {
-      console.log(`   ✅ Version ${packageJson.version} already in versions.json`);
-    }
-
-    // Step 6: Check if we're logged into NPM
-    console.log(`\n🔐 Checking NPM authentication...`);
-    try {
-      const whoami = execSync('npm whoami', { encoding: 'utf8' }).trim();
-      console.log(`   ✅ Logged in as: ${whoami}`);
-    } catch {
-      console.log(`   ❌ Not logged into NPM`);
-      console.log(`   💡 Run: npm login`);
-      throw new Error("NPM authentication required");
-    }
-
-    // Step 7: Run tests to ensure everything works
-    console.log(`\n🧪 Running quick test...`);
-    try {
-      execSync('yarn build', { stdio: 'inherit' });
-      console.log(`   ✅ Build test passed`);
-    } catch {
-      throw new Error("Build test failed");
-    }
-
-    console.log(`\n✅ Package is ready for NPM publication!`);
-
-    // Step 8: Ask for confirmation
-    const shouldPublish = await askConfirmation(`\nProceed with NPM publication?`, rl);
-
-    if (!shouldPublish) {
-      console.log(`❌ Publication cancelled`);
-      return;
-    }
-
-    // Step 9: Publish to NPM
-    console.log(`\n📤 Publishing to NPM...`);
-    execSync('npm publish', { stdio: 'inherit' });
+    // Step 4: Publish to NPM
+    console.log(`\n📤 Step 4/4: Publishing to NPM...`);
+    execSync('npm publish --registry https://registry.npmjs.org/', { stdio: 'inherit' });
 
     console.log(`\n🎉 Package published successfully!`);
     console.log(`\n📋 Next steps:`);
-    console.log(`   1. npm install -g ${packageJson.name}`);
-    console.log(`   2. cd any-obsidian-plugin && obsidian-inject`);
-    console.log(`   3. Test the global installation`);
+    console.log(`   1. npm install -g obsidian-plugin-config`);
+    console.log(`   2. Test injection: cd any-plugin && obsidian-inject`);
 
   } catch (error) {
     console.error(`\n❌ Build failed: ${error instanceof Error ? error.message : String(error)}`);
-    throw error;
+    process.exit(1);
   }
 }
 
 /**
- * Main function
+ * Verify package is ready for publication
  */
-async function main(): Promise<void> {
-  try {
-    console.log(`🎯 Obsidian Plugin Config - NPM Package Builder`);
-    console.log(`📦 Prepare and publish NPM package\n`);
+function verifyPackage(): void {
+  // Check required scripts
+  const requiredScripts = [
+    "scripts/inject-path.ts",
+    "scripts/inject-prompt.ts",
+    "scripts/utils.ts",
+    "scripts/esbuild.config.ts",
+    "scripts/acp.ts",
+    "scripts/update-version-config.ts",
+    "scripts/help.ts"
+  ];
 
-    await buildNpmPackage();
-
-  } catch (error) {
-    console.error(`💥 Error: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
-  } finally {
-    rl.close();
+  for (const script of requiredScripts) {
+    if (!fs.existsSync(script)) {
+      throw new Error(`Missing required script: ${script}`);
+    }
   }
+  console.log(`   ✅ All required scripts present`);
+
+  // Check package.json
+  const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+  const requiredFields = ['name', 'version', 'description', 'bin', 'repository', 'author'];
+
+  for (const field of requiredFields) {
+    if (!packageJson[field]) {
+      throw new Error(`Missing required package.json field: ${field}`);
+    }
+  }
+  console.log(`   ✅ Package.json valid (v${packageJson.version})`);
+
+  // Check bin file exists
+  if (!fs.existsSync("bin/obsidian-inject.js")) {
+    throw new Error(`Missing bin file: bin/obsidian-inject.js`);
+  }
+  console.log(`   ✅ Bin file ready`);
+
+  // Sync versions.json
+  const versionsPath = "versions.json";
+  let versions: Record<string, string> = {};
+
+  if (fs.existsSync(versionsPath)) {
+    versions = JSON.parse(fs.readFileSync(versionsPath, "utf8"));
+  }
+
+  if (!versions[packageJson.version]) {
+    versions[packageJson.version] = "1.8.9";
+    fs.writeFileSync(versionsPath, JSON.stringify(versions, null, "\t"), "utf8");
+    console.log(`   ✅ Added version ${packageJson.version} to versions.json`);
+  } else {
+    console.log(`   ✅ Version ${packageJson.version} in versions.json`);
+  }
+
+  // Quick build test
+  execSync('yarn build', { stdio: 'pipe' });
+  console.log(`   ✅ Build test passed`);
 }
 
 // Run the script
-main().catch(console.error);
+buildAndPublishNpm();

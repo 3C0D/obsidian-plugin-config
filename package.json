@@ -37,7 +37,7 @@
     "inject": "tsx scripts/inject-prompt.ts",
     "check-plugin": "tsx scripts/inject-path.ts --dry-run",
     "build-npm": "tsx scripts/build-npm.ts",
-    "publish-npm": "tsx scripts/build-npm.ts",
+    "publish": "tsx scripts/build-npm.ts",
     "help": "tsx scripts/help.ts",
     "h": "tsx scripts/help.ts"
   },

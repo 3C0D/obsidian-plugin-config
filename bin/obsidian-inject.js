@@ -3,6 +3,7 @@
 /**
  * Obsidian Plugin Config - CLI Entry Point
  * Global command: obsidian-inject
+ * Version: 1.1.8
  */
 
 import { execSync } from 'child_process';
@@ -50,7 +51,7 @@ Pour plus d'informations: https://github.com/3C0D/obsidian-plugin-config
 
 function main() {
   const args = process.argv.slice(2);
-  
+
   // Handle help flags
   if (args.includes('--help') || args.includes('-h')) {
     showHelp();
