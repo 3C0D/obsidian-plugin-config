@@ -3,7 +3,7 @@
 /**
  * Obsidian Plugin Config - CLI Entry Point
  * Global command: obsidian-inject
- * Version: 1.1.12
+ * Version: 1.1.13
  */
 
 import { execSync } from 'child_process';
