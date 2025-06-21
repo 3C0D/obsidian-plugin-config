@@ -22,23 +22,32 @@ npm update -g obsidian-plugin-config
 ### For Plugin Config Development
 
 ```bash
-# Development
-yarn start                # Install dependencies + update exports
-yarn build                # Build the project
-yarn dev                  # Development build
-yarn real                 # Build to real vault
+# Installation & Setup
+yarn i                   # Install dependencies
+yarn update-exports      # Update package.json exports
 
-# Git Operations
-yarn acp                  # Add, commit, push
-yarn bacp                 # Build + add, commit, push
-yarn v                    # Update version
+# Git & Version Management
+yarn acp                 # Add, commit, push
+yarn bacp                # Build + add, commit, push
+yarn v                   # Update version
+
+# Build & Testing
+yarn build               # TypeScript check (no build needed)
+yarn dev                 # Development build (watch mode)
+yarn real                # Build to real vault
+yarn lint, lint:fix      # ESLint verification/correction
+
+# Injection (Development phase)
+yarn inject-prompt       # Interactive injection
+yarn inject-path         # Direct injection
+yarn inject, check-plugin # Injection shortcuts
 
 # NPM Publishing
-yarn build-npm            # Build NPM package
-yarn publish-npm          # Publish to NPM
+yarn npm-publish         # Complete NPM workflow
+yarn build-npm           # Alias for npm-publish
 
 # Help
-yarn help                 # Show help
+yarn help                # Show help
 ```
 
 ### For Plugin Injection
@@ -99,6 +108,19 @@ cd obsidian-plugin-config
 yarn install
 ```
 
+### As a Plugin (for testing NPM exports)
+
+```bash
+# Setup vault paths in .env
+echo "TEST_VAULT=C:/path/to/test/vault" >> .env
+echo "REAL_VAULT=C:/path/to/real/vault" >> .env
+
+# Development mode
+yarn start                # Start development mode
+yarn dev                  # Watch mode for development
+yarn real                 # Install to real vault
+```
+
 ### Local injection test
 
 ```bash
@@ -109,27 +131,36 @@ yarn inject ../my-plugin --yes
 yarn inject-prompt "../my-plugin"
 ```
 
-### Full workflow: Local → NPM
+### Development Workflow
 
 ```bash
-# 1. Local development
+# Standard workflow
+1. yarn i                # Install dependencies
+2. Make changes to obsidian-plugin-config
+3. yarn update-exports   # Update exports if needed
+4. yarn lint:fix         # Fix any linting issues
+5. yarn v                # Update version + commit + push GitHub
+6. yarn npm-publish      # Complete NPM workflow
+
+# Testing as plugin (optional)
+yarn dev                 # Watch mode for development
+yarn real                # Install to real vault
+
+# Injection testing (development phase)
 yarn inject ../test-plugin --yes
-
-# 2. Fix ESM imports if necessary
-# Example: "./utils.ts" → "./utils.js"
-
-# 3. Build and publish to NPM
-yarn build-npm
-yarn update-version
-npm login
-npm publish
 ```
 
-### Maintenance commands
+### Key Commands Summary
 
 ```bash
-yarn acp                # Add, commit, push
-yarn update-version     # Update version
-yarn build-npm         # Build NPM package
+# Essential workflow
+yarn i                 # Install dependencies
+yarn update-exports    # Update exports
+yarn v                 # Update version + commit + push
+yarn npm-publish       # Complete NPM workflow
+
+# Development & testing
+yarn dev               # Test as plugin (watch mode)
+yarn lint:fix          # Fix code issues
 yarn help              # Full help
 ```

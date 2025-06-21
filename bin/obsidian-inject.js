@@ -3,7 +3,7 @@
 /**
  * Obsidian Plugin Config - CLI Entry Point
  * Global command: obsidian-inject
- * Version: 1.1.11
+ * Version: 1.1.12
  */
 
 import { execSync } from 'child_process';
@@ -22,30 +22,30 @@ const injectScriptPath = join(packageRoot, 'scripts', 'inject-path.ts');
 function showHelp() {
   console.log(`
 Obsidian Plugin Config - Global CLI
-Système d'injection pour plugins Obsidian autonomes
+Injection system for autonomous Obsidian plugins
 
-UTILISATION:
-  obsidian-inject                    # Injection dans le répertoire courant
-  obsidian-inject <chemin>           # Injection par chemin
-  obsidian-inject --help, -h         # Afficher cette aide
+USAGE:
+  obsidian-inject                    # Inject in current directory
+  obsidian-inject <path>             # Inject by path
+  obsidian-inject --help, -h         # Show this help
 
-EXEMPLES:
-  cd mon-plugin && obsidian-inject
-  obsidian-inject ../mon-autre-plugin
-  obsidian-inject "C:\\Users\\dev\\plugins\\mon-plugin"
+EXAMPLES:
+  cd my-plugin && obsidian-inject
+  obsidian-inject ../my-other-plugin
+  obsidian-inject "C:\\Users\\dev\\plugins\\my-plugin"
 
-CE QUI EST INJECTÉ:
-  ✅ Scripts locaux (esbuild.config.ts, acp.ts, utils.ts, etc.)
-  ✅ Configuration package.json (scripts, dépendances)
-  ✅ Protection yarn obligatoire
-  ✅ Installation automatique des dépendances
+WHAT IS INJECTED:
+  ✅ Local scripts (esbuild.config.ts, acp.ts, utils.ts, etc.)
+  ✅ Package.json configuration (scripts, dependencies)
+  ✅ Yarn protection enforced
+  ✅ Automatic dependency installation
 
 ARCHITECTURE:
-  - Plugin devient AUTONOME avec scripts locaux
-  - Aucune dépendance externe requise après injection
-  - Mise à jour possible via re-injection
+  - Plugin becomes AUTONOMOUS with local scripts
+  - No external dependencies required after injection
+  - Updates possible via re-injection
 
-Pour plus d'informations: https://github.com/3C0D/obsidian-plugin-config
+More info: https://github.com/3C0D/obsidian-plugin-config
 `);
 }
 
@@ -60,8 +60,8 @@ function main() {
 
   // Check if injection script exists
   if (!fs.existsSync(injectScriptPath)) {
-    console.error(`❌ Erreur: Script d'injection non trouvé à ${injectScriptPath}`);
-    console.error(`   Vérifiez que obsidian-plugin-config est correctement installé.`);
+    console.error(`❌ Error: Injection script not found at ${injectScriptPath}`);
+    console.error(`   Make sure obsidian-plugin-config is properly installed.`);
     process.exit(1);
   }
 
@@ -74,41 +74,41 @@ function main() {
     targetPath = resolve(userCwd, args[0]);
   }
 
-  console.log(`🎯 Obsidian Plugin Config - Injection Globale`);
-  console.log(`📁 Cible: ${targetPath}`);
-  console.log(`📦 Depuis: ${packageRoot}\n`);
+  console.log(`🎯 Obsidian Plugin Config - Global Injection`);
+  console.log(`📁 Target: ${targetPath}`);
+  console.log(`📦 From: ${packageRoot}\n`);
 
   try {
     // Check if target directory has package.json
     const targetPackageJson = join(targetPath, 'package.json');
     if (!fs.existsSync(targetPackageJson)) {
-      console.error(`❌ Erreur: package.json non trouvé dans ${targetPath}`);
-      console.error(`   Assurez-vous que c'est un projet Node.js valide.`);
+      console.error(`❌ Error: package.json not found in ${targetPath}`);
+      console.error(`   Make sure this is a valid Node.js project.`);
       process.exit(1);
     }
 
     // Clean NPM artifacts if package-lock.json exists
     const packageLockPath = join(targetPath, 'package-lock.json');
     if (fs.existsSync(packageLockPath)) {
-      console.log(`🧹 Installation NPM détectée, nettoyage...`);
+      console.log(`🧹 NPM installation detected, cleaning...`);
 
       try {
         // Remove package-lock.json
         fs.unlinkSync(packageLockPath);
-        console.log(`   🗑️  package-lock.json supprimé`);
+        console.log(`   🗑️  package-lock.json removed`);
 
         // Remove node_modules if it exists
         const nodeModulesPath = join(targetPath, 'node_modules');
         if (fs.existsSync(nodeModulesPath)) {
           fs.rmSync(nodeModulesPath, { recursive: true, force: true });
-          console.log(`   🗑️  node_modules supprimé (sera réinstallé avec Yarn)`);
+          console.log(`   🗑️  node_modules removed (will be reinstalled with Yarn)`);
         }
 
-        console.log(`   ✅ Artefacts NPM nettoyés pour éviter les conflits Yarn`);
+        console.log(`   ✅ NPM artifacts cleaned to avoid Yarn conflicts`);
 
       } catch (cleanError) {
-        console.error(`   ❌ Échec du nettoyage:`, cleanError.message);
-        console.log(`   💡 Supprimez manuellement package-lock.json et node_modules`);
+        console.error(`   ❌ Cleanup failed:`, cleanError.message);
+        console.log(`   💡 Manually remove package-lock.json and node_modules`);
       }
     }
 
@@ -119,9 +119,9 @@ function main() {
         cwd: targetPath,
         stdio: 'pipe'
       });
-      console.log(`✅ tsx disponible localement`);
+      console.log(`✅ tsx available locally`);
     } catch {
-      console.log(`⚠️  tsx non trouvé, installation en cours...`);
+      console.log(`⚠️  tsx not found, installing...`);
 
       // Install tsx locally in target directory
       try {
@@ -129,10 +129,10 @@ function main() {
           cwd: targetPath,
           stdio: 'inherit'
         });
-        console.log(`✅ tsx installé avec succès`);
+        console.log(`✅ tsx installed successfully`);
       } catch (installError) {
-        console.error(`❌ Échec de l'installation de tsx:`, installError.message);
-        console.error(`   Essayez d'installer tsx manuellement: cd "${targetPath}" && yarn add -D tsx`);
+        console.error(`❌ tsx installation failed:`, installError.message);
+        console.error(`   Try installing tsx manually: cd "${targetPath}" && yarn add -D tsx`);
         process.exit(1);
       }
     }
@@ -145,10 +145,10 @@ function main() {
       cwd: targetPath  // Use target directory to ensure tsx is available
     });
 
-    console.log(`\n✅ Injection terminée avec succès !`);
+    console.log(`\n✅ Injection completed successfully!`);
 
   } catch (error) {
-    console.error(`\n❌ Erreur lors de l'injection:`, error.message);
+    console.error(`\n❌ Injection error:`, error.message);
     process.exit(1);
   }
 }

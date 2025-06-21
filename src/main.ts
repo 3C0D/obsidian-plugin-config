@@ -16,22 +16,22 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
   mySetting: "default"
 };
 
-export default class MyPlugin extends Plugin {
+export default class ObsidianPluginConfigPlugin extends Plugin {
   settings: MyPluginSettings;
 
   async onload(): Promise<void> {
-    console.log("loading plugin");
+    console.log("Loading obsidian-plugin-config plugin for testing NPM exports");
     await this.loadSettings();
 
     this.addCommand({
       id: 'show-confirmation-modal',
-      name: 'Show Confirmation Modal (Local)',
+      name: 'Test Confirmation Modal (Local)',
       callback: () => this.showConfirmationModal()
     });
 
     this.addCommand({
       id: 'show-centralized-modal',
-      name: 'Show Confirmation Modal (Centralized)',
+      name: 'Test Confirmation Modal (Centralized)',
       callback: () => this.showCentralizedModal()
     });
 
@@ -45,7 +45,7 @@ export default class MyPlugin extends Plugin {
       }
     });
 
-    this.addSettingTab(new SampleSettingTab(this.app, this));
+    this.addSettingTab(new PluginConfigSettingTab(this.app, this));
   }
 
   private showConfirmationModal(): void {
@@ -89,10 +89,10 @@ export default class MyPlugin extends Plugin {
   }
 }
 
-class SampleSettingTab extends PluginSettingTab {
-  plugin: MyPlugin;
+class PluginConfigSettingTab extends PluginSettingTab {
+  plugin: ObsidianPluginConfigPlugin;
 
-  constructor(app: App, plugin: MyPlugin) {
+  constructor(app: App, plugin: ObsidianPluginConfigPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
@@ -100,7 +100,22 @@ class SampleSettingTab extends PluginSettingTab {
   display(): void {
     const { containerEl } = this;
     containerEl.empty();
-    new Setting(containerEl);
+
+    containerEl.createEl('h2', { text: 'Obsidian Plugin Config Settings' });
+    containerEl.createEl('p', {
+      text: 'This plugin is used for testing NPM exports and development of the obsidian-plugin-config system.'
+    });
+
+    new Setting(containerEl)
+      .setName('Test Setting')
+      .setDesc('A test setting for development purposes')
+      .addText(text => text
+        .setPlaceholder('Enter test value')
+        .setValue(this.plugin.settings.mySetting)
+        .onChange(async (value) => {
+          this.plugin.settings.mySetting = value;
+          await this.plugin.saveSettings();
+        }));
   }
 }
 
