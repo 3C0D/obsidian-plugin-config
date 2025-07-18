@@ -392,6 +392,7 @@ async function updatePackageJson(targetPath: string, useSass: boolean = false): 
     ];
 
     console.log(`   🔍 Checking for obsolete scripts...`);
+    console.log(`   🔍 Current scripts:`, Object.keys(packageJson.scripts || {}));
     for (const script of obsoleteScripts) {
       if (packageJson.scripts && packageJson.scripts[script]) {
         console.log(`   🧹 Removing obsolete script: "${script}" (was: "${packageJson.scripts[script]}")`);
