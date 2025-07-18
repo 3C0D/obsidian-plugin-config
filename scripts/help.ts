@@ -80,9 +80,10 @@ AUTOMATED WORKFLOW (One command):
                                    # → Verify package
                                    # → Publish to NPM
 
-AFTER NPM PUBLISH:
-  npm install -g obsidian-plugin-config  # Update global package
-  Test injection: cd any-plugin && obsidian-inject
+AFTER NPM PUBLISH - Testing:
+  1. npm install -g obsidian-plugin-config@latest  # Update global package
+  2. obsidian-inject ../test-plugin                 # Test standard injection
+  3. obsidian-inject ../test-plugin --sass          # Test SASS injection
 
 TESTING AS PLUGIN (Optional):
   1. Configure .env with TEST_VAULT and REAL_VAULT paths
