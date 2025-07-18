@@ -464,12 +464,6 @@ async function updatePackageJson(targetPath: string, useSass: boolean = false): 
       }
     }
 
-    // Clean up SASS dependencies if not using SASS
-    if (!useSass && packageJson.devDependencies["esbuild-sass-plugin"]) {
-      console.log(`   🧹 Removing SASS dependency: esbuild-sass-plugin (not using --sass option)`);
-      delete packageJson.devDependencies["esbuild-sass-plugin"];
-    }
-
     // Ensure yarn protection
     if (!packageJson.engines) packageJson.engines = {};
     packageJson.engines.npm = "please-use-yarn";
