@@ -3,7 +3,7 @@
 /**
  * Obsidian Plugin Config - CLI Entry Point
  * Global command: obsidian-inject
- * Version: 1.1.16
+ * Version: 1.1.17
  */
 
 import { execSync } from 'child_process';
@@ -27,13 +27,11 @@ Injection system for autonomous Obsidian plugins
 USAGE:
   obsidian-inject                    # Inject in current directory
   obsidian-inject <path>             # Inject by path
-  obsidian-inject <path> --sass      # Inject with SASS support
   obsidian-inject --help, -h         # Show this help
 
 EXAMPLES:
   cd my-plugin && obsidian-inject
   obsidian-inject ../my-other-plugin
-  obsidian-inject ../my-plugin --sass
   obsidian-inject "C:\\Users\\dev\\plugins\\my-plugin"
 
 WHAT IS INJECTED:
@@ -41,7 +39,6 @@ WHAT IS INJECTED:
   ✅ Package.json configuration (scripts, dependencies)
   ✅ Yarn protection enforced
   ✅ Automatic dependency installation
-  🎨 SASS support (with --sass option): esbuild-sass-plugin + SCSS compilation
 
 ARCHITECTURE:
   - Plugin becomes AUTONOMOUS with local scripts
@@ -68,22 +65,17 @@ function main() {
     process.exit(1);
   }
 
-  // Parse arguments
-  const sassFlag = args.includes('--sass');
-  const pathArg = args.find(arg => !arg.startsWith('-'));
-
   // Determine target path (resolve relative to user's current directory)
   const userCwd = process.cwd();
-  let targetPath = pathArg || userCwd;
+  let targetPath = args[0] || userCwd;
 
   // If relative path, resolve from user's current directory
-  if (pathArg && !isAbsolute(pathArg)) {
-    targetPath = resolve(userCwd, pathArg);
+  if (args[0] && !isAbsolute(args[0])) {
+    targetPath = resolve(userCwd, args[0]);
   }
 
   console.log(`🎯 Obsidian Plugin Config - Global Injection`);
   console.log(`📁 Target: ${targetPath}`);
-  console.log(`🎨 SASS: ${sassFlag ? 'Enabled' : 'Disabled'}`);
   console.log(`📦 From: ${packageRoot}\n`);
 
   try {
@@ -146,8 +138,7 @@ function main() {
     }
 
     // Execute the injection script with tsx
-    const sassOption = sassFlag ? ' --sass' : '';
-    const command = `npx tsx "${injectScriptPath}" "${targetPath}" --yes${sassOption}`;
+    const command = `npx tsx "${injectScriptPath}" "${targetPath}"`;
 
     execSync(command, {
       stdio: 'inherit',
