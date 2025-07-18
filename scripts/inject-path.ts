@@ -67,13 +67,14 @@ async function analyzePlugin(pluginPath: string): Promise<InjectionPlan> {
 /**
  * Display injection plan and ask for confirmation
  */
-async function showInjectionPlan(plan: InjectionPlan, autoConfirm: boolean = false): Promise<boolean> {
+async function showInjectionPlan(plan: InjectionPlan, autoConfirm: boolean = false, useSass: boolean = false): Promise<boolean> {
   console.log(`\n🎯 Injection Plan for: ${plan.targetPath}`);
   console.log(`📁 Target: ${path.basename(plan.targetPath)}`);
   console.log(`📦 Package.json: ${plan.hasPackageJson ? '✅' : '❌'}`);
   console.log(`📋 Manifest.json: ${plan.hasManifest ? '✅' : '❌'}`);
   console.log(`📂 Scripts folder: ${plan.hasScriptsFolder ? '✅ (will be updated)' : '❌ (will be created)'}`);
   console.log(`🔌 Obsidian plugin: ${plan.isObsidianPlugin ? '✅' : '❌'}`);
+  console.log(`🎨 SASS support: ${useSass ? '✅ (esbuild-sass-plugin will be added)' : '❌'}`);
 
   if (!plan.isObsidianPlugin) {
     console.log(`\n⚠️  Warning: This doesn't appear to be a valid Obsidian plugin`);
@@ -246,7 +247,7 @@ async function cleanOldLintFiles(targetPath: string): Promise<void> {
 /**
  * Inject scripts from local files
  */
-async function injectScripts(targetPath: string): Promise<void> {
+async function injectScripts(targetPath: string, useSass: boolean = false): Promise<void> {
   const scriptsPath = path.join(targetPath, "scripts");
 
   // Create scripts directory if it doesn't exist
@@ -263,7 +264,7 @@ async function injectScripts(targetPath: string): Promise<void> {
 
   const scriptFiles = [
     "templates/scripts/utils.ts",
-    "templates/scripts/esbuild.config.ts",
+    useSass ? "templates/scripts/esbuild.config-sass.ts" : "templates/scripts/esbuild.config.ts",
     "templates/scripts/acp.ts",
     "templates/scripts/update-version.ts",
     "templates/scripts/release.ts",
@@ -286,7 +287,13 @@ async function injectScripts(targetPath: string): Promise<void> {
   for (const scriptFile of scriptFiles) {
     try {
       const content = copyFromLocal(scriptFile);
-      const fileName = path.basename(scriptFile);
+      let fileName = path.basename(scriptFile);
+
+      // Handle SASS template renaming
+      if (fileName === 'esbuild.config-sass.ts') {
+        fileName = 'esbuild.config.ts';
+      }
+
       const targetFile = path.join(scriptsPath, fileName);
 
       fs.writeFileSync(targetFile, content, 'utf8');
@@ -353,7 +360,7 @@ async function injectScripts(targetPath: string): Promise<void> {
 /**
  * Update package.json with autonomous configuration
  */
-async function updatePackageJson(targetPath: string): Promise<void> {
+async function updatePackageJson(targetPath: string, useSass: boolean = false): Promise<void> {
   const packageJsonPath = path.join(targetPath, "package.json");
 
   if (!await isValidPath(packageJsonPath)) {
@@ -411,7 +418,8 @@ async function updatePackageJson(targetPath: string): Promise<void> {
       "obsidian-typings": "^3.9.5",
       "semver": "^7.7.2",
       "tsx": "^4.19.4",
-      "typescript": "^5.8.2"
+      "typescript": "^5.8.2",
+      ...(useSass ? { "esbuild-sass-plugin": "^3.3.1" } : {})
     };
 
     // Force update TypeScript to compatible version
@@ -669,7 +677,7 @@ async function runYarnInstall(targetPath: string): Promise<void> {
 /**
  * Main injection function
  */
-export async function performInjection(targetPath: string): Promise<void> {
+export async function performInjection(targetPath: string, useSass: boolean = false): Promise<void> {
   console.log(`\n🚀 Starting injection process...`);
 
   try {
@@ -680,11 +688,11 @@ export async function performInjection(targetPath: string): Promise<void> {
     await ensureTsxInstalled(targetPath);
 
     // Step 3: Inject scripts
-    await injectScripts(targetPath);
+    await injectScripts(targetPath, useSass);
 
     // Step 4: Update package.json
     console.log(`\n📦 Updating package.json...`);
-    await updatePackageJson(targetPath);
+    await updatePackageJson(targetPath, useSass);
 
     // Step 5: Analyze centralized imports (without modifying)
     await analyzeCentralizedImports(targetPath);
@@ -731,6 +739,7 @@ async function main(): Promise<void> {
     const args = process.argv.slice(2);
     const autoConfirm = args.includes('--yes') || args.includes('-y');
     const dryRun = args.includes('--dry-run') || args.includes('--check');
+    const useSass = args.includes('--sass');
     const targetPath = args.find(arg => !arg.startsWith('-'));
 
     if (!targetPath) {
@@ -739,6 +748,7 @@ async function main(): Promise<void> {
       console.error(`   Options:`);
       console.error(`     --yes, -y       Auto-confirm injection`);
       console.error(`     --dry-run       Check only (no injection)`);
+      console.error(`     --sass          Use SASS templates (includes esbuild-sass-plugin)`);
       console.error(`   Shortcuts:`);
       console.error(`     yarn check-plugin ../plugin    # Verification only`);
       console.error(`     yarn verify-plugin ../plugin   # Alias pour check-plugin`);
@@ -767,6 +777,7 @@ async function main(): Promise<void> {
       console.log(`📋 Manifest.json: ${plan.hasManifest ? '✅' : '❌'}`);
       console.log(`📂 Scripts folder: ${plan.hasScriptsFolder ? '✅ (will be updated)' : '❌ (will be created)'}`);
       console.log(`🔌 Obsidian plugin: ${plan.isObsidianPlugin ? '✅' : '❌'}`);
+      console.log(`🎨 SASS support: ${useSass ? '✅ (esbuild-sass-plugin will be added)' : '❌'}`);
 
       if (!plan.isObsidianPlugin) {
         console.log(`\n⚠️  Warning: This doesn't appear to be a valid Obsidian plugin`);
@@ -824,7 +835,7 @@ async function main(): Promise<void> {
     console.log(`\n🔍 Checking plugin-config repository status...`);
     await ensurePluginConfigClean();
 
-    const confirmed = await showInjectionPlan(plan, autoConfirm);
+    const confirmed = await showInjectionPlan(plan, autoConfirm, useSass);
 
     if (!confirmed) {
       console.log(`❌ Injection cancelled by user`);
@@ -832,7 +843,7 @@ async function main(): Promise<void> {
     }
 
     // Perform injection
-    await performInjection(resolvedPath);
+    await performInjection(resolvedPath, useSass);
 
   } catch (error) {
     console.error(`💥 Error: ${error instanceof Error ? error.message : String(error)}`);

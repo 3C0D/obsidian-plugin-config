@@ -6,6 +6,7 @@ import path from "path";
 import { readFileSync } from "fs";
 import { rm } from "fs/promises";
 import fs from "fs";
+import { sassPlugin } from "esbuild-sass-plugin";
 import { isValidPath, copyFilesToTargetDir, askQuestion, createReadlineInterface, removeMainCss } from "./utils.js";
 
 // Determine the plugin directory (where the script is called from)
@@ -51,12 +52,14 @@ async function updateEnvFile(envKey: string, vaultPath: string): Promise<void> {
   if (regex.test(envContent)) {
     envContent = envContent.replace(regex, newLine);
   } else {
-    envContent += envContent.endsWith('\n') ? '' : '\n';
+    if (envContent.length > 0 && !envContent.endsWith('\n')) {
+      envContent += '\n';
+    }
     envContent += newLine + '\n';
   }
 
   // Write back to .env
-  await import('fs').then(fs => fs.writeFileSync(envPath, envContent));
+  fs.writeFileSync(envPath, envContent);
   console.log(`✅ Updated ${envKey} in .env file`);
 }
 
@@ -85,6 +88,7 @@ function getVaultPath(vaultPath: string): string {
     return path.join(vaultPath, ".obsidian", "plugins", manifest.id);
   }
 }
+
 const manifestPath = path.join(pluginDir, "manifest.json");
 
 // Check if manifest exists (for plugin-config itself, it might not exist)
@@ -171,13 +175,10 @@ async function createBuildContext(buildPath: string, isProd: boolean, entryPoint
   const plugins = [
     // Add SASS plugin if SCSS files are detected
     ...(hasSass ? [
-      // Dynamic import for SASS plugin to avoid dependency issues when not needed
-      await import('esbuild-sass-plugin').then(({ sassPlugin }) =>
-        sassPlugin({
-          syntax: 'scss',
-          style: 'expanded',
-        })
-      ),
+      sassPlugin({
+        syntax: 'scss',
+        style: 'expanded',
+      }),
       {
         name: 'remove-main-css',
         setup(build: esbuild.PluginBuild): void {
@@ -260,7 +261,7 @@ async function main(): Promise<void> {
     console.log(buildPath === pluginDir
       ? "Building in initial folder"
       : `Building in ${buildPath}`);
-
+    
     // Check for SCSS first, then CSS in src, then in root
     const srcStylesScssPath = path.join(pluginDir, "src/styles.scss");
     const srcStylesPath = path.join(pluginDir, "src/styles.css");

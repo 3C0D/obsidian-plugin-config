@@ -1,0 +1,29 @@
+{
+  "devDependencies": {
+    "@types/node": "^16.11.6",
+    "eslint": "^9.0.0",
+    "obsidian": "latest",
+    "obsidian-typings": "latest",
+    "typescript": "^5.8.2",
+    "tsx": "^4.19.4",
+    "esbuild-sass-plugin": "^3.3.1"
+  },
+  "engines": {
+    "npm": "please-use-yarn",
+    "yarn": ">=1.22.0"
+  },
+  "scripts": {
+    "start": "yarn install && yarn dev",
+    "dev": "tsx ../obsidian-plugin-config/scripts/esbuild.config.ts",
+    "build": "tsc -noEmit -skipLibCheck && tsx ../obsidian-plugin-config/scripts/esbuild.config.ts production",
+    "real": "tsx ../obsidian-plugin-config/scripts/esbuild.config.ts production real",
+    "acp": "tsx ../obsidian-plugin-config/scripts/acp.ts",
+    "bacp": "tsx ../obsidian-plugin-config/scripts/acp.ts -b",
+    "update-version": "tsx ../obsidian-plugin-config/scripts/update-version.ts",
+    "v": "tsx ../obsidian-plugin-config/scripts/update-version.ts",
+    "release": "tsx ../obsidian-plugin-config/scripts/release.ts",
+    "r": "tsx ../obsidian-plugin-config/scripts/release.ts",
+    "help": "tsx ../obsidian-plugin-config/templates/help-plugin.ts",
+    "h": "tsx ../obsidian-plugin-config/templates/help-plugin.ts"
+  }
+}

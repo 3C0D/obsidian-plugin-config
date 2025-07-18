@@ -32,6 +32,7 @@
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
     "inject-path": "tsx scripts/inject-path.ts",
+    "inject-sass": "tsx scripts/inject-path.ts --sass",
     "inject-prompt": "tsx scripts/inject-prompt.ts",
     "inject": "tsx scripts/inject-prompt.ts",
     "check-plugin": "tsx scripts/inject-path.ts --dry-run",
