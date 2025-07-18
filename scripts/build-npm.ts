@@ -201,7 +201,7 @@ function buildAndPublishNpm(): void {
     console.log(`\n📤 Step 2/6: Committing and pushing changes...`);
     try {
       execSync('echo "Prepare NPM package publication" | tsx scripts/acp.ts -b', { stdio: 'inherit' });
-    } catch (acpError) {
+    } catch {
       console.log(`   ℹ️  No additional changes to commit`);
     }
 

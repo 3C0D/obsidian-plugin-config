@@ -6,6 +6,7 @@ import path from "path";
 import { readFileSync } from "fs";
 import { rm } from "fs/promises";
 import fs from "fs";
+// @ts-ignore - esbuild-sass-plugin is installed during SASS injection
 import { sassPlugin } from "esbuild-sass-plugin";
 import { isValidPath, copyFilesToTargetDir, askQuestion, createReadlineInterface, removeMainCss } from "./utils.js";
 
@@ -261,7 +262,7 @@ async function main(): Promise<void> {
     console.log(buildPath === pluginDir
       ? "Building in initial folder"
       : `Building in ${buildPath}`);
-    
+
     // Check for SCSS first, then CSS in src, then in root
     const srcStylesScssPath = path.join(pluginDir, "src/styles.scss");
     const srcStylesPath = path.join(pluginDir, "src/styles.css");

@@ -62,6 +62,9 @@ yarn inject-prompt "../my-plugin"
 obsidian-inject ../my-plugin --yes
 yarn inject-path ../my-plugin --yes
 
+# SASS injection (includes esbuild-sass-plugin)
+yarn inject-sass ../my-plugin --yes
+
 # Verification only
 yarn check-plugin ../my-plugin
 ```
@@ -73,6 +76,7 @@ yarn check-plugin ../my-plugin
 - ✅ **tsconfig.json template**: modern optimized TypeScript configuration
 - ✅ **Automatic installation** of dependencies with yarn
 - ✅ **Traceability file**: `.injection-info.json` (version, injection date)
+- 🎨 **SASS support**: Optional SASS/SCSS compilation with `--sass` option
 
 ## Commands available after injection
 
@@ -87,6 +91,28 @@ yarn v              # Update version
 yarn release        # GitHub release
 yarn help           # Full help
 ```
+
+## SASS Support
+
+For plugins that use SASS/SCSS styling:
+
+```bash
+# Inject with SASS support
+yarn inject-sass ../my-plugin --yes
+
+# What gets added:
+# - esbuild-sass-plugin dependency
+# - SASS compilation in esbuild.config.ts
+# - Automatic .scss file detection
+# - CSS cleanup after compilation
+```
+
+**SASS Features:**
+
+- ✅ **Automatic detection** of `.scss` files in `src/` directory
+- ✅ **Priority order**: `src/styles.scss` > `src/styles.css` > `styles.css`
+- ✅ **Clean compilation** with automatic main.css removal
+- ✅ **Error handling** with helpful messages
 
 ## Architecture
 

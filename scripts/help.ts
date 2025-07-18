@@ -26,6 +26,7 @@ BUILD & TESTING:
 INJECTION (Development phase):
   yarn inject-prompt <path>       # Interactive injection (recommended)
   yarn inject-path <path> --yes   # Direct injection with auto-confirm
+  yarn inject-sass <path> --yes   # Injection with SASS support
   yarn inject, check-plugin       # Injection shortcuts
 
 NPM PUBLISHING:
@@ -57,6 +58,7 @@ Injection Usage (Development phase):
   Usage:
     yarn inject-prompt ../my-plugin  # Interactive (recommended)
     yarn inject-path ../my-plugin    # Direct injection
+    yarn inject-sass ../my-plugin    # Injection with SASS support
     yarn check-plugin ../my-plugin   # Verification only
 
 ═══════════════════════════════════════════════════════════════════

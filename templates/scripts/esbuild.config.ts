@@ -172,12 +172,19 @@ async function createBuildContext(buildPath: string, isProd: boolean, entryPoint
     // Add SASS plugin if SCSS files are detected
     ...(hasSass ? [
       // Dynamic import for SASS plugin to avoid dependency issues when not needed
-      await import('esbuild-sass-plugin').then(({ sassPlugin }) =>
-        sassPlugin({
-          syntax: 'scss',
-          style: 'expanded',
-        })
-      ),
+      await (async () => {
+        try {
+          // @ts-ignore - esbuild-sass-plugin is installed during injection
+          const { sassPlugin } = await import('esbuild-sass-plugin');
+          return sassPlugin({
+            syntax: 'scss',
+            style: 'expanded',
+          });
+        } catch (error) {
+          console.warn('⚠️  esbuild-sass-plugin not found. Install it with: yarn add -D esbuild-sass-plugin');
+          throw error;
+        }
+      })(),
       {
         name: 'remove-main-css',
         setup(build: esbuild.PluginBuild): void {
