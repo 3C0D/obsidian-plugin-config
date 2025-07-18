@@ -57,9 +57,20 @@ Injection Usage (Development phase):
 
   Usage:
     yarn inject-prompt ../my-plugin  # Interactive (recommended)
-    yarn inject-path ../my-plugin    # Direct injection
+    yarn inject-path ../my-plugin    # Direct injection (standard)
     yarn inject-sass ../my-plugin    # Injection with SASS support
     yarn check-plugin ../my-plugin   # Verification only
+
+SASS Support:
+  What --sass option adds:
+    ✅ esbuild-sass-plugin dependency
+    ✅ SCSS compilation in esbuild.config.ts
+    ✅ Automatic .scss file detection (src/styles.scss priority)
+    ✅ CSS cleanup after compilation
+
+  NPM Global Usage:
+    npm install -g obsidian-plugin-config
+    cd your-plugin && obsidian-inject --sass
 
 ═══════════════════════════════════════════════════════════════════
 
