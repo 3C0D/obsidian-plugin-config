@@ -274,7 +274,8 @@ async function injectScripts(targetPath: string, useSass: boolean = false): Prom
   const configFiles = [
     "templates/tsconfig-template.json",
     "templates/.gitignore",
-    "templates/eslint.config.mts"
+    "templates/eslint.config.mts",
+    "templates/.vscode/settings.json"
   ];
 
   const workflowFiles = [
@@ -310,14 +311,24 @@ async function injectScripts(targetPath: string, useSass: boolean = false): Prom
       const content = copyFromLocal(configFile);
       let fileName = path.basename(configFile);
 
-      // Handle template renaming
+      // Handle template renaming and special paths
+      let targetFile;
       if (fileName === 'tsconfig-template.json') {
         fileName = 'tsconfig.json';
+        targetFile = path.join(targetPath, fileName);
+      } else if (configFile.includes('.vscode/settings.json')) {
+        // Special handling for .vscode/settings.json
+        targetFile = path.join(targetPath, '.vscode', 'settings.json');
+        fileName = '.vscode/settings.json';
+      } else {
+        targetFile = path.join(targetPath, fileName);
       }
 
-      const targetFile = path.join(targetPath, fileName);
-
-
+      // Ensure directory exists for nested files
+      const targetDir = path.dirname(targetFile);
+      if (!await isValidPath(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
 
       // Handle existing config files
       if (await isValidPath(targetFile)) {
@@ -325,6 +336,8 @@ async function injectScripts(targetPath: string, useSass: boolean = false): Prom
           console.log(`   🔄 ${fileName} exists, updating with template`);
         } else if (fileName === '.gitignore') {
           console.log(`   🔄 ${fileName} exists, updating with template (keeps .injection-info.json)`);
+        } else if (fileName === '.vscode/settings.json') {
+          console.log(`   🔄 ${fileName} exists, updating with template`);
         }
       }
 
@@ -391,6 +404,18 @@ async function updatePackageJson(targetPath: string, useSass: boolean = false): 
       "lint": "eslint . --ext .ts",
       "lint:fix": "eslint . --ext .ts --fix"
     };
+
+    // Clean up obsolete scripts
+    const obsoleteScripts = [
+      "version" // yarn version doesn't work as expected, use "v" instead
+    ];
+
+    for (const script of obsoleteScripts) {
+      if (packageJson.scripts && packageJson.scripts[script]) {
+        console.log(`   🧹 Removing obsolete script: "${script}"`);
+        delete packageJson.scripts[script];
+      }
+    }
 
     // Remove centralized dependency
     if (packageJson.dependencies && packageJson.dependencies["obsidian-plugin-config"]) {
