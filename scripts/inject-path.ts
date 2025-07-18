@@ -386,6 +386,18 @@ async function updatePackageJson(targetPath: string, useSass: boolean = false): 
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
     console.log(`   🔍 Original package name: ${packageJson.name}`);
 
+    // Clean up obsolete scripts first
+    const obsoleteScripts = [
+      "version" // yarn version doesn't work as expected, use "v" instead
+    ];
+
+    for (const script of obsoleteScripts) {
+      if (packageJson.scripts && packageJson.scripts[script]) {
+        console.log(`   🧹 Removing obsolete script: "${script}"`);
+        delete packageJson.scripts[script];
+      }
+    }
+
     // Update scripts
     packageJson.scripts = {
       ...packageJson.scripts,
@@ -404,18 +416,6 @@ async function updatePackageJson(targetPath: string, useSass: boolean = false): 
       "lint": "eslint . --ext .ts",
       "lint:fix": "eslint . --ext .ts --fix"
     };
-
-    // Clean up obsolete scripts
-    const obsoleteScripts = [
-      "version" // yarn version doesn't work as expected, use "v" instead
-    ];
-
-    for (const script of obsoleteScripts) {
-      if (packageJson.scripts && packageJson.scripts[script]) {
-        console.log(`   🧹 Removing obsolete script: "${script}"`);
-        delete packageJson.scripts[script];
-      }
-    }
 
     // Remove centralized dependency
     if (packageJson.dependencies && packageJson.dependencies["obsidian-plugin-config"]) {
