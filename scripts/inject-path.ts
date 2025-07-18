@@ -391,10 +391,13 @@ async function updatePackageJson(targetPath: string, useSass: boolean = false): 
       "version" // yarn version doesn't work as expected, use "v" instead
     ];
 
+    console.log(`   🔍 Checking for obsolete scripts...`);
     for (const script of obsoleteScripts) {
       if (packageJson.scripts && packageJson.scripts[script]) {
-        console.log(`   🧹 Removing obsolete script: "${script}"`);
+        console.log(`   🧹 Removing obsolete script: "${script}" (was: "${packageJson.scripts[script]}")`);
         delete packageJson.scripts[script];
+      } else {
+        console.log(`   ✅ Script "${script}" not found (good)`);
       }
     }
 
