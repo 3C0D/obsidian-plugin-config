@@ -9,11 +9,11 @@ Injection system for autonomous Obsidian plugins
 📋 PLUGIN CONFIG COMMANDS
 
 INSTALLATION & SETUP:
-  yarn i                          # Install dependencies
+  yarn i, install                 # Install dependencies
   yarn update-exports, ue         # Update package.json exports
 
 GIT & VERSION MANAGEMENT:
-  yarn acp                        # Add, commit, push (with Git sync)
+  yarn acp                        # Add, commit, push
   yarn bacp                       # Build + add, commit, push
   yarn v, update-version          # Update version (package.json + versions.json)
 
@@ -26,8 +26,8 @@ BUILD & TESTING:
 INJECTION (Development phase):
   yarn inject-prompt <path>       # Interactive injection (recommended)
   yarn inject-path <path> --yes   # Direct injection with auto-confirm
-  yarn inject-sass <path> --yes   # Injection with SASS support
-  yarn inject, check-plugin       # Injection shortcuts
+  yarn inject <path> --sass       # Injection with SASS support
+  yarn check-plugin <path>        # Verification only (dry-run)
 
 NPM PUBLISHING:
   yarn npm-publish                # Complete NPM workflow (exports + bin + publish)
@@ -38,70 +38,102 @@ HELP:
 
 ═══════════════════════════════════════════════════════════════════
 
+📦 EXPORTS SYSTEM
+
+The package exposes the following entry points:
+  obsidian-plugin-config          # Main entry (src/index.ts)
+  obsidian-plugin-config/modals   # Modal components
+  obsidian-plugin-config/tools    # Tool utilities
+  obsidian-plugin-config/utils    # Utility helpers
+  obsidian-plugin-config/scripts/ # Individual scripts
+
+After modifying exports, run:
+  yarn update-exports             # Regenerates package.json exports field
+
+═══════════════════════════════════════════════════════════════════
+
+🏗️  ARCHITECTURE
+
+inject-core.ts — shared injection logic:
+  analyzePlugin()                 # Analyze target plugin directory
+  performInjection()              # Main orchestration function
+  updatePackageJson()             # Inject scripts + dependencies
+  injectScripts()                 # Copy templates to target
+  ensurePluginConfigClean()       # Auto-commit before injection
+
+inject-path.ts — CLI entry point:
+  Parses --yes, --dry-run, --sass flags
+  Calls performInjection() from inject-core
+
+inject-prompt.ts — interactive entry point:
+  Prompts for target path interactively
+  Supports --sass flag
+  Calls performInjection() from inject-core
+
+═══════════════════════════════════════════════════════════════════
+
 🔧 DEVELOPMENT WORKFLOWS
 
 Plugin Config Development:
-  1. yarn i                        # Install dependencies
-  2. yarn update-exports            # Update exports
-  3. yarn dev                      # Test as plugin (optional)
-  4. yarn lint:fix                 # Fix code issues
-  5. yarn v                        # Update version + commit + push
-  6. yarn npm-publish              # Publish to NPM
+  1. yarn i                       # Install dependencies
+  2. yarn update-exports          # Update exports
+  3. yarn dev                     # Test as plugin (optional)
+  4. yarn lint:fix                # Fix code issues
+  5. yarn v                       # Update version + commit + push
+  6. yarn npm-publish             # Publish to NPM
 
-Injection Usage (Development phase):
+Injection Usage:
   Recommended structure:
     my-plugins/
-    ├── obsidian-plugin-config/     # This repo
+    ├── obsidian-plugin-config/   # This repo
     ├── my-plugin-1/
     └── my-plugin-2/
 
   Usage:
-    yarn inject-prompt ../my-plugin  # Interactive (recommended)
-    yarn inject-path ../my-plugin    # Direct injection (standard)
-    yarn inject-sass ../my-plugin    # Injection with SASS support
-    yarn check-plugin ../my-plugin   # Verification only
+    yarn inject-prompt ../my-plugin   # Interactive (recommended)
+    yarn inject-path ../my-plugin     # Direct injection
+    yarn inject ../my-plugin --sass   # With SASS support
+    yarn check-plugin ../my-plugin    # Verification only
 
-SASS Support:
-  What --sass option adds:
+SASS Support (--sass flag):
+  What gets added to the target plugin:
     ✅ esbuild-sass-plugin dependency
-    ✅ SCSS compilation in esbuild.config.ts
     ✅ Automatic .scss file detection (src/styles.scss priority)
     ✅ CSS cleanup after compilation
 
-  NPM Global Usage:
-    npm install -g obsidian-plugin-config
-    cd your-plugin && obsidian-inject --sass
+  The standard esbuild.config.ts handles SASS via dynamic import —
+  no separate template needed.
 
 ═══════════════════════════════════════════════════════════════════
 
 🚀 COMPLETE WORKFLOWS
 
 STANDARD DEVELOPMENT WORKFLOW:
-  1. yarn i                        # Install dependencies
+  1. yarn i                       # Install dependencies
   2. Make changes to obsidian-plugin-config
-  3. yarn update-exports            # Update exports if needed
-  4. yarn lint:fix                 # Fix any linting issues
-  5. yarn v                        # Update version + commit + push GitHub
-  6. yarn npm-publish              # Complete NPM workflow
+  3. yarn update-exports          # Update exports if needed
+  4. yarn lint:fix                # Fix any linting issues
+  5. yarn v                       # Update version + commit + push GitHub
+  6. yarn npm-publish             # Complete NPM workflow
 
 AUTOMATED WORKFLOW (One command):
-  yarn npm-publish                 # Does EVERYTHING automatically:
-                                   # → Update exports
-                                   # → Generate bin/obsidian-inject.js
-                                   # → Verify package
-                                   # → Publish to NPM
+  yarn npm-publish                # Does EVERYTHING automatically:
+                                  # → Update version
+                                  # → Update exports
+                                  # → Generate bin/obsidian-inject.js
+                                  # → Verify package
+                                  # → Publish to NPM
 
 AFTER NPM PUBLISH - Testing:
-  1. npm install -g obsidian-plugin-config@latest  # Update global package
-  2. obsidian-inject ../test-plugin                 # Test standard injection
-  3. obsidian-inject ../test-plugin --sass          # Test SASS injection
+  npm install -g obsidian-plugin-config@latest
+  obsidian-inject ../test-plugin
+  obsidian-inject ../test-plugin --sass
 
 TESTING AS PLUGIN (Optional):
   1. Configure .env with TEST_VAULT and REAL_VAULT paths
-  2. yarn dev                      # Watch mode for development
-  3. yarn real                     # Install to real vault
+  2. yarn dev                     # Watch mode for development
+  3. yarn real                    # Install to real vault
 
 ═══════════════════════════════════════════════════════════════════
 
 `);
-

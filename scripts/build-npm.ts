@@ -204,7 +204,7 @@ function buildAndPublishNpm(): void {
   try {
     // Step 1: Update version and push to GitHub
     console.log(`📋 Step 1/6: Updating version...`);
-    execSync('echo 1 | tsx scripts/update-version-config.ts', { stdio: 'inherit' });
+    execSync('tsx scripts/update-version-config.ts', { stdio: 'inherit' });
 
     // Step 2: Commit and push any remaining changes
     console.log(`\n📤 Step 2/6: Committing and pushing changes...`);
@@ -289,7 +289,8 @@ function verifyPackage(): void {
   }
 
   if (!versions[packageJson.version]) {
-    versions[packageJson.version] = "1.8.9";
+    const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
+    versions[packageJson.version] = manifest.minAppVersion;
     fs.writeFileSync(versionsPath, JSON.stringify(versions, null, "\t"), "utf8");
     console.log(`   ✅ Added version ${packageJson.version} to versions.json`);
   } else {

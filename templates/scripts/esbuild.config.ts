@@ -171,7 +171,6 @@ async function createBuildContext(buildPath: string, isProd: boolean, entryPoint
   const plugins = [
     // Add SASS plugin if SCSS files are detected
     ...(hasSass ? [
-      // Dynamic import for SASS plugin to avoid dependency issues when not needed
       await (async () => {
         try {
           // @ts-ignore - esbuild-sass-plugin is installed during injection
@@ -196,25 +195,6 @@ async function createBuildContext(buildPath: string, isProd: boolean, entryPoint
         },
       }
     ] : []),
-    // Plugin pour gérer les alias de chemin
-    {
-      name: "path-alias",
-      setup: (build: esbuild.PluginBuild): void => {
-        build.onResolve({ filter: /^@config\// }, (args) => {
-          const relativePath = args.path.replace(/^@config\//, "");
-          return {
-            path: path.resolve("../obsidian-plugin-config/src", relativePath)
-          };
-        });
-
-        build.onResolve({ filter: /^@config-scripts\// }, (args) => {
-          const relativePath = args.path.replace(/^@config-scripts\//, "");
-          return {
-            path: path.resolve("../obsidian-plugin-config/scripts", relativePath)
-          };
-        });
-      }
-    },
     {
       name: "copy-to-plugins-folder",
       setup: (build: esbuild.PluginBuild): void => {

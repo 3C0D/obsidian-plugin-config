@@ -1,5 +1,4 @@
 import { App, Modal } from "obsidian";
-import { capitalize } from "lodash";
 
 export interface ConfirmModalOptions {
   title: string;
@@ -22,8 +21,8 @@ export class GenericConfirmModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
 
-    // Title (using lodash capitalize for demo)
-    contentEl.createEl("h2", { text: capitalize(this.options.title) });
+    const title = this.options.title.charAt(0).toUpperCase() + this.options.title.slice(1);
+    contentEl.createEl("h2", { text: title });
 
     // Message
     contentEl.createEl("p", { text: this.options.message });

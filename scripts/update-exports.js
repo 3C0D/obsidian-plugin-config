@@ -62,16 +62,7 @@ ${exportStatements}
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
 
     // Generate exports object
-    const exportsObj = {
-      ".": "./src/index.ts",
-      "./scripts/*": "./scripts/*"
-    };
-
-    // Add exports for each module
-    for (const subdir of exportsToGenerate) {
-      exportsObj[`./${subdir}`] = `./src/${subdir}/index.ts`;
-    }
-
+    const exportsObj = { ".": "./src/index.ts" };
     packageJson.exports = exportsObj;
 
     // Write updated package.json

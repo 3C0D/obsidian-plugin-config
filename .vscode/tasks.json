@@ -1,0 +1,110 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Build",
+			"type": "shell",
+			"command": "yarn build",
+			"group": { "kind": "build", "isDefault": true },
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": ["$tsc"]
+		},
+		{
+			"label": "Dev (watch)",
+			"type": "shell",
+			"command": "yarn dev",
+			"group": "build",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": ["$tsc-watch"],
+			"isBackground": true
+		},
+		{
+			"label": "Real (build to vault)",
+			"type": "shell",
+			"command": "yarn real",
+			"group": "build",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": ["$tsc"]
+		},
+		{
+			"label": "Lint",
+			"type": "shell",
+			"command": "yarn lint",
+			"group": "test",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": ["$eslint-stylish"]
+		},
+		{
+			"label": "Lint: Fix",
+			"type": "shell",
+			"command": "yarn lint:fix",
+			"group": "test",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": ["$eslint-stylish"]
+		},
+		{
+			"label": "Prettier: Check",
+			"type": "shell",
+			"command": "npx prettier --check \"src/**/*.ts\"",
+			"group": "test",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": []
+		},
+		{
+			"label": "Prettier: Fix",
+			"type": "shell",
+			"command": "npx prettier --write \"src/**/*.ts\"",
+			"group": "test",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": []
+		},
+		{
+			"label": "Update Exports",
+			"type": "shell",
+			"command": "yarn update-exports",
+			"group": "build",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": []
+		},
+		{
+			"label": "ACP (add, commit, push)",
+			"type": "shell",
+			"command": "yarn acp",
+			"group": "build",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": []
+		},
+		{
+			"label": "BACP (build + acp)",
+			"type": "shell",
+			"command": "yarn bacp",
+			"group": "build",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": []
+		},
+		{
+			"label": "Version update",
+			"type": "shell",
+			"command": "yarn v",
+			"group": "build",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": []
+		},
+		{
+			"label": "NPM Publish",
+			"type": "shell",
+			"command": "yarn npm-publish",
+			"group": "build",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": []
+		},
+		{
+			"label": "Cleanup: Lint + Prettier + Build",
+			"dependsOrder": "sequence",
+			"dependsOn": ["Lint: Fix", "Prettier: Fix", "Build"],
+			"group": "build",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": []
+		}
+	]
+}

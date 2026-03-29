@@ -23,7 +23,7 @@ npm update -g obsidian-plugin-config
 
 ```bash
 # Installation & Setup
-yarn i                   # Install dependencies
+yarn i, install                   # Install dependencies
 yarn update-exports      # Update package.json exports
 
 # Git & Version Management

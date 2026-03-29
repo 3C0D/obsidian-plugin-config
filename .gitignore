@@ -15,6 +15,7 @@ build/
 # IDE files
 .vscode/*
 !.vscode/settings.json
+!.vscode/tasks.json
 .idea/
 
 # OS files

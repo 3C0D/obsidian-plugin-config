@@ -183,25 +183,6 @@ async function createBuildContext(buildPath: string, isProd: boolean, entryPoint
     outdir: buildPath,
     outbase: path.join(pluginDir, "src"),
     plugins: [
-      // Plugin pour gérer les alias de chemin
-      {
-        name: "path-alias",
-        setup: (build): void => {
-          build.onResolve({ filter: /^@config\// }, (args) => {
-            const relativePath = args.path.replace(/^@config\//, "");
-            return {
-              path: path.resolve("../obsidian-plugin-config/src", relativePath)
-            };
-          });
-
-          build.onResolve({ filter: /^@config-scripts\// }, (args) => {
-            const relativePath = args.path.replace(/^@config-scripts\//, "");
-            return {
-              path: path.resolve("../obsidian-plugin-config/scripts", relativePath)
-            };
-          });
-        }
-      },
       {
         name: "copy-to-plugins-folder",
         setup: (build): void => {

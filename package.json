@@ -42,11 +42,7 @@
     "h": "tsx scripts/help.ts"
   },
   "exports": {
-    ".": "./src/index.ts",
-    "./scripts/*": "./scripts/*",
-    "./modals": "./src/modals/index.ts",
-    "./tools": "./src/tools/index.ts",
-    "./utils": "./src/utils/index.ts"
+    ".": "./src/index.ts"
   },
   "devDependencies": {
     "@types/eslint": "latest",
@@ -64,6 +60,7 @@
     "jiti": "latest",
     "obsidian": "*",
     "obsidian-typings": "^3.9.5",
+    "prettier": "^3.4.0",
     "semver": "^7.7.2",
     "tsx": "^4.19.4",
     "typescript": "^5.8.2"
