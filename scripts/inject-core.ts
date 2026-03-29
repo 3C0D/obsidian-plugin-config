@@ -97,36 +97,66 @@ export function copyFromLocal(filePath: string): string {
  */
 export async function ensurePluginConfigClean(): Promise<void> {
   const configRoot = findPluginConfigRoot();
+  const gitDir = path.join(configRoot, ".git");
+
+  // Skip git check if not a git repo
+  // (e.g. NPM global install)
+  if (!fs.existsSync(gitDir)) {
+    console.log(
+      `✅ Plugin-config repo is clean` +
+      ` (NPM install, no git check)`
+    );
+    return;
+  }
+
   const originalCwd = process.cwd();
 
   try {
     process.chdir(configRoot);
-    const gitStatus = execSync("git status --porcelain", { encoding: "utf8" }).trim();
+    const gitStatus = execSync(
+      "git status --porcelain",
+      { encoding: "utf8" }
+    ).trim();
 
     if (gitStatus) {
-      console.log(`\n⚠️  Plugin-config has uncommitted changes:`);
+      console.log(
+        `\n⚠️  Plugin-config has uncommitted changes:`
+      );
       console.log(gitStatus);
-      console.log(`\n🔧 Auto-committing changes with yarn bacp...`);
+      console.log(
+        `\n🔧 Auto-committing changes...`
+      );
 
-      const commitMessage = "🔧 Update plugin-config templates and scripts";
+      const msg =
+        "🔧 Update plugin-config templates";
       gitExec("git add -A");
-      gitExec(`git commit -m "${commitMessage}"`);
+      gitExec(`git commit -m "${msg}"`);
 
       try {
-        const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", {
-          encoding: "utf8"
-        }).trim();
-        gitExec(`git push origin ${currentBranch}`);
-        console.log(`✅ Changes committed and pushed successfully`);
+        const branch = execSync(
+          "git rev-parse --abbrev-ref HEAD",
+          { encoding: "utf8" }
+        ).trim();
+        gitExec(`git push origin ${branch}`);
+        console.log(
+          `✅ Changes committed and pushed`
+        );
       } catch {
         try {
-          const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", {
-            encoding: "utf8"
-          }).trim();
-          gitExec(`git push --set-upstream origin ${currentBranch}`);
-          console.log(`✅ New branch pushed with upstream set`);
+          const branch = execSync(
+            "git rev-parse --abbrev-ref HEAD",
+            { encoding: "utf8" }
+          ).trim();
+          gitExec(
+            `git push --set-upstream origin ${branch}`
+          );
+          console.log(
+            `✅ New branch pushed with upstream`
+          );
         } catch {
-          console.log(`⚠️  Changes committed locally but push failed. Continue with injection.`);
+          console.log(
+            `⚠️  Committed locally, push failed`
+          );
         }
       }
     } else {
