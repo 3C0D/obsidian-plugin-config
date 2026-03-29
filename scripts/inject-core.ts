@@ -293,9 +293,9 @@ export async function injectScripts(targetPath: string, useSass: boolean = false
     "templates/scripts/help.ts"
   ];
 
-  // Files that should NOT be overwritten if they
-  // already exist (contain user-specific config)
-  const skipIfExists = new Set([".env"]);
+  // Files that need value-preserving merge instead
+  // of full overwrite (user fills in their paths)
+  const mergeEnvFile = new Set([".env"]);
 
   // Files with .template suffix (NPM excludes dotfiles)
   // Map: { source: targetName }
@@ -331,7 +331,9 @@ export async function injectScripts(targetPath: string, useSass: boolean = false
       fs.writeFileSync(targetFile, content, "utf8");
       console.log(`   ✅ ${fileName}`);
     } catch (error) {
-      console.error(`   ❌ Failed to inject ${scriptFile}: ${error}`);
+      console.error(
+        `   ❌ Failed to inject ${scriptFile}: ${error}`
+      );
     }
   }
 
@@ -342,27 +344,49 @@ export async function injectScripts(targetPath: string, useSass: boolean = false
     configFileMap
   )) {
     try {
-      const targetFile = path.join(
-        targetPath, destName
-      );
-      // Skip if file exists and is user-specific
+      const targetFile = path.join(targetPath, destName);
+      const templateContent = copyFromLocal(src);
+
+      // For .env: merge existing values into the template
       if (
-        skipIfExists.has(destName) &&
+        mergeEnvFile.has(destName) &&
         fs.existsSync(targetFile)
       ) {
-        console.log(
-          `   ⏭️  ${destName} (kept existing)`
+        const existing = fs.readFileSync(
+          targetFile, "utf8"
         );
+        // Parse existing key=value pairs
+        const existingVals: Record<string, string> = {};
+        for (const line of existing.split(/\r?\n/)) {
+          const m = line.match(/^([^#=]+)=(.*)$/);
+          if (m) existingVals[m[1].trim()] = m[2].trim();
+        }
+        // Re-write template, substituting existing values
+        const merged = templateContent
+          .split(/\r?\n/)
+          .map((line) => {
+            const m = line.match(/^([^#=]+)=(.*)$/);
+            if (m) {
+              const key = m[1].trim();
+              const val = existingVals[key] ?? m[2].trim();
+              return `${key}=${val}`;
+            }
+            return line;
+          })
+          .join("\n");
+        fs.writeFileSync(targetFile, merged, "utf8");
+        console.log(`   ✅ ${destName} (values preserved)`);
         continue;
       }
-      const content = copyFromLocal(src);
-      fs.writeFileSync(targetFile, content, "utf8");
+
+      fs.writeFileSync(targetFile, templateContent, "utf8");
       console.log(`   ✅ ${destName}`);
     } catch (error) {
       console.error(
         `   ❌ Failed to inject ${destName}: ${error}`
       );
     }
+
   }
 
   // Copy .vscode config files
