@@ -293,17 +293,25 @@ export async function injectScripts(targetPath: string, useSass: boolean = false
     "templates/scripts/help.ts"
   ];
 
-  const configFiles = [
-    "templates/tsconfig.json",
-    "templates/.gitignore",
-    "templates/eslint.config.mts",
-    "templates/.vscode/settings.json",
-    "templates/.editorconfig",
-    "templates/.prettierrc",
-    "templates/.npmrc",
-    "templates/.env",
-    "templates/.vscode/tasks.json"
-  ];
+  // Files with .template suffix are renamed by NPM
+  // exclusion rules (.gitignore, .npmrc, .env)
+  // Map: { source: targetName }
+  const configFileMap: Record<string, string> = {
+    "templates/tsconfig.json": "tsconfig.json",
+    "templates/gitignore.template": ".gitignore",
+    "templates/eslint.config.mts": "eslint.config.mts",
+    "templates/.editorconfig": ".editorconfig",
+    "templates/.prettierrc": ".prettierrc",
+    "templates/npmrc.template": ".npmrc",
+    "templates/env.template": ".env",
+  };
+
+  const configVscodeMap: Record<string, string> = {
+    "templates/.vscode/settings.json":
+      ".vscode/settings.json",
+    "templates/.vscode/tasks.json":
+      ".vscode/tasks.json",
+  };
 
   const workflowFiles = [
     "templates/.github/workflows/release.yml",
@@ -324,33 +332,45 @@ export async function injectScripts(targetPath: string, useSass: boolean = false
     }
   }
 
-  console.log(`\n📥 Copying config files from local files...`);
+  console.log(`\n📥 Copying config files...`);
 
-  for (const configFile of configFiles) {
+  // Copy root config files
+  for (const [src, destName] of Object.entries(
+    configFileMap
+  )) {
     try {
-      const content = copyFromLocal(configFile);
-      let targetFile: string;
-      let displayName: string;
+      const content = copyFromLocal(src);
+      const targetFile = path.join(
+        targetPath, destName
+      );
+      fs.writeFileSync(targetFile, content, "utf8");
+      console.log(`   ✅ ${destName}`);
+    } catch (error) {
+      console.error(
+        `   ❌ Failed to inject ${destName}: ${error}`
+      );
+    }
+  }
 
-      if (configFile.includes(".vscode/")) {
-        const vscodePart = configFile.replace("templates/.vscode/", "");
-        targetFile = path.join(targetPath, ".vscode", vscodePart);
-        displayName = `.vscode/${vscodePart}`;
-      } else {
-        const fileName = path.basename(configFile);
-        targetFile = path.join(targetPath, fileName);
-        displayName = fileName;
-      }
-
+  // Copy .vscode config files
+  for (const [src, destName] of Object.entries(
+    configVscodeMap
+  )) {
+    try {
+      const content = copyFromLocal(src);
+      const targetFile = path.join(
+        targetPath, destName
+      );
       const targetDir = path.dirname(targetFile);
       if (!await isValidPath(targetDir)) {
         fs.mkdirSync(targetDir, { recursive: true });
       }
-
       fs.writeFileSync(targetFile, content, "utf8");
-      console.log(`   ✅ ${displayName}`);
+      console.log(`   ✅ ${destName}`);
     } catch (error) {
-      console.error(`   ❌ Failed to inject ${configFile}: ${error}`);
+      console.error(
+        `   ❌ Failed to inject ${destName}: ${error}`
+      );
     }
   }
 
