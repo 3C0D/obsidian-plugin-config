@@ -29,8 +29,10 @@ INJECTION (Development phase):
   yarn inject <path> --sass       # Injection with SASS support
   yarn check-plugin <path>        # Verification only (dry-run)
 
-NPM PUBLISHING:
-  yarn npm-publish                # Complete NPM workflow (exports + bin + publish)
+NPM PUBLISHING (all-in-one - no acp needed before):
+  yarn npm-publish                # Full workflow:
+                                  # version → exports → bin
+                                  # → commit+push → publish
   yarn build-npm                  # Alias for npm-publish
 
 HELP:
@@ -82,17 +84,15 @@ Plugin Config Development:
   6. yarn npm-publish             # Publish to NPM
 
 Injection Usage:
-  Recommended structure:
-    my-plugins/
-    ├── obsidian-plugin-config/   # This repo
-    ├── my-plugin-1/
-    └── my-plugin-2/
+  Usage (from plugin directory or by path):
+    obsidian-inject               # Inject in current dir
+    obsidian-inject ../my-plugin  # Inject by path
+    obsidian-inject ../my-plugin --sass  # With SASS
 
-  Usage:
-    yarn inject-prompt ../my-plugin   # Interactive (recommended)
-    yarn inject-path ../my-plugin     # Direct injection
-    yarn inject ../my-plugin --sass   # With SASS support
-    yarn check-plugin ../my-plugin    # Verification only
+  Or with local yarn commands:
+    yarn inject-prompt            # Interactive
+    yarn inject-path ../my-plugin # Direct injection
+    yarn check-plugin ../my-plugin # Dry-run only
 
 SASS Support (--sass flag):
   What gets added to the target plugin:
@@ -109,23 +109,22 @@ SASS Support (--sass flag):
 
 STANDARD DEVELOPMENT WORKFLOW:
   1. yarn i                       # Install dependencies
-  2. Make changes to obsidian-plugin-config
-  3. yarn update-exports          # Update exports if needed
-  4. yarn lint:fix                # Fix any linting issues
-  5. yarn v                       # Update version + commit + push GitHub
-  6. yarn npm-publish             # Complete NPM workflow
-
-AUTOMATED WORKFLOW (One command):
-  yarn npm-publish                # Does EVERYTHING automatically:
-                                  # → Update version
+  2. Make changes to src/ or templates/
+  3. yarn lint:fix                # Fix any linting issues
+  4. yarn npm-publish             # Does EVERYTHING:
+                                  # → Ask for version bump type
                                   # → Update exports
-                                  # → Generate bin/obsidian-inject.js
+                                  # → Generate bin file
                                   # → Verify package
+                                  # → Commit + push to GitHub
                                   # → Publish to NPM
 
-AFTER NPM PUBLISH - Testing:
+  Note: yarn acp is only needed for intermediate commits
+  (not required before npm-publish).
+
+AFTER NPM PUBLISH - Update global CLI:
   npm install -g obsidian-plugin-config@latest
-  obsidian-inject ../test-plugin
+  obsidian-inject                 # Test in current plugin dir
   obsidian-inject ../test-plugin --sass
 
 TESTING AS PLUGIN (Optional):
