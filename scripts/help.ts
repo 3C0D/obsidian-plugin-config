@@ -40,15 +40,14 @@ HELP:
 
 📦 EXPORTS SYSTEM
 
-The package exposes the following entry points:
-  obsidian-plugin-config          # Main entry (src/index.ts)
-  obsidian-plugin-config/modals   # Modal components
-  obsidian-plugin-config/tools    # Tool utilities
-  obsidian-plugin-config/utils    # Utility helpers
-  obsidian-plugin-config/scripts/ # Individual scripts
+The package exposes a single entry point:
+  obsidian-plugin-config          # Main entry — re-exports all modules
 
-After modifying exports, run:
-  yarn update-exports             # Regenerates package.json exports field
+Src modules (auto-exported via src/index.ts):
+  modals, tools, utils
+
+After adding a new module to src/, run:
+  yarn update-exports             # Regenerates src/index.ts
 
 ═══════════════════════════════════════════════════════════════════
 

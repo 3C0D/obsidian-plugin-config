@@ -3,6 +3,7 @@
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
+import { fileURLToPath } from "url";
 import { isValidPath, gitExec } from "./utils.js";
 
 export interface InjectionPlan {
@@ -59,7 +60,7 @@ export async function analyzePlugin(pluginPath: string): Promise<InjectionPlan> 
  * Find plugin-config root directory (handles NPM global installs)
  */
 export function findPluginConfigRoot(): string {
-  const scriptDir = path.dirname(new URL(import.meta.url).pathname);
+  const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const npmPackageRoot = path.resolve(scriptDir, "..");
   const npmPackageJson = path.join(npmPackageRoot, "package.json");
 
