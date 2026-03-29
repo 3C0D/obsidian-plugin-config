@@ -293,8 +293,11 @@ export async function injectScripts(targetPath: string, useSass: boolean = false
     "templates/scripts/help.ts"
   ];
 
-  // Files with .template suffix are renamed by NPM
-  // exclusion rules (.gitignore, .npmrc, .env)
+  // Files that should NOT be overwritten if they
+  // already exist (contain user-specific config)
+  const skipIfExists = new Set([".env"]);
+
+  // Files with .template suffix (NPM excludes dotfiles)
   // Map: { source: targetName }
   const configFileMap: Record<string, string> = {
     "templates/tsconfig.json": "tsconfig.json",
@@ -339,10 +342,20 @@ export async function injectScripts(targetPath: string, useSass: boolean = false
     configFileMap
   )) {
     try {
-      const content = copyFromLocal(src);
       const targetFile = path.join(
         targetPath, destName
       );
+      // Skip if file exists and is user-specific
+      if (
+        skipIfExists.has(destName) &&
+        fs.existsSync(targetFile)
+      ) {
+        console.log(
+          `   ⏭️  ${destName} (kept existing)`
+        );
+        continue;
+      }
+      const content = copyFromLocal(src);
       fs.writeFileSync(targetFile, content, "utf8");
       console.log(`   ✅ ${destName}`);
     } catch (error) {
