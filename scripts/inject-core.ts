@@ -692,6 +692,16 @@ export async function performInjection(
 ): Promise<void> {
 	console.log(`\n🚀 Starting injection process...`);
 
+	// Prevent injecting into obsidian-plugin-config itself
+	const targetPkg = path.join(targetPath, 'package.json');
+	if (fs.existsSync(targetPkg)) {
+		const pkg = JSON.parse(fs.readFileSync(targetPkg, 'utf8'));
+		if (pkg.name === 'obsidian-plugin-config') {
+			console.error(`❌ Cannot inject into obsidian-plugin-config itself.`);
+			process.exit(1);
+		}
+	}
+
 	try {
 		await cleanNpmArtifactsIfNeeded(targetPath);
 		await ensureTsxInstalled(targetPath);

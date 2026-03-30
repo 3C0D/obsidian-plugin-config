@@ -14,119 +14,88 @@ npm install -g obsidian-plugin-config
 ## Update
 
 ```bash
-npm update -g obsidian-plugin-config
+npm install -g obsidian-plugin-config@latest --force
 ```
 
-## Commands
-
-### For Plugin Config Development
+## Usage (global CLI)
 
 ```bash
-# Installation & Setup
-yarn i, install                   # Install dependencies
-yarn update-exports      # Update package.json exports
+# Inject in current plugin directory
+obsidian-inject
 
-# Git & Version Management
-yarn acp                 # Add, commit, push
-yarn bacp                # Build + add, commit, push
-yarn v                   # Update version
+# Inject by path
+obsidian-inject ../my-plugin
 
-# Build & Testing
-yarn build               # TypeScript check (no build needed)
-yarn dev                 # Development build (watch mode)
-yarn real                # Build to real vault
-yarn lint, lint:fix      # ESLint verification/correction
+# Inject with SASS support (adds esbuild-sass-plugin)
+obsidian-inject ../my-plugin --sass
 
-# Injection (Development phase)
-yarn inject-prompt       # Interactive injection
-yarn inject-path         # Direct injection
-yarn inject, check-plugin # Injection shortcuts
-
-# NPM Publishing
-yarn npm-publish         # Complete NPM workflow
-yarn build-npm           # Alias for npm-publish
+# Verification only (no changes)
+obsidian-inject ../my-plugin --dry-run
 
 # Help
-yarn help                # Show help
-```
-
-### For Plugin Injection
-
-```bash
-# Interactive injection (recommended)
-obsidian-inject
-obsidian-inject ../my-plugin
-yarn inject-prompt "../my-plugin"
-
-# Automatic injection
-obsidian-inject ../my-plugin --yes
-yarn inject-path ../my-plugin --yes
-
-# SASS injection (includes esbuild-sass-plugin)
-yarn inject-sass ../my-plugin --yes
-
-# Verification only
-yarn check-plugin ../my-plugin
+obsidian-inject --help
 ```
 
 ## What is injected
 
-- ✅ **Standalone local scripts**: `esbuild.config.ts`, `acp.ts`, `update-version.ts`, etc.
-- ✅ **package.json configuration**: scripts, dependencies, yarn protection
-- ✅ **tsconfig.json template**: modern optimized TypeScript configuration
-- ✅ **Automatic installation** of dependencies with yarn
-- ✅ **Traceability file**: `.injection-info.json` (version, injection date)
-- 🎨 **SASS support**: Optional SASS/SCSS compilation with `--sass` option
+- ✅ **Standalone local scripts**: `esbuild.config.ts`, `acp.ts`,
+  `update-version.ts`, `release.ts`, `help.ts`, `utils.ts`
+- ✅ **package.json**: scripts, dependencies, yarn protection
+- ✅ **tsconfig.json**: modern optimized TypeScript configuration
+- ✅ **eslint.config.mts**: ESLint flat config
+- ✅ **Config files**: `.editorconfig`, `.prettierrc`, `.npmrc`,
+  `.env`, `.vscode/settings.json`, `.vscode/tasks.json`
+- ✅ **GitHub Actions**: release workflow
+- ✅ **Traceability**: `.injection-info.json` (version, date)
+- 🎨 **SASS support**: optional, via `--sass` flag
 
 ## Commands available after injection
 
 ```bash
-yarn build          # Production build
-yarn dev            # Development build + watch
 yarn start          # Install dependencies + start dev
-yarn real           # Build to real vault
-yarn acp            # Add-commit-push
-yarn bacp           # Build + add-commit-push
+yarn dev            # Development build (watch mode)
+yarn build          # Production build
+yarn real           # Build + install to real vault
+yarn acp            # Add, commit, push
+yarn bacp           # Build + add, commit, push
 yarn v              # Update version
 yarn release        # GitHub release
+yarn lint           # ESLint check
+yarn lint:fix       # ESLint fix
 yarn help           # Full help
 ```
 
 ## SASS Support
 
-For plugins that use SASS/SCSS styling:
-
 ```bash
-# Inject with SASS support
-yarn inject-sass ../my-plugin --yes
-
-# What gets added:
-# - esbuild-sass-plugin dependency
-# - SASS compilation in esbuild.config.ts
-# - Automatic .scss file detection
-# - CSS cleanup after compilation
+obsidian-inject ../my-plugin --sass
 ```
 
-**SASS Features:**
-
-- ✅ **Automatic detection** of `.scss` files in `src/` directory
-- ✅ **Priority order**: `src/styles.scss` > `src/styles.css` > `styles.css`
-- ✅ **Clean compilation** with automatic main.css removal
-- ✅ **Error handling** with helpful messages
+What gets added:
+- ✅ `esbuild-sass-plugin` dependency
+- ✅ Automatic `.scss` detection (`src/styles.scss` priority)
+- ✅ CSS cleanup after compilation
 
 ## Architecture
 
-The plugin becomes **100% STANDALONE** after injection:
+The plugin becomes **100% standalone** after injection:
 
-- ❌ **No external dependencies** required
-- ✅ **Scripts integrated locally**
-- ✅ **Updatable** via re-injection
-- ✅ **Yarn protection** maintained
-- ✅ **Compatible with all Obsidian plugins**
+- ✅ Scripts integrated locally (no external runtime dependency)
+- ✅ Updatable via re-injection
+- ✅ Yarn protection enforced
+- ✅ Compatible with all Obsidian plugins
+
+---
 
 ## Local Development (for contributors)
 
-### Installation
+This repo has **two roles**:
+
+1. **Injection system** — `templates/` + `scripts/inject-*.ts`
+2. **Snippet development** — `src/` is a local Obsidian plugin
+   used to develop and export reusable code (modals, helpers)
+
+### Setup
 
 ```bash
 git clone https://github.com/3C0D/obsidian-plugin-config
@@ -134,59 +103,45 @@ cd obsidian-plugin-config
 yarn install
 ```
 
-### As a Plugin (for testing NPM exports)
+### Configure vault paths
 
 ```bash
-# Setup vault paths in .env
-echo "TEST_VAULT=C:/path/to/test/vault" >> .env
-echo "REAL_VAULT=C:/path/to/real/vault" >> .env
-
-# Development mode
-yarn start                # Start development mode
-yarn dev                  # Watch mode for development
-yarn real                 # Install to real vault
+# Edit .env
+TEST_VAULT=C:/path/to/test/vault
+REAL_VAULT=C:/path/to/real/vault
 ```
 
-### Local injection test
+### Development commands
 
 ```bash
-# Automatic injection
-yarn inject ../my-plugin --yes
-
-# Injection with prompts
-yarn inject-prompt "../my-plugin"
+yarn dev            # Watch mode (test as local plugin)
+yarn real           # Install to real vault
+yarn lint:fix       # Fix linting issues
+yarn update-exports # Regenerate src/index.ts exports
 ```
 
-### Development Workflow
+### Injection commands (local)
 
 ```bash
-# Standard workflow
-1. yarn i                # Install dependencies
-2. Make changes to obsidian-plugin-config
-3. yarn update-exports   # Update exports if needed
-4. yarn lint:fix         # Fix any linting issues
-5. yarn v                # Update version + commit + push GitHub
-6. yarn npm-publish      # Complete NPM workflow
-
-# Testing as plugin (optional)
-yarn dev                 # Watch mode for development
-yarn real                # Install to real vault
-
-# Injection testing (development phase)
-yarn inject ../test-plugin --yes
+yarn inject-prompt              # Interactive injection
+yarn inject-path ../my-plugin   # Direct injection
+yarn inject ../my-plugin --sass # With SASS support
+yarn check-plugin ../my-plugin  # Dry-run only
 ```
 
-### Key Commands Summary
+### Publish workflow
 
 ```bash
-# Essential workflow
-yarn i                 # Install dependencies
-yarn update-exports    # Update exports
-yarn v                 # Update version + commit + push
-yarn npm-publish       # Complete NPM workflow
-
-# Development & testing
-yarn dev               # Test as plugin (watch mode)
-yarn lint:fix          # Fix code issues
-yarn help              # Full help
+yarn npm-publish    # All-in-one (7 steps):
+                    # 0. NPM auth check
+                    # 1. Version bump
+                    # 2. Update exports
+                    # 3. Generate bin/obsidian-inject.js
+                    # 4. Verify package
+                    # 5. Commit + push
+                    # 6. Publish to NPM
+                    # 7. Update global CLI (ask, or auto with --auto-update)
 ```
+
+> `yarn acp` is only needed for intermediate commits —
+> not required before `yarn npm-publish`.

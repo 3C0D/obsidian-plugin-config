@@ -247,15 +247,19 @@ async function buildAndPublishNpm(): Promise<void> {
 			stdio: 'inherit'
 		});
 
-		// Step 7: Offer global update
+		// Step 7: Update global CLI (auto if --auto-update, else ask)
 		console.log(`\n🌍 Step 7/7: Update global CLI?`);
-		const { askConfirmation, createReadlineInterface } = await import('./utils.js');
-		const rl = createReadlineInterface();
-		const doUpdate = await askConfirmation(
-			`Install npm install -g obsidian-plugin-config@latest?`,
-			rl
-		);
-		rl.close();
+		const autoUpdate = process.argv.includes('--auto-update');
+		let doUpdate = autoUpdate;
+		if (!autoUpdate) {
+			const { askConfirmation, createReadlineInterface } = await import('./utils.js');
+			const rl = createReadlineInterface();
+			doUpdate = await askConfirmation(
+				`Install obsidian-plugin-config@latest globally?`,
+				rl
+			);
+			rl.close();
+		}
 		if (doUpdate) {
 			execSync(
 				'npm install -g obsidian-plugin-config@latest --force --engine-strict=false',
