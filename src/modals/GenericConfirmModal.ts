@@ -66,3 +66,14 @@ export class GenericConfirmModal extends Modal {
 export function showConfirmModal(app: App, options: ConfirmModalOptions): void {
 	new GenericConfirmModal(app, options).open();
 }
+
+export async function confirmation(app: App, message: string): Promise<boolean> {
+	return new Promise((resolve) => {
+		new GenericConfirmModal(app, {
+			title: 'Confirm',
+			message,
+			onConfirm: () => resolve(true),
+			onCancel: () => resolve(false)
+		}).open();
+	});
+}
