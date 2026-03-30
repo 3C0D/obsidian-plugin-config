@@ -42,6 +42,14 @@
       "problemMatcher": ["$tsc"]
     },
     {
+      "label": "Obsidian Inject",
+      "type": "shell",
+      "command": "obsidian-inject",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
       "label": "Cleanup: Lint + Prettier + Build",
       "dependsOrder": "sequence",
       "dependsOn": ["Lint: Fix", "Prettier: Fix", "Build"],
