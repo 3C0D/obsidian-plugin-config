@@ -204,6 +204,18 @@ function buildAndPublishNpm(): void {
   );
 
   try {
+    // Step 0: Check NPM login
+    console.log(`🔐 Checking NPM authentication...`);
+    try {
+      const whoami = execSync('npm whoami --registry https://registry.npmjs.org/', {
+        stdio: 'pipe', encoding: 'utf8'
+      }).trim();
+      console.log(`   ✅ Logged in as: ${whoami}\n`);
+    } catch {
+      console.error(`   ❌ Not logged in to NPM. Run: npm login`);
+      process.exit(1);
+    }
+
     // Step 1: Update version in package.json only
     // (no commit yet - we'll do one big commit after)
     console.log(`📋 Step 1/6: Updating version...`);
@@ -212,21 +224,21 @@ function buildAndPublishNpm(): void {
     });
 
     // Step 2: Update exports automatically
-    console.log(`\n📦 Step 2/6: Updating exports...`);
+    console.log(`\n📦 Step 2/7: Updating exports...`);
     execSync('yarn update-exports', { stdio: 'inherit' });
 
     // Step 3: Generate bin file (uses updated version)
-    console.log(`\n🔧 Step 3/6: Generating bin/obsidian-inject.js...`);
+    console.log(`\n🔧 Step 3/7: Generating bin/obsidian-inject.js...`);
     generateBinFile();
 
     // Step 4: Verify package and sync versions.json
     // (must happen before commit so versions.json is included)
-    console.log(`\n📋 Step 4/6: Verifying package...`);
+    console.log(`\n📋 Step 4/7: Verifying package...`);
     verifyPackage();
 
     // Step 5: Commit and push ALL changes together
     // (package.json version, bin/, versions.json, exports)
-    console.log(`\n📤 Step 5/6: Committing and pushing changes...`);
+    console.log(`\n📤 Step 5/7: Committing and pushing changes...`);
     try {
       execSync(
         'echo "Publish NPM package" | tsx scripts/acp.ts -b',
@@ -237,7 +249,7 @@ function buildAndPublishNpm(): void {
     }
 
     // Step 6: Publish to NPM
-    console.log(`\n📤 Step 6/6: Publishing to NPM...`);
+    console.log(`\n📤 Step 6/7: Publishing to NPM...`);
     execSync(
       'npm publish --registry https://registry.npmjs.org/',
       { stdio: 'inherit' }
