@@ -44,6 +44,16 @@ async function main(): Promise<void> {
 			process.exit(1);
 		}
 
+		// Prevent injecting into obsidian-plugin-config itself
+		const selfPkg = path.join(resolvedPath, 'package.json');
+		if (fs.existsSync(selfPkg)) {
+			const pkg = JSON.parse(fs.readFileSync(selfPkg, 'utf8'));
+			if (pkg.name === 'obsidian-plugin-config') {
+				console.error(`❌ Cannot inject into obsidian-plugin-config itself.`);
+				process.exit(1);
+			}
+		}
+
 		console.log(`📁 Target directory: ${resolvedPath}`);
 		console.log(`\n🔍 Analyzing plugin...`);
 		const plan = await analyzePlugin(resolvedPath);

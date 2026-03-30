@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 
+import fs from 'fs';
 import path from 'path';
 import {
 	analyzePlugin,
@@ -69,6 +70,16 @@ async function main(): Promise<void> {
 			console.log(`📁 Using provided path: ${targetPath}`);
 		} else {
 			targetPath = await promptForTargetPath();
+		}
+
+		// Prevent injecting into obsidian-plugin-config itself
+		const selfPkg = path.join(targetPath, 'package.json');
+		if (fs.existsSync(selfPkg)) {
+			const pkg = JSON.parse(fs.readFileSync(selfPkg, 'utf8'));
+			if (pkg.name === 'obsidian-plugin-config') {
+				console.error(`❌ Cannot inject into obsidian-plugin-config itself.`);
+				process.exit(1);
+			}
 		}
 
 		console.log(`\n🔍 Checking plugin-config repository status...`);
