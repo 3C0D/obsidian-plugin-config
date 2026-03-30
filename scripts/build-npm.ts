@@ -268,8 +268,8 @@ async function buildAndPublishNpm(): Promise<void> {
 			rl.close();
 		}
 		if (doUpdate) {
-			console.log(`   ⏳ Waiting 15s for NPM registry propagation...`);
-			await new Promise(resolve => setTimeout(resolve, 5000));
+			console.log(`   ⏳ Waiting 10s for NPM registry propagation...`);
+			await new Promise(resolve => setTimeout(resolve, 10000));
 			execSync(
 				'npm install -g obsidian-plugin-config@latest --force --engine-strict=false',
 				{ stdio: 'inherit' }
