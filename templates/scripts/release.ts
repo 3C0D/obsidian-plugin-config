@@ -78,8 +78,8 @@ async function doNextSteps(message: string, tag: string): Promise<void> {
 		await ensureGitSync();
 
 		execSync('git push');
-	} catch (error: any) {
-		console.error('Error:', error.message);
+	} catch (error: unknown) {
+		console.error('Error:', error instanceof Error ? error.message : String(error));
 	}
 	try {
 		execSync(`git tag -a ${tag} ${tagMessage}`);
