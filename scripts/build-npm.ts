@@ -1,28 +1,28 @@
 #!/usr/bin/env tsx
 
-import fs from "fs";
-import path from "path";
-import { execSync } from "child_process";
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
 
 /**
  * Generate bin/obsidian-inject.js from template
  */
 async function generateBinFile(): Promise<void> {
-  console.log(`\n🔧 Generating bin/obsidian-inject.js...`);
+	console.log(`\n🔧 Generating bin/obsidian-inject.js...`);
 
-  const binDir = "bin";
-  const binPath = path.join(binDir, "obsidian-inject.js");
+	const binDir = 'bin';
+	const binPath = path.join(binDir, 'obsidian-inject.js');
 
-  // Ensure bin directory exists
-  if (!fs.existsSync(binDir)) {
-    fs.mkdirSync(binDir, { recursive: true });
-    console.log(`   📁 Created ${binDir} directory`);
-  }
+	// Ensure bin directory exists
+	if (!fs.existsSync(binDir)) {
+		fs.mkdirSync(binDir, { recursive: true });
+		console.log(`   📁 Created ${binDir} directory`);
+	}
 
-  // Read package.json for version info
-  const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
+	// Read package.json for version info
+	const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-  const binContent = `#!/usr/bin/env node
+	const binContent = `#!/usr/bin/env node
 
 /**
  * Obsidian Plugin Config - CLI Entry Point
@@ -190,139 +190,156 @@ function main() {
 main();
 `;
 
-  fs.writeFileSync(binPath, binContent, "utf8");
-  console.log(`   ✅ Generated ${binPath}`);
+	fs.writeFileSync(binPath, binContent, 'utf8');
+	console.log(`   ✅ Generated ${binPath}`);
 }
 
 /**
  * Complete NPM workflow - Version, Commit, Push, Publish
  */
 async function buildAndPublishNpm(): Promise<void> {
-  console.log(`🚀 Obsidian Plugin Config - Complete NPM Workflow`);
-  console.log(`Full automation: version → exports → bin → commit → publish\n`);
+	console.log(`🚀 Obsidian Plugin Config - Complete NPM Workflow`);
+	console.log(`Full automation: version → exports → bin → commit → publish\n`);
 
-  try {
-    // Step 0: Check NPM login
-    console.log(`🔐 Checking NPM authentication...`);
-    try {
-      const whoami = execSync('npm whoami --registry https://registry.npmjs.org/', {
-        stdio: 'pipe', encoding: 'utf8'
-      }).trim();
-      console.log(`   ✅ Logged in as: ${whoami}\n`);
-    } catch {
-      console.error(`   ❌ Not logged in to NPM. Run: npm login`);
-      process.exit(1);
-    }
+	try {
+		// Step 0: Check NPM login
+		console.log(`🔐 Checking NPM authentication...`);
+		try {
+			const whoami = execSync('npm whoami --registry https://registry.npmjs.org/', {
+				stdio: 'pipe',
+				encoding: 'utf8'
+			}).trim();
+			console.log(`   ✅ Logged in as: ${whoami}\n`);
+		} catch {
+			console.error(`   ❌ Not logged in to NPM. Run: npm login`);
+			process.exit(1);
+		}
 
-    // Step 1: Update version
-    console.log(`📋 Step 1/7: Updating version...`);
-    execSync('tsx scripts/update-version-config.ts', { stdio: 'inherit' });
+		// Step 1: Update version
+		console.log(`📋 Step 1/7: Updating version...`);
+		execSync('tsx scripts/update-version-config.ts', { stdio: 'inherit' });
 
-    // Step 2: Update exports
-    console.log(`\n📦 Step 2/7: Updating exports...`);
-    execSync('yarn update-exports', { stdio: 'inherit' });
+		// Step 2: Update exports
+		console.log(`\n📦 Step 2/7: Updating exports...`);
+		execSync('yarn update-exports', { stdio: 'inherit' });
 
-    // Step 3: Generate bin file
-    console.log(`\n🔧 Step 3/7: Generating bin/obsidian-inject.js...`);
-    await generateBinFile();
+		// Step 3: Generate bin file
+		console.log(`\n🔧 Step 3/7: Generating bin/obsidian-inject.js...`);
+		await generateBinFile();
 
-    // Step 4: Verify package and sync versions.json
-    console.log(`\n📋 Step 4/7: Verifying package...`);
-    verifyPackage();
+		// Step 4: Verify package and sync versions.json
+		console.log(`\n📋 Step 4/7: Verifying package...`);
+		verifyPackage();
 
-    // Step 5: Commit and push
-    console.log(`\n📤 Step 5/7: Committing and pushing changes...`);
-    try {
-      execSync('echo "Publish NPM package" | tsx scripts/acp.ts -b', { stdio: 'inherit' });
-    } catch {
-      console.log(`   ℹ️  No additional changes to commit`);
-    }
+		// Step 5: Commit and push
+		console.log(`\n📤 Step 5/7: Committing and pushing changes...`);
+		try {
+			execSync('echo "Publish NPM package" | tsx scripts/acp.ts -b', {
+				stdio: 'inherit'
+			});
+		} catch {
+			console.log(`   ℹ️  No additional changes to commit`);
+		}
 
-    // Step 6: Publish to NPM
-    console.log(`\n📤 Step 6/7: Publishing to NPM...`);
-    execSync('npm publish --registry https://registry.npmjs.org/', { stdio: 'inherit' });
+		// Step 6: Publish to NPM
+		console.log(`\n📤 Step 6/7: Publishing to NPM...`);
+		execSync('npm publish --registry https://registry.npmjs.org/', {
+			stdio: 'inherit'
+		});
 
-    // Step 7: Offer global update
-    console.log(`\n🌍 Step 7/7: Update global CLI?`);
-    const { askConfirmation, createReadlineInterface } = await import("./utils.js");
-    const rl = createReadlineInterface();
-    const doUpdate = await askConfirmation(
-      `Install npm install -g obsidian-plugin-config@latest?`, rl
-    );
-    rl.close();
-    if (doUpdate) {
-      execSync('npm install -g obsidian-plugin-config@latest --force --engine-strict=false', { stdio: 'inherit' });
-      console.log(`   ✅ Global CLI updated`);
-    }
+		// Step 7: Offer global update
+		console.log(`\n🌍 Step 7/7: Update global CLI?`);
+		const { askConfirmation, createReadlineInterface } = await import('./utils.js');
+		const rl = createReadlineInterface();
+		const doUpdate = await askConfirmation(
+			`Install npm install -g obsidian-plugin-config@latest?`,
+			rl
+		);
+		rl.close();
+		if (doUpdate) {
+			execSync(
+				'npm install -g obsidian-plugin-config@latest --force --engine-strict=false',
+				{ stdio: 'inherit' }
+			);
+			console.log(`   ✅ Global CLI updated`);
+		}
 
-    console.log(`\n🎉 Complete workflow successful!`);
-    console.log(`   Test: cd any-plugin && obsidian-inject`);
-
-  } catch (error) {
-    console.error(`\n❌ Workflow failed: ${error instanceof Error ? error.message : String(error)}`);
-    process.exit(1);
-  }
+		console.log(`\n🎉 Complete workflow successful!`);
+		console.log(`   Test: cd any-plugin && obsidian-inject`);
+	} catch (error) {
+		console.error(
+			`\n❌ Workflow failed: ${error instanceof Error ? error.message : String(error)}`
+		);
+		process.exit(1);
+	}
 }
 
 /**
  * Verify package is ready for publication
  */
 function verifyPackage(): void {
-  // Check required scripts
-  const requiredScripts = [
-    "scripts/inject-path.ts",
-    "scripts/inject-prompt.ts",
-    "scripts/utils.ts",
-    "scripts/esbuild.config.ts",
-    "scripts/acp.ts",
-    "scripts/update-version-config.ts",
-    "scripts/help.ts"
-  ];
+	// Check required scripts
+	const requiredScripts = [
+		'scripts/inject-path.ts',
+		'scripts/inject-prompt.ts',
+		'scripts/utils.ts',
+		'scripts/esbuild.config.ts',
+		'scripts/acp.ts',
+		'scripts/update-version-config.ts',
+		'scripts/help.ts'
+	];
 
-  for (const script of requiredScripts) {
-    if (!fs.existsSync(script)) {
-      throw new Error(`Missing required script: ${script}`);
-    }
-  }
-  console.log(`   ✅ All required scripts present`);
+	for (const script of requiredScripts) {
+		if (!fs.existsSync(script)) {
+			throw new Error(`Missing required script: ${script}`);
+		}
+	}
+	console.log(`   ✅ All required scripts present`);
 
-  // Check package.json
-  const packageJson = JSON.parse(fs.readFileSync("package.json", "utf8"));
-  const requiredFields = ['name', 'version', 'description', 'bin', 'repository', 'author'];
+	// Check package.json
+	const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+	const requiredFields = [
+		'name',
+		'version',
+		'description',
+		'bin',
+		'repository',
+		'author'
+	];
 
-  for (const field of requiredFields) {
-    if (!packageJson[field]) {
-      throw new Error(`Missing required package.json field: ${field}`);
-    }
-  }
-  console.log(`   ✅ Package.json valid (v${packageJson.version})`);
+	for (const field of requiredFields) {
+		if (!packageJson[field]) {
+			throw new Error(`Missing required package.json field: ${field}`);
+		}
+	}
+	console.log(`   ✅ Package.json valid (v${packageJson.version})`);
 
-  // Check bin file exists
-  if (!fs.existsSync("bin/obsidian-inject.js")) {
-    throw new Error(`Missing bin file: bin/obsidian-inject.js`);
-  }
-  console.log(`   ✅ Bin file ready`);
+	// Check bin file exists
+	if (!fs.existsSync('bin/obsidian-inject.js')) {
+		throw new Error(`Missing bin file: bin/obsidian-inject.js`);
+	}
+	console.log(`   ✅ Bin file ready`);
 
-  // Sync versions.json
-  const versionsPath = "versions.json";
-  let versions: Record<string, string> = {};
+	// Sync versions.json
+	const versionsPath = 'versions.json';
+	let versions: Record<string, string> = {};
 
-  if (fs.existsSync(versionsPath)) {
-    versions = JSON.parse(fs.readFileSync(versionsPath, "utf8"));
-  }
+	if (fs.existsSync(versionsPath)) {
+		versions = JSON.parse(fs.readFileSync(versionsPath, 'utf8'));
+	}
 
-  if (!versions[packageJson.version]) {
-    const manifest = JSON.parse(fs.readFileSync("manifest.json", "utf8"));
-    versions[packageJson.version] = manifest.minAppVersion;
-    fs.writeFileSync(versionsPath, JSON.stringify(versions, null, "\t"), "utf8");
-    console.log(`   ✅ Added version ${packageJson.version} to versions.json`);
-  } else {
-    console.log(`   ✅ Version ${packageJson.version} in versions.json`);
-  }
+	if (!versions[packageJson.version]) {
+		const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
+		versions[packageJson.version] = manifest.minAppVersion;
+		fs.writeFileSync(versionsPath, JSON.stringify(versions, null, '\t'), 'utf8');
+		console.log(`   ✅ Added version ${packageJson.version} to versions.json`);
+	} else {
+		console.log(`   ✅ Version ${packageJson.version} in versions.json`);
+	}
 
-  // Quick build test
-  execSync('yarn build', { stdio: 'pipe' });
-  console.log(`   ✅ Build test passed`);
+	// Quick build test
+	execSync('yarn build', { stdio: 'pipe' });
+	console.log(`   ✅ Build test passed`);
 }
 
 // Run the script

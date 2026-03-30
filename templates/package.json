@@ -18,7 +18,9 @@
     "help": "tsx scripts/help.ts",
     "h": "tsx scripts/help.ts",
     "lint": "eslint . --ext .ts",
-    "lint:fix": "eslint . --ext .ts --fix"
+    "lint:fix": "eslint . --ext .ts --fix",
+    "prettier": "npx prettier --check '**/*.{ts,json}'",
+    "prettier:fix": "npx prettier --write '**/*.{ts,json}'"
   },
   "devDependencies": {
     "@types/eslint": "latest",
