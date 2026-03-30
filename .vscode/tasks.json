@@ -91,6 +91,14 @@
 			"problemMatcher": []
 		},
 		{
+			"label": "Upgrade All (yarn upgrade + sync templates)",
+			"type": "shell",
+			"command": "yarn upgrade-all",
+			"group": "build",
+			"presentation": { "reveal": "always", "panel": "shared" },
+			"problemMatcher": []
+		},
+		{
 			"label": "NPM Publish",
 			"type": "shell",
 			"command": "yarn npm-publish",
