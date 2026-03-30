@@ -30,10 +30,19 @@ INJECTION (Development phase):
   yarn check-plugin <path>        # Verification only (dry-run)
 
 NPM PUBLISHING (all-in-one - no acp needed before):
-  yarn npm-publish                # Full workflow:
-                                  # version → exports → bin
-                                  # → commit+push → publish
+  yarn npm-publish                # Full workflow (7 steps):
+                                  # 0. NPM auth check
+                                  # 1. version bump
+                                  # 2. update exports
+                                  # 3. generate bin
+                                  # 4. verify package
+                                  # 5. commit + push
+                                  # 6. publish to NPM
+                                  # 7. offer global CLI update
   yarn build-npm                  # Alias for npm-publish
+
+UPGRADE:
+  yarn upgrade-all                # yarn upgrade + sync template deps
 
 HELP:
   yarn help, h                    # This help

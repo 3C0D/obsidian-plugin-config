@@ -1,4 +1,5 @@
-import { App, Plugin, PluginSettingTab, Setting, Notice } from 'obsidian';
+import type { App } from 'obsidian';
+import { Plugin, PluginSettingTab, Setting, Notice } from 'obsidian';
 import { showConfirmModal } from './modals/GenericConfirmModal.ts';
 // import { showTestMessage, getRandomEmoji } from "obsidian-plugin-config/tools";
 

@@ -197,11 +197,9 @@ main();
 /**
  * Complete NPM workflow - Version, Commit, Push, Publish
  */
-function buildAndPublishNpm(): void {
+async function buildAndPublishNpm(): Promise<void> {
   console.log(`🚀 Obsidian Plugin Config - Complete NPM Workflow`);
-  console.log(
-    `Full automation: version → exports → bin → commit → publish\n`
-  );
+  console.log(`Full automation: version → exports → bin → commit → publish\n`);
 
   try {
     // Step 0: Check NPM login
@@ -216,58 +214,52 @@ function buildAndPublishNpm(): void {
       process.exit(1);
     }
 
-    // Step 1: Update version in package.json only
-    // (no commit yet - we'll do one big commit after)
-    console.log(`📋 Step 1/6: Updating version...`);
-    execSync('tsx scripts/update-version-config.ts', {
-      stdio: 'inherit'
-    });
+    // Step 1: Update version
+    console.log(`📋 Step 1/7: Updating version...`);
+    execSync('tsx scripts/update-version-config.ts', { stdio: 'inherit' });
 
-    // Step 2: Update exports automatically
+    // Step 2: Update exports
     console.log(`\n📦 Step 2/7: Updating exports...`);
     execSync('yarn update-exports', { stdio: 'inherit' });
 
-    // Step 3: Generate bin file (uses updated version)
+    // Step 3: Generate bin file
     console.log(`\n🔧 Step 3/7: Generating bin/obsidian-inject.js...`);
-    generateBinFile();
+    await generateBinFile();
 
     // Step 4: Verify package and sync versions.json
-    // (must happen before commit so versions.json is included)
     console.log(`\n📋 Step 4/7: Verifying package...`);
     verifyPackage();
 
-    // Step 5: Commit and push ALL changes together
-    // (package.json version, bin/, versions.json, exports)
+    // Step 5: Commit and push
     console.log(`\n📤 Step 5/7: Committing and pushing changes...`);
     try {
-      execSync(
-        'echo "Publish NPM package" | tsx scripts/acp.ts -b',
-        { stdio: 'inherit' }
-      );
+      execSync('echo "Publish NPM package" | tsx scripts/acp.ts -b', { stdio: 'inherit' });
     } catch {
       console.log(`   ℹ️  No additional changes to commit`);
     }
 
     // Step 6: Publish to NPM
     console.log(`\n📤 Step 6/7: Publishing to NPM...`);
-    execSync(
-      'npm publish --registry https://registry.npmjs.org/',
-      { stdio: 'inherit' }
+    execSync('npm publish --registry https://registry.npmjs.org/', { stdio: 'inherit' });
+
+    // Step 7: Offer global update
+    console.log(`\n🌍 Step 7/7: Update global CLI?`);
+    const { askConfirmation, createReadlineInterface } = await import("./utils.js");
+    const rl = createReadlineInterface();
+    const doUpdate = await askConfirmation(
+      `Install npm install -g obsidian-plugin-config@latest?`, rl
     );
+    rl.close();
+    if (doUpdate) {
+      execSync('npm install -g obsidian-plugin-config@latest', { stdio: 'inherit' });
+      console.log(`   ✅ Global CLI updated`);
+    }
 
     console.log(`\n🎉 Complete workflow successful!`);
-    console.log(`\n📋 Next steps:`);
-    console.log(`   1. npm install -g obsidian-plugin-config`);
-    console.log(
-      `   2. Test injection: cd any-plugin && obsidian-inject`
-    );
+    console.log(`   Test: cd any-plugin && obsidian-inject`);
 
   } catch (error) {
-    console.error(
-      `\n❌ Workflow failed: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
+    console.error(`\n❌ Workflow failed: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);
   }
 }
@@ -334,4 +326,4 @@ function verifyPackage(): void {
 }
 
 // Run the script
-buildAndPublishNpm();
+await buildAndPublishNpm();

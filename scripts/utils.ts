@@ -76,17 +76,17 @@ export async function copyFilesToTargetDir(buildPath: string): Promise<void> {
 
   try {
     await mkdir(buildPath, { recursive: true });
-  } catch (error: any) {
-    if (error.code !== "EEXIST") {
-      console.error(`Error creating directory: ${error.message}`);
+  } catch (error: unknown) {
+    if ((error as NodeJS.ErrnoException).code !== "EEXIST") {
+      console.error(`Error creating directory: ${(error as Error).message}`);
     }
   }
 
   // Copy manifest
   try {
     await copyFile(manifestSrc, manifestDest);
-  } catch (error: any) {
-    console.error(`Error copying manifest: ${error.message}`);
+  } catch (error: unknown) {
+    console.error(`Error copying manifest: ${(error as Error).message}`);
   }
 
   // Copy CSS
@@ -107,16 +107,16 @@ export async function copyFilesToTargetDir(buildPath: string): Promise<void> {
     } else {
       return;
     }
-  } catch (error: any) {
-    console.error(`Error copying CSS: ${error.message}`);
+  } catch (error: unknown) {
+    console.error(`Error copying CSS: ${(error as Error).message}`);
   }
 }
 
 export function gitExec(command: string): void {
   try {
     execSync(command, { stdio: "inherit" });
-  } catch (error: any) {
-    console.error(`Error executing '${command}':`, error.message);
+  } catch (error: unknown) {
+    console.error(`Error executing '${command}':`, (error as Error).message);
     throw error;
   }
 }
@@ -141,8 +141,8 @@ export async function ensureGitSync(): Promise<void> {
     } else {
       console.log('✅ Repository is synchronized with remote');
     }
-  } catch (error: any) {
-    console.error(`❌ Git sync failed: ${error.message}`);
+  } catch (error: unknown) {
+    console.error(`❌ Git sync failed: ${(error as Error).message}`);
     throw error;
   }
 }
