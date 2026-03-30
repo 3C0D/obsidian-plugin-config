@@ -107,6 +107,14 @@
       "problemMatcher": []
     },
     {
+      "label": "Install/Update obsidian-inject",
+      "type": "shell",
+      "command": "npm list -g obsidian-plugin-config --depth=0 && npm install -g obsidian-plugin-config@latest --force --engine-strict=false && npm list -g obsidian-plugin-config --depth=0",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
       "label": "Cleanup: Lint + Prettier + Build",
       "dependsOrder": "sequence",
       "dependsOn": ["Lint: Fix", "Prettier: Fix", "Build"],
