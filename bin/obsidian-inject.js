@@ -3,7 +3,7 @@
 /**
  * Obsidian Plugin Config - CLI Entry Point
  * Global command: obsidian-inject
- * Version: 1.4.8
+ * Version: 1.5.0
  */
 
 import { execSync } from 'child_process';
@@ -92,6 +92,13 @@ function main() {
     if (!fs.existsSync(targetPackageJson)) {
       console.error(`❌ Error: package.json not found in ${targetPath}`);
       console.error(`   Make sure this is a valid Node.js project.`);
+      process.exit(1);
+    }
+
+    // Prevent injecting into obsidian-plugin-config itself
+    const pkg = JSON.parse(fs.readFileSync(targetPackageJson, 'utf8'));
+    if (pkg.name === 'obsidian-plugin-config') {
+      console.error(`❌ Cannot inject into obsidian-plugin-config itself.`);
       process.exit(1);
     }
 

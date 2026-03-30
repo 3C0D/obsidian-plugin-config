@@ -119,6 +119,13 @@ function main() {
       process.exit(1);
     }
 
+    // Prevent injecting into obsidian-plugin-config itself
+    const pkg = JSON.parse(fs.readFileSync(targetPackageJson, 'utf8'));
+    if (pkg.name === 'obsidian-plugin-config') {
+      console.error(\`❌ Cannot inject into obsidian-plugin-config itself.\`);
+      process.exit(1);
+    }
+
     // Clean NPM artifacts if package-lock.json exists
     const packageLockPath = join(targetPath, 'package-lock.json');
     if (fs.existsSync(packageLockPath)) {
