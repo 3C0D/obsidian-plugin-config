@@ -282,7 +282,7 @@ export async function cleanOldLintFiles(targetPath: string): Promise<void> {
 /**
  * Inject scripts and config files
  */
-export async function injectScripts(targetPath: string, useSass: boolean = false): Promise<void> {
+export async function injectScripts(targetPath: string): Promise<void> {
   const scriptsPath = path.join(targetPath, "scripts");
 
   if (!await isValidPath(scriptsPath)) {
@@ -708,7 +708,7 @@ export async function performInjection(
   try {
     await cleanNpmArtifactsIfNeeded(targetPath);
     await ensureTsxInstalled(targetPath);
-    await injectScripts(targetPath, useSass);
+    await injectScripts(targetPath);
 
     console.log(`\n📦 Updating package.json...`);
     await updatePackageJson(targetPath, useSass);

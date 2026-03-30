@@ -52,6 +52,12 @@ const configs: Linter.Config[] = [
       "@typescript-eslint/no-unsafe-member-access": "off",
       "@typescript-eslint/no-unsafe-argument": "off"
     }
+  },
+  {
+    files: ["src/**/*.ts"],
+    rules: {
+      "no-console": ["warn", { "allow": ["warn", "error", "debug"] }]
+    }
   }
 ];
 

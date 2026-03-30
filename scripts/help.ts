@@ -138,7 +138,7 @@ STANDARD DEVELOPMENT WORKFLOW:
   (not required before npm-publish).
 
 AFTER NPM PUBLISH - Update global CLI:
-  npm install -g obsidian-plugin-config@latest
+  npm install -g obsidian-plugin-config@latest --force
   obsidian-inject                 # Test in current plugin dir
   obsidian-inject ../test-plugin --sass
 

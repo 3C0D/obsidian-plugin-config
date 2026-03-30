@@ -251,7 +251,7 @@ async function buildAndPublishNpm(): Promise<void> {
     );
     rl.close();
     if (doUpdate) {
-      execSync('npm install -g obsidian-plugin-config@latest', { stdio: 'inherit' });
+      execSync('npm install -g obsidian-plugin-config@latest --force', { stdio: 'inherit' });
       console.log(`   ✅ Global CLI updated`);
     }
 

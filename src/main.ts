@@ -15,7 +15,7 @@ export default class ObsidianPluginConfigPlugin extends Plugin {
 	settings: MyPluginSettings;
 
 	async onload(): Promise<void> {
-		console.log('Loading obsidian-plugin-config plugin for testing NPM exports');
+		console.debug('Loading obsidian-plugin-config plugin for testing NPM exports');
 		await this.loadSettings();
 
 		this.addCommand({
@@ -52,11 +52,9 @@ export default class ObsidianPluginConfigPlugin extends Plugin {
 			cancelText: 'Annuler',
 			onConfirm: () => {
 				new Notice('Action confirmée !');
-				console.log("Action confirmée par l'utilisateur");
 			},
 			onCancel: () => {
 				new Notice('Action annulée.');
-				console.log("Action annulée par l'utilisateur");
 			}
 		});
 	}
