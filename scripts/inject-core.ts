@@ -483,12 +483,7 @@ export async function updatePackageJson(
       ...templatePkg.scripts
     };
 
-    if (packageJson.dependencies?.["obsidian-plugin-config"]) {
-      delete packageJson.dependencies["obsidian-plugin-config"];
-      console.log(`   🗑️  Removed obsidian-plugin-config dependency`);
-    }
-
-    if (!packageJson.devDependencies) packageJson.devDependencies = {};
+if (!packageJson.devDependencies) packageJson.devDependencies = {};
 
     const requiredDeps: Record<string, string> = templatePkg.devDependencies;
 
