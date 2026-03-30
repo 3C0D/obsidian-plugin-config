@@ -20,7 +20,7 @@
 		{
 			"label": "Prettier: Check",
 			"type": "shell",
-			"command": "npx prettier --check \"src/**/*.ts\"",
+			"command": "npx prettier --check \"{src,scripts}/**/*.{ts,json}\"",
 			"group": "test",
 			"presentation": { "reveal": "always", "panel": "shared" },
 			"problemMatcher": []
@@ -28,7 +28,7 @@
 		{
 			"label": "Prettier: Fix",
 			"type": "shell",
-			"command": "npx prettier --write \"src/**/*.ts\"",
+			"command": "npx prettier --write \"{src,scripts}/**/*.{ts,json}\"",
 			"group": "test",
 			"presentation": { "reveal": "always", "panel": "shared" },
 			"problemMatcher": []
