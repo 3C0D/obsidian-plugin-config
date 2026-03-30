@@ -229,6 +229,15 @@ export async function cleanOldScripts(scriptsPath: string): Promise<void> {
     }
   }
 
+  const obsoleteRootFiles = ["help-plugin.ts"];
+  for (const fileName of obsoleteRootFiles) {
+    const filePath = path.join(path.dirname(scriptsPath), fileName);
+    if (await isValidPath(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log(`🗑️  Removed obsolete root file: ${fileName}`);
+    }
+  }
+
   const obsoleteFiles = ["start.mjs", "start.js"];
   for (const fileName of obsoleteFiles) {
     const filePath = path.join(scriptsPath, fileName);
@@ -449,6 +458,18 @@ export async function updatePackageJson(
   try {
     const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
 
+    const configRoot = findPluginConfigRoot();
+    const templatePkg = JSON.parse(
+      fs.readFileSync(path.join(configRoot, "templates/package.json"), "utf8")
+    );
+
+    if (useSass) {
+      const sassPkg = JSON.parse(
+        fs.readFileSync(path.join(configRoot, "templates/package-sass.json"), "utf8")
+      );
+      Object.assign(templatePkg.devDependencies, sassPkg.devDependencies);
+    }
+
     const obsoleteScripts = ["version"];
     for (const script of obsoleteScripts) {
       if (packageJson.scripts?.[script]) {
@@ -459,20 +480,7 @@ export async function updatePackageJson(
 
     packageJson.scripts = {
       ...packageJson.scripts,
-      start: "yarn install && yarn dev",
-      dev: "tsx scripts/esbuild.config.ts",
-      build: "tsc -noEmit -skipLibCheck && tsx scripts/esbuild.config.ts production",
-      real: "tsx scripts/esbuild.config.ts production real",
-      acp: "tsx scripts/acp.ts",
-      bacp: "tsx scripts/acp.ts -b",
-      "update-version": "tsx scripts/update-version.ts",
-      v: "tsx scripts/update-version.ts",
-      release: "tsx scripts/release.ts",
-      r: "tsx scripts/release.ts",
-      help: "tsx scripts/help.ts",
-      h: "tsx scripts/help.ts",
-      lint: "eslint . --ext .ts",
-      "lint:fix": "eslint . --ext .ts --fix"
+      ...templatePkg.scripts
     };
 
     if (packageJson.dependencies?.["obsidian-plugin-config"]) {
@@ -482,44 +490,24 @@ export async function updatePackageJson(
 
     if (!packageJson.devDependencies) packageJson.devDependencies = {};
 
-    const requiredDeps: Record<string, string> = {
-      "@types/eslint": "latest",
-      "@types/node": "^22.15.26",
-      "@types/semver": "^7.7.0",
-      "@typescript-eslint/eslint-plugin": "latest",
-      "@typescript-eslint/parser": "latest",
-      "builtin-modules": "3.3.0",
-      dedent: "^1.6.0",
-      dotenv: "^16.4.5",
-      esbuild: "latest",
-      eslint: "latest",
-      "eslint-import-resolver-typescript": "latest",
-      jiti: "latest",
-      obsidian: "*",
-      "obsidian-typings": "^3.9.5",
-      prettier: "^3.4.0",
-      semver: "^7.7.2",
-      tsx: "^4.19.4",
-      typescript: "^5.8.2",
-      ...(useSass ? { "esbuild-sass-plugin": "^3.3.1" } : {})
-    };
+    const requiredDeps: Record<string, string> = templatePkg.devDependencies;
 
     let addedDeps = 0;
     let updatedDeps = 0;
     for (const [dep, version] of Object.entries(requiredDeps)) {
       if (!packageJson.devDependencies[dep]) {
-        packageJson.devDependencies[dep] = version;
+        packageJson.devDependencies[dep] = version as string;
         addedDeps++;
       } else if (packageJson.devDependencies[dep] !== version) {
-        packageJson.devDependencies[dep] = version;
+        packageJson.devDependencies[dep] = version as string;
         updatedDeps++;
       }
     }
 
     if (!packageJson.engines) packageJson.engines = {};
-    packageJson.engines.npm = "please-use-yarn";
-    packageJson.engines.yarn = ">=1.22.0";
-    packageJson.type = "module";
+    packageJson.engines.npm = templatePkg.engines.npm;
+    packageJson.engines.yarn = templatePkg.engines.yarn;
+    packageJson.type = templatePkg.type;
 
     fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), "utf8");
     console.log(`   ✅ Updated package.json (${addedDeps} new, ${updatedDeps} updated dependencies)`);

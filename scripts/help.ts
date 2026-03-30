@@ -55,21 +55,27 @@ After adding a new module to src/, run:
 
 🏗️  ARCHITECTURE
 
+TWO DISTINCT ROLES:
+  Root (src/, scripts/)           # Local plugin + NPM snippet exports
+  templates/                      # Source of truth for injection
+
+templates/ → what gets injected:
+  templates/package.json          # Base deps/scripts for target plugins
+  templates/package-sass.json     # Extra deps when --sass is used
+  templates/tsconfig.json         # TypeScript config for target plugins
+  templates/scripts/*             # Scripts copied to <target>/scripts/
+  templates/eslint.config.mts     # ESLint config for target plugins
+
 inject-core.ts — shared injection logic:
-  analyzePlugin()                 # Analyze target plugin directory
+  updatePackageJson()             # Reads templates/package.json (not hardcoded)
+  injectScripts()                 # Copies templates/ files to target
   performInjection()              # Main orchestration function
-  updatePackageJson()             # Inject scripts + dependencies
-  injectScripts()                 # Copy templates to target
-  ensurePluginConfigClean()       # Auto-commit before injection
 
 inject-path.ts — CLI entry point:
   Parses --yes, --dry-run, --sass flags
-  Calls performInjection() from inject-core
 
 inject-prompt.ts — interactive entry point:
   Prompts for target path interactively
-  Supports --sass flag
-  Calls performInjection() from inject-core
 
 ═══════════════════════════════════════════════════════════════════
 
