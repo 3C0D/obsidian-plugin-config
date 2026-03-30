@@ -344,7 +344,7 @@ function verifyPackage(): void {
 	if (!versions[packageJson.version]) {
 		const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
 		versions[packageJson.version] = manifest.minAppVersion;
-		fs.writeFileSync(versionsPath, JSON.stringify(versions, null, '\t'), 'utf8');
+		fs.writeFileSync(versionsPath, JSON.stringify(versions, null, '  '), 'utf8');
 		console.log(`   ✅ Added version ${packageJson.version} to versions.json`);
 	} else {
 		console.log(`   ✅ Version ${packageJson.version} in versions.json`);
