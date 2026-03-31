@@ -608,19 +608,30 @@ export function readInjectionInfo(targetPath: string): Record<string, string> | 
 }
 
 /**
- * Clean NPM artifacts if package-lock.json is found
+ * Clean NPM/Yarn lock files and node_modules to ensure fresh install
  */
 export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<void> {
 	const packageLockPath = path.join(targetPath, 'package-lock.json');
+	const yarnLockPath = path.join(targetPath, 'yarn.lock');
+	const nodeModulesPath = path.join(targetPath, 'node_modules');
 
-	if (fs.existsSync(packageLockPath)) {
-		console.log(`\n🧹 NPM installation detected, cleaning artifacts...`);
+	const hasPackageLock = fs.existsSync(packageLockPath);
+	const hasYarnLock = fs.existsSync(yarnLockPath);
+
+	if (hasPackageLock || hasYarnLock) {
+		console.log(`\n🧹 Cleaning lock files and node_modules...`);
 
 		try {
-			fs.unlinkSync(packageLockPath);
-			console.log(`   🗑️  Removed package-lock.json`);
+			if (hasPackageLock) {
+				fs.unlinkSync(packageLockPath);
+				console.log(`   🗑️  Removed package-lock.json`);
+			}
 
-			const nodeModulesPath = path.join(targetPath, 'node_modules');
+			if (hasYarnLock) {
+				fs.unlinkSync(yarnLockPath);
+				console.log(`   🗑️  Removed yarn.lock`);
+			}
+
 			if (fs.existsSync(nodeModulesPath)) {
 				fs.rmSync(nodeModulesPath, { recursive: true, force: true });
 				console.log(
@@ -628,11 +639,11 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
 				);
 			}
 
-			console.log(`   ✅ NPM artifacts cleaned to avoid Yarn conflicts`);
+			console.log(`   ✅ Lock files and artifacts cleaned for fresh install`);
 		} catch (error) {
-			console.error(`   ❌ Failed to clean NPM artifacts: ${error}`);
+			console.error(`   ❌ Failed to clean artifacts: ${error}`);
 			console.log(
-				`   💡 You may need to manually remove package-lock.json and node_modules`
+				`   💡 You may need to manually remove package-lock.json, yarn.lock and node_modules`
 			);
 		}
 	}
