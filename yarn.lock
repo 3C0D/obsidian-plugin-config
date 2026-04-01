@@ -115,9 +115,9 @@
     w3c-keyname "^2.2.4"
 
 "@codemirror/view@^6.0.0", "@codemirror/view@^6.23.0":
-  version "6.40.0"
-  resolved "https://registry.yarnpkg.com/@codemirror/view/-/view-6.40.0.tgz#97198fd717ebf471ef594a5bd557a9f2d1d4d165"
-  integrity sha512-WA0zdU7xfF10+5I3HhUUq3kqOx3KjqmtQ9lqZjfK7jtYk4G72YW9rezcSywpaUMCWOMlq+6E0pO1IWg1TNIhtg==
+  version "6.41.0"
+  resolved "https://registry.yarnpkg.com/@codemirror/view/-/view-6.41.0.tgz#482cbcb5f8f90131908e5f9c0e2f4681e0684db0"
+  integrity sha512-6H/qadXsVuDY219Yljhohglve8xf4B8xJkVOEWfA5uiYKiTFppjqsvsfR5iPA0RbvRBoOyTZpbLIxe9+0UR8xA==
   dependencies:
     "@codemirror/state" "^6.6.0"
     crelt "^1.0.6"
@@ -3068,9 +3068,9 @@ ufo@^1.6.3:
   integrity sha512-yDJTmhydvl5lJzBmy/hyOAA0d+aqCBuwl818haVdYCRrWV84o7YyeVm4QlVHStqNrrJSTb6jKuFAVqAFsr+K3Q==
 
 undici-types@^7.21.0:
-  version "7.24.6"
-  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.24.6.tgz#61275b485d7fd4e9d269c7cf04ec2873c9cc0f91"
-  integrity sha512-WRNW+sJgj5OBN4/0JpHFqtqzhpbnV0GuB+OozA9gCL7a993SmU+1JBZCzLNxYsbMfIeDL+lTsphD5jN5N+n0zg==
+  version "7.24.7"
+  resolved "https://registry.yarnpkg.com/undici-types/-/undici-types-7.24.7.tgz#a699975cb7ee836147bdec78746e2aeee786786c"
+  integrity sha512-XA+gOBkzYD3C74sZowtCLTpgtaCdqZhqCvR6y9LXvrKTt/IVU6bz49T4D+BPi475scshCCkb0IklJRw6T1ZlgQ==
 
 undici-types@~6.21.0:
   version "6.21.0"
