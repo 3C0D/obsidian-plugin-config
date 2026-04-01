@@ -209,18 +209,18 @@ async function buildAndPublishNpm(): Promise<void> {
 	console.log(`Full automation: version → exports → bin → commit → publish\n`);
 
 	try {
-		// Step 0: Check NPM login
-		console.log(`🔐 Checking NPM authentication...`);
-		try {
-			const whoami = execSync('npm whoami --registry https://registry.npmjs.org/', {
-				stdio: 'pipe',
-				encoding: 'utf8'
-			}).trim();
-			console.log(`   ✅ Logged in as: ${whoami}\n`);
-		} catch {
-			console.error(`   ❌ Not logged in to NPM. Run: npm login`);
-			process.exit(1);
-		}
+		// Step 0: Check NPM login (disabled - npm publish will handle auth)
+		// console.log(`🔐 Checking NPM authentication...`);
+		// try {
+		// 	const whoami = execSync('npm whoami --registry https://registry.npmjs.org/', {
+		// 		stdio: 'pipe',
+		// 		encoding: 'utf8'
+		// 	}).trim();
+		// 	console.log(`   ✅ Logged in as: ${whoami}\n`);
+		// } catch {
+		// 	console.error(`   ❌ Not logged in to NPM. Run: npm login`);
+		// 	process.exit(1);
+		// }
 
 		// Step 1: Update version
 		console.log(`📋 Step 1/7: Updating version...`);
@@ -259,7 +259,8 @@ async function buildAndPublishNpm(): Promise<void> {
 		const autoUpdate = process.argv.includes('--auto-update');
 		let doUpdate = autoUpdate;
 		if (!autoUpdate) {
-			const { askConfirmation, createReadlineInterface } = await import('./utils.js');
+			const { askConfirmation, createReadlineInterface } =
+				await import('./utils.js');
 			const rl = createReadlineInterface();
 			doUpdate = await askConfirmation(
 				`Install obsidian-plugin-config@latest globally?`,
@@ -269,7 +270,7 @@ async function buildAndPublishNpm(): Promise<void> {
 		}
 		if (doUpdate) {
 			console.log(`   ⏳ Waiting 15s for NPM registry propagation...`);
-			await new Promise(resolve => setTimeout(resolve, 15000));
+			await new Promise((resolve) => setTimeout(resolve, 15000));
 			execSync(
 				'npm install -g obsidian-plugin-config@latest --force --engine-strict=false',
 				{ stdio: 'inherit' }
