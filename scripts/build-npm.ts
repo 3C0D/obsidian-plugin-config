@@ -209,7 +209,7 @@ async function buildAndPublishNpm(): Promise<void> {
 	console.log(`Full automation: version → exports → bin → commit → publish\n`);
 
 	try {
-		// Step 0: Check NPM login (disabled - npm publish will handle auth)
+		// Step 0: Check NPM login
 		// console.log(`🔐 Checking NPM authentication...`);
 		// try {
 		// 	const whoami = execSync('npm whoami --registry https://registry.npmjs.org/', {

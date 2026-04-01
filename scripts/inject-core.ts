@@ -1,7 +1,6 @@
 #!/usr/bin/env tsx
 
 import fs from 'fs';
-import fsExtra from 'fs-extra';
 import path from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
@@ -634,8 +633,12 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
 			}
 
 			if (fs.existsSync(nodeModulesPath)) {
-				// Use fs-extra for better Windows compatibility with locked files
-				await fsExtra.remove(nodeModulesPath);
+				try {
+					execSync(`rmdir /s /q "${nodeModulesPath}"`, { stdio: 'inherit' });
+				} catch {
+					// Fallback: fs.rmSync si rmdir échoue
+					fs.rmSync(nodeModulesPath, { recursive: true, force: true });
+				}
 				console.log(
 					`   🗑️  Removed node_modules (will be reinstalled with Yarn)`
 				);
