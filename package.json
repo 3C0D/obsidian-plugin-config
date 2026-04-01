@@ -47,9 +47,6 @@
   "exports": {
     ".": "./src/index.ts"
   },
-  "dependencies": {
-    "fs-extra": "^11.2.0"
-  },
   "devDependencies": {
     "@types/eslint": "latest",
     "@types/fs-extra": "^11.0.4",
@@ -63,6 +60,7 @@
     "esbuild": "latest",
     "eslint": "latest",
     "eslint-import-resolver-typescript": "latest",
+    "fs-extra": "^11.2.0",
     "jiti": "latest",
     "obsidian": "*",
     "obsidian-typings": "latest",
