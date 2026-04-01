@@ -1,6 +1,6 @@
 {
   "name": "obsidian-plugin-config",
-  "version": "1.5.9",
+  "version": "1.5.10",
   "description": "Système d'injection pour plugins Obsidian autonomes",
   "type": "module",
   "main": "src/index.ts",
@@ -49,6 +49,7 @@
   },
   "devDependencies": {
     "@types/eslint": "latest",
+    "@types/fs-extra": "^11.0.4",
     "@types/node": "^22.15.26",
     "@types/semver": "^7.7.0",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
