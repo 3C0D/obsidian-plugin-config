@@ -659,6 +659,42 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
 		console.log(`\n🧹 Cleaning lock files and node_modules...`);
 
 		try {
+			// Remove node_modules FIRST (before lock files)
+			if (fs.existsSync(nodeModulesPath)) {
+				console.log(`   ⏳ Removing node_modules (this may take a moment)...`);
+				try {
+					execSync(`rmdir /s /q "${nodeModulesPath}"`, {
+						stdio: 'pipe',
+						windowsHide: true
+					});
+					console.log(
+						`   🗑️  Removed node_modules (will be reinstalled with Yarn)`
+					);
+				} catch {
+					// If locked, rename it
+					try {
+						const timestamp = Date.now();
+						const oldPath = `${nodeModulesPath}.old.${timestamp}`;
+						fs.renameSync(nodeModulesPath, oldPath);
+						console.log(
+							`   🔄 Renamed locked node_modules to ${path.basename(oldPath)}`
+						);
+						console.log(
+							`   💡 Delete it manually later: ${oldPath}`
+						);
+					} catch {
+						console.log(
+							`   ⚠️  Could not remove/rename node_modules (locked by processes)`
+						);
+						console.log(
+							`   💡 Close Obsidian/VSCode and run: obsidian-inject again`
+						);
+						throw new Error('node_modules locked - close processes and retry');
+					}
+				}
+			}
+
+			// Then remove lock files
 			if (hasPackageLock) {
 				fs.unlinkSync(packageLockPath);
 				console.log(`   🗑️  Removed package-lock.json`);
@@ -669,42 +705,11 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
 				console.log(`   🗑️  Removed yarn.lock`);
 			}
 
-			if (fs.existsSync(nodeModulesPath)) {
-				console.log(`   ⏳ Removing node_modules (this may take a moment)...`);
-				try {
-					// Try standard rmdir first
-					execSync(`rmdir /s /q "${nodeModulesPath}"`, {
-						stdio: 'pipe',
-						windowsHide: true
-					});
-					console.log(
-						`   🗑️  Removed node_modules (will be reinstalled with Yarn)`
-					);
-				} catch {
-					// If locked, rename it and let yarn install create a fresh one
-					try {
-						const timestamp = Date.now();
-						const oldPath = `${nodeModulesPath}.old.${timestamp}`;
-						fs.renameSync(nodeModulesPath, oldPath);
-						console.log(
-							`   🔄 Renamed locked node_modules to ${path.basename(oldPath)}`
-						);
-						console.log(
-							`   💡 You can delete it manually later when processes are closed`
-						);
-					} catch {
-						console.log(
-							`   ⚠️  Could not remove node_modules (files locked by running processes)`
-						);
-						console.log(
-							`   💡 Yarn will update it anyway, but close processes for clean install`
-						);
-					}
-				}
-			}
-
 			console.log(`   ✅ Lock files and artifacts cleaned for fresh install`);
 		} catch (error) {
+			if (error instanceof Error && error.message.includes('locked')) {
+				throw error;
+			}
 			console.error(`   ❌ Failed to clean artifacts: ${error}`);
 			console.log(
 				`   💡 You may need to manually remove package-lock.json, yarn.lock and node_modules`
