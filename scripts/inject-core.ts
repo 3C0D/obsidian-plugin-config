@@ -195,7 +195,10 @@ export async function showInjectionPlan(
 /**
  * Clean old script files
  */
-export async function cleanOldScripts(scriptsPath: string): Promise<void> {
+export async function cleanOldScripts(
+	scriptsPath: string,
+	approvedDests: Set<string>
+): Promise<void> {
 	const scriptNames = [
 		'utils',
 		'esbuild.config',
@@ -210,10 +213,10 @@ export async function cleanOldScripts(scriptsPath: string): Promise<void> {
 		for (const ext of extensions) {
 			const scriptFile = path.join(scriptsPath, `${scriptName}${ext}`);
 			if (await isValidPath(scriptFile)) {
-				fs.unlinkSync(scriptFile);
-				console.log(
-					`🗑️  Removed existing ${scriptName}${ext} (will be replaced)`
-				);
+				if (approvedDests.has(scriptFile)) {
+					fs.unlinkSync(scriptFile);
+					console.log(`🗑️  Removed existing ${scriptName}${ext} (will be replaced)`);
+				}
 			}
 		}
 	}
@@ -270,12 +273,166 @@ export async function cleanOldLintFiles(targetPath: string): Promise<void> {
 	}
 }
 
+interface FileEntry {
+	src: string; // path relative to configRoot
+	dest: string; // absolute path in target plugin
+	optionKey: keyof InjectionOptions | null; // null = always inject
+	mergeEnv?: boolean; // special .env merge logic
+}
+
+/**
+ * Build the full list of files to inject, with source and destination paths
+ */
+function buildFileList(targetPath: string, options: InjectionOptions): FileEntry[] {
+	const scriptsPath = path.join(targetPath, 'scripts');
+	const entries: FileEntry[] = [];
+
+	// Scripts
+	const scriptFiles = [
+		'templates/scripts/utils.ts',
+		'templates/scripts/esbuild.config.ts',
+		'templates/scripts/acp.ts',
+		'templates/scripts/update-version.ts',
+		'templates/scripts/release.ts',
+		'templates/scripts/help.ts'
+	];
+	for (const src of scriptFiles) {
+		entries.push({
+			src,
+			dest: path.join(scriptsPath, path.basename(src)),
+			optionKey: 'scripts'
+		});
+	}
+
+	// Root config files
+	const configFileMap: Array<[string, string, keyof InjectionOptions | null, boolean?]> =
+		[
+			['templates/tsconfig.json', 'tsconfig.json', 'tsconfig'],
+			['templates/gitignore.template', '.gitignore', 'gitignore'],
+			['templates/eslint.config.mts', 'eslint.config.mts', 'eslint'],
+			['templates/.editorconfig', '.editorconfig', 'editorconfig'],
+			['templates/.prettierrc', '.prettierrc', 'prettier'],
+			['templates/npmrc.template', '.npmrc', null],
+			['templates/env.template', '.env', 'env', true]
+		];
+	for (const [src, destName, optionKey, mergeEnv] of configFileMap) {
+		entries.push({
+			src,
+			dest: path.join(targetPath, destName),
+			optionKey,
+			mergeEnv: !!mergeEnv
+		});
+	}
+
+	// VSCode config files
+	const configVscodeMap: Array<[string, string]> = [
+		['templates/.vscode/settings.json', '.vscode/settings.json'],
+		['templates/.vscode/tasks.json', '.vscode/tasks.json']
+	];
+	for (const [src, destName] of configVscodeMap) {
+		entries.push({
+			src,
+			dest: path.join(targetPath, destName),
+			optionKey: 'vscode'
+		});
+	}
+
+	// GitHub workflow files
+	const workflowFiles = [
+		'templates/.github/workflows/release.yml',
+		'templates/.github/workflows/release-body.md'
+	];
+	for (const src of workflowFiles) {
+		entries.push({
+			src,
+			dest: path.join(targetPath, src.replace('templates/', '')),
+			optionKey: 'github'
+		});
+	}
+
+	return entries;
+}
+
+/**
+ * Compare source templates with existing target files.
+ * Prompt user only when content differs and file already exists.
+ * Returns the Set of dest paths approved for injection.
+ */
+export async function diffAndPromptFiles(
+	targetPath: string,
+	options: InjectionOptions
+): Promise<Set<string>> {
+	const { askConfirmation, createReadlineInterface } = await import('./utils.js');
+	const rl = createReadlineInterface();
+	const configRoot = findPluginConfigRoot();
+	const entries = buildFileList(targetPath, options);
+	const approved = new Set<string>();
+
+	console.log(`\n🔍 Comparing files with existing content...`);
+
+	let hasChanges = false;
+
+	for (const entry of entries) {
+		// Skip if disabled by options
+		if (entry.optionKey !== null && !options[entry.optionKey]) continue;
+		// Skip .env merge (always approved, merge logic handled separately)
+		if (entry.mergeEnv) {
+			approved.add(entry.dest);
+			continue;
+		}
+
+		const srcPath = path.join(configRoot, entry.src);
+		let srcContent: string;
+		try {
+			srcContent = fs.readFileSync(srcPath, 'utf8');
+		} catch {
+			// Source doesn't exist, skip
+			continue;
+		}
+
+		// Target doesn't exist yet → inject without prompting
+		if (!fs.existsSync(entry.dest)) {
+			approved.add(entry.dest);
+			continue;
+		}
+
+		const destContent = fs.readFileSync(entry.dest, 'utf8');
+
+		// Identical → skip silently
+		if (srcContent === destContent) {
+			console.log(`   ✅ ${path.relative(targetPath, entry.dest)} (unchanged)`);
+			continue;
+		}
+
+		// Different → ask user
+		hasChanges = true;
+		const relDest = path.relative(targetPath, entry.dest);
+		const update = await askConfirmation(
+			`   Update ${relDest}? (content differs)`,
+			rl
+		);
+		if (update) {
+			approved.add(entry.dest);
+		} else {
+			console.log(`   ⏭️  Kept existing ${relDest}`);
+		}
+	}
+
+	if (!hasChanges) {
+		console.log(`   ✅ All existing files are up to date`);
+	}
+
+	rl.close();
+	return approved;
+}
+
 /**
  * Inject scripts and config files
  */
 export async function injectScripts(
 	targetPath: string,
-	options: InjectionOptions
+	options: InjectionOptions,
+	approvedDests: Set<string>
 ): Promise<void> {
 	const scriptsPath = path.join(targetPath, 'scripts');
 
@@ -284,7 +441,7 @@ export async function injectScripts(
 		console.log(`📁 Created scripts directory`);
 	}
 
-	await cleanOldScripts(scriptsPath);
+	await cleanOldScripts(scriptsPath, approvedDests);
 	await cleanOldLintFiles(targetPath);
 
 	const scriptFiles = [
@@ -327,9 +484,13 @@ export async function injectScripts(
 	if (options.scripts) {
 		for (const scriptFile of scriptFiles) {
 			try {
-				const content = copyFromLocal(scriptFile);
 				const fileName = path.basename(scriptFile);
 				const targetFile = path.join(scriptsPath, fileName);
+				if (!approvedDests.has(targetFile)) {
+					console.log(`   ⏭️  Skipped ${fileName} (kept existing)`);
+					continue;
+				}
+				const content = copyFromLocal(scriptFile);
 				fs.writeFileSync(targetFile, content, 'utf8');
 				console.log(`   ✅ ${fileName}`);
 			} catch (error) {
@@ -357,6 +518,12 @@ export async function injectScripts(
 		if (!shouldInject) {
 			console.log(`   ⏭️  Skipped ${destName} (user choice)`);
 			continue;
+		}
+
+		// Skip if not approved by diff step
+		const targetFile = path.join(targetPath, destName);
+		if (!approvedDests.has(targetFile)) {
+			continue; // already logged during diff step
 		}
 
 		try {
@@ -401,8 +568,9 @@ export async function injectScripts(
 	if (options.vscode) {
 		for (const [src, destName] of Object.entries(configVscodeMap)) {
 			try {
-				const content = copyFromLocal(src);
 				const targetFile = path.join(targetPath, destName);
+				if (!approvedDests.has(targetFile)) continue;
+				const content = copyFromLocal(src);
 				const targetDir = path.dirname(targetFile);
 				if (!(await isValidPath(targetDir))) {
 					fs.mkdirSync(targetDir, { recursive: true });
@@ -425,6 +593,7 @@ export async function injectScripts(
 				const content = copyFromLocal(workflowFile);
 				const relativePath = workflowFile.replace('templates/', '');
 				const targetFile = path.join(targetPath, relativePath);
+				if (!approvedDests.has(targetFile)) continue;
 				const targetDir = path.dirname(targetFile);
 
 				if (!(await isValidPath(targetDir))) {
@@ -766,9 +935,10 @@ export async function performInjection(
 	console.log(`\n🚀 Starting injection process...`);
 
 	try {
+		const approvedDests = await diffAndPromptFiles(targetPath, options);
 		await cleanNpmArtifactsIfNeeded(targetPath);
 		await ensureTsxInstalled(targetPath);
-		await injectScripts(targetPath, options);
+		await injectScripts(targetPath, options, approvedDests);
 
 		console.log(`\n📦 Updating package.json...`);
 		await updatePackageJson(targetPath, options, useSass);
