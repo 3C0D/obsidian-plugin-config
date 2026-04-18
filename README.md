@@ -59,10 +59,18 @@ yarn real           # Build + install to real vault
 yarn acp            # Add, commit, push
 yarn bacp           # Build + add, commit, push
 yarn v              # Update version
-yarn release        # GitHub release
+yarn r              # GitHub release
 yarn lint           # ESLint check
 yarn lint:fix       # ESLint fix
-yarn h           # Full help
+yarn prettier       # Prettier check
+yarn prettier:fix   # Prettier format all
+yarn h              # Full help
+```
+
+## Updating Dependencies
+
+```bash
+yarn upgrade        # Update all dependencies to latest
 ```
 
 ## SASS Support
@@ -84,6 +92,61 @@ Target plugins become **100% standalone** after injection:
 - ✅ Updatable via re-injection
 - ✅ Yarn protection enforced
 - ✅ Compatible with all Obsidian plugins
+
+## Development Workflow (for injected plugins)
+
+After injection, your plugin has a complete development setup:
+
+### Environment Setup
+
+**In-place development** (inside vault):
+- Develop directly in `.obsidian/plugins/your-plugin`
+- Run `yarn dev` - builds automatically to current location
+
+**External development** (outside vault):
+- Develop anywhere on your system
+- Configure `.env` file with vault paths:
+  ```bash
+  TEST_VAULT=/path/to/test/vault
+  REAL_VAULT=/path/to/production/vault
+  ```
+- Run `yarn dev` - builds to TEST_VAULT
+- Run `yarn real` - builds to REAL_VAULT
+
+### Development Commands
+
+```bash
+yarn start          # Install dependencies + start dev
+yarn dev            # Watch mode (auto-rebuild on changes)
+yarn build          # Production build
+yarn real           # Build to production vault
+```
+
+### Version & Release
+
+```bash
+yarn v              # Update version (prompts for type)
+yarn acp            # Add, commit, push changes
+yarn bacp           # Build + add, commit, push
+yarn r              # Create GitHub release
+```
+
+### Code Quality
+
+```bash
+yarn lint           # Check for linting errors
+yarn lint:fix       # Auto-fix linting errors
+yarn prettier       # Check formatting
+yarn prettier:fix   # Auto-format all files
+```
+
+### Recommended Workflow
+
+1. `yarn start` - Install and start development
+2. Make changes, test in Obsidian
+3. `yarn bacp` - Build and commit changes
+4. `yarn v` - Update version
+5. `yarn r` - Create release
 
 ---
 
