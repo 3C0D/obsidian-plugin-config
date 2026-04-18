@@ -17,7 +17,19 @@ const rl = createReadlineInterface();
 
 async function main(): Promise<void> {
 	try {
-		console.log(`🎯 Obsidian Plugin Config - Local Injection Tool`);
+		// Show version
+		const configRoot = findPluginConfigRoot();
+		let version = 'unknown';
+		try {
+			const pkg = JSON.parse(
+				fs.readFileSync(path.join(configRoot, 'package.json'), 'utf8')
+			);
+			version = pkg.version || 'unknown';
+		} catch {
+			// Ignore
+		}
+
+		console.log(`🎯 Obsidian Plugin Config - Local Injection Tool v${version}`);
 		console.log(`📥 Inject autonomous configuration from local files\n`);
 
 		const args = process.argv.slice(2);
