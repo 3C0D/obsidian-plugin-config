@@ -780,6 +780,26 @@ export async function performInjection(
 
 		await runYarnInstall(targetPath);
 
+		// Clean up old node_modules if yarn install succeeded
+		const oldDirs = fs.readdirSync(targetPath)
+			.filter(name => name.startsWith('node_modules.old.'))
+			.map(name => path.join(targetPath, name));
+		
+		if (oldDirs.length > 0) {
+			console.log(`\n🧹 Cleaning up old node_modules...`);
+			for (const oldDir of oldDirs) {
+				try {
+					execSync(`rmdir /s /q "${oldDir}"`, {
+						stdio: 'pipe',
+						windowsHide: true
+					});
+					console.log(`   🗑️  Removed ${path.basename(oldDir)}`);
+				} catch {
+					console.log(`   ⚠️  Could not remove ${path.basename(oldDir)} (delete manually)`);
+				}
+			}
+		}
+
 		console.log(`\n📝 Creating injection info...`);
 		await createInjectionInfo(targetPath);
 
