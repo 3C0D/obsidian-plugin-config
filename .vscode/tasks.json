@@ -42,6 +42,14 @@
       "problemMatcher": []
     },
     {
+      "label": "Check Global CLI Version",
+      "type": "shell",
+      "command": "npm list -g obsidian-plugin-config --depth=0",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared" },
+      "problemMatcher": []
+    },
+    {
       "label": "NPM Publish",
       "type": "shell",
       "command": "yarn npm-publish",

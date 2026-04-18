@@ -662,35 +662,27 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
 			// Remove node_modules FIRST (before lock files)
 			if (fs.existsSync(nodeModulesPath)) {
 				console.log(`   ⏳ Removing node_modules (this may take a moment)...`);
-				try {
-					execSync(`rmdir /s /q "${nodeModulesPath}"`, {
-						stdio: 'pipe',
-						windowsHide: true
-					});
-					console.log(
-						`   🗑️  Removed node_modules (will be reinstalled with Yarn)`
-					);
-				} catch {
-					// If locked, rename it
+				
+				execSync(`rmdir /s /q "${nodeModulesPath}"`, {
+					stdio: 'pipe',
+					windowsHide: true
+				});
+
+				if (fs.existsSync(nodeModulesPath)) {
+					// rmdir failed silently (locked .exe files) - rename instead
+					const timestamp = Date.now();
+					const oldPath = `${nodeModulesPath}.old.${timestamp}`;
 					try {
-						const timestamp = Date.now();
-						const oldPath = `${nodeModulesPath}.old.${timestamp}`;
 						fs.renameSync(nodeModulesPath, oldPath);
-						console.log(
-							`   🔄 Renamed locked node_modules to ${path.basename(oldPath)}`
-						);
-						console.log(
-							`   💡 Delete it manually later: ${oldPath}`
-						);
+						console.log(`   🔄 Renamed locked node_modules to ${path.basename(oldPath)}`);
+						console.log(`   💡 Delete it manually later: ${oldPath}`);
 					} catch {
-						console.log(
-							`   ⚠️  Could not remove/rename node_modules (locked by processes)`
-						);
-						console.log(
-							`   💡 Close Obsidian/VSCode and run: obsidian-inject again`
-						);
+						console.log(`   ⚠️  Could not remove/rename node_modules (locked by processes)`);
+						console.log(`   💡 Close Obsidian/VSCode and run: obsidian-inject again`);
 						throw new Error('node_modules locked - close processes and retry');
 					}
+				} else {
+					console.log(`   🗑️  Removed node_modules (will be reinstalled with Yarn)`);
 				}
 			}
 
