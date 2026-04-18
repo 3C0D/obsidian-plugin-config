@@ -661,16 +661,28 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
 		try {
 			// Remove node_modules FIRST (before lock files)
 			if (fs.existsSync(nodeModulesPath)) {
-				const timestamp = Date.now();
-				const oldPath = `${nodeModulesPath}.old.${timestamp}`;
-				try {
-					fs.renameSync(nodeModulesPath, oldPath);
-					console.log(`   🔄 Renamed node_modules to ${path.basename(oldPath)}`);
-					console.log(`   💡 Delete it manually later: ${oldPath}`);
-				} catch {
-					console.log(`   ⚠️  Could not rename node_modules (locked by processes)`);
-					console.log(`   💡 Close Obsidian/VSCode and run: obsidian-inject again`);
-					throw new Error('node_modules locked - close processes and retry');
+				console.log(`   ⏳ Removing node_modules (this may take a moment)...`);
+				
+				execSync(`rmdir /s /q "${nodeModulesPath}"`, {
+					stdio: 'pipe',
+					windowsHide: true
+				});
+
+				if (fs.existsSync(nodeModulesPath)) {
+					// rmdir failed silently (locked .exe files) - rename instead
+					const timestamp = Date.now();
+					const oldPath = `${nodeModulesPath}.old.${timestamp}`;
+					try {
+						fs.renameSync(nodeModulesPath, oldPath);
+						console.log(`   🔄 Renamed locked node_modules to ${path.basename(oldPath)}`);
+						console.log(`   💡 Delete it manually later: ${oldPath}`);
+					} catch {
+						console.log(`   ⚠️  Could not remove/rename node_modules (locked by processes)`);
+						console.log(`   💡 Close Obsidian/VSCode and run: obsidian-inject again`);
+						throw new Error('node_modules locked - close processes and retry');
+					}
+				} else {
+					console.log(`   🗑️  Removed node_modules (will be reinstalled with Yarn)`);
 				}
 			}
 
@@ -779,6 +791,19 @@ export async function performInjection(
 		console.log(
 			`   4. yarn acp      # Commit changes (or yarn bacp for build+commit)`
 		);
+
+		// Check for .old directories and remind user to delete them
+		const oldDirs = fs.readdirSync(targetPath)
+			.filter(name => name.startsWith('node_modules.old.'))
+			.map(name => path.basename(name));
+		
+		if (oldDirs.length > 0) {
+			console.log(`\n🧹 Cleanup reminder:`);
+			for (const oldDir of oldDirs) {
+				console.log(`   🗑️  Delete manually: ${oldDir}`);
+			}
+			console.log(`   💡 Close all processes first, then delete these folders`);
+		}
 	} catch (error) {
 		console.error(`\n❌ Injection failed: ${error}`);
 		throw error;
