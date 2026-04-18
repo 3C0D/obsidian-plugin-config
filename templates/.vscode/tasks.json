@@ -49,6 +49,7 @@
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []
     },
+
     {
       "label": "Obsidian Inject (no confirm)",
       "type": "shell",

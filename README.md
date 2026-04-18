@@ -139,6 +139,19 @@ yarn build          # Production build
 yarn real           # Build to production vault
 ```
 
+### VSCode Tasks (Ctrl+Shift+P → "Run Task")
+
+After injection, VSCode tasks are available for quick access:
+
+- **Build** - Production build
+- **Lint** / **Lint: Fix** - ESLint check/fix
+- **Prettier: Check** / **Prettier: Fix** - Format check/fix
+- **Obsidian Inject** - Re-inject configuration (with confirmation)
+- **Obsidian Inject (no confirm)** - Re-inject without confirmation
+- **Cleanup: Lint + Prettier + Build** - Full cleanup sequence
+
+💡 **Tip**: Use `Ctrl+Shift+B` (Windows/Linux) or `Cmd+Shift+B` (Mac) for the default Build task.
+
 ### Version & Release
 
 ```bash
