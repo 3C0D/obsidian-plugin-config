@@ -824,8 +824,8 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
 	const hasPackageLock = fs.existsSync(packageLockPath);
 	const hasYarnLock = fs.existsSync(yarnLockPath);
 
-	if (hasPackageLock || hasYarnLock) {
-		console.log(`\n🧹 Cleaning lock files and node_modules...`);
+	if (hasPackageLock) {
+		console.log(`\n🧹 Cleaning NPM artifacts (migrating to Yarn)...`);
 
 		try {
 			// Remove node_modules FIRST (before lock files)
