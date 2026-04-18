@@ -661,28 +661,16 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
 		try {
 			// Remove node_modules FIRST (before lock files)
 			if (fs.existsSync(nodeModulesPath)) {
-				console.log(`   ⏳ Removing node_modules (this may take a moment)...`);
-				
-				execSync(`rmdir /s /q "${nodeModulesPath}"`, {
-					stdio: 'pipe',
-					windowsHide: true
-				});
-
-				if (fs.existsSync(nodeModulesPath)) {
-					// rmdir failed silently (locked .exe files) - rename instead
-					const timestamp = Date.now();
-					const oldPath = `${nodeModulesPath}.old.${timestamp}`;
-					try {
-						fs.renameSync(nodeModulesPath, oldPath);
-						console.log(`   🔄 Renamed locked node_modules to ${path.basename(oldPath)}`);
-						console.log(`   💡 Delete it manually later: ${oldPath}`);
-					} catch {
-						console.log(`   ⚠️  Could not remove/rename node_modules (locked by processes)`);
-						console.log(`   💡 Close Obsidian/VSCode and run: obsidian-inject again`);
-						throw new Error('node_modules locked - close processes and retry');
-					}
-				} else {
-					console.log(`   🗑️  Removed node_modules (will be reinstalled with Yarn)`);
+				const timestamp = Date.now();
+				const oldPath = `${nodeModulesPath}.old.${timestamp}`;
+				try {
+					fs.renameSync(nodeModulesPath, oldPath);
+					console.log(`   🔄 Renamed node_modules to ${path.basename(oldPath)}`);
+					console.log(`   💡 Delete it manually later: ${oldPath}`);
+				} catch {
+					console.log(`   ⚠️  Could not rename node_modules (locked by processes)`);
+					console.log(`   💡 Close Obsidian/VSCode and run: obsidian-inject again`);
+					throw new Error('node_modules locked - close processes and retry');
 				}
 			}
 
@@ -779,26 +767,6 @@ export async function performInjection(
 		await createRequiredDirectories(targetPath);
 
 		await runYarnInstall(targetPath);
-
-		// Clean up old node_modules if yarn install succeeded
-		const oldDirs = fs.readdirSync(targetPath)
-			.filter(name => name.startsWith('node_modules.old.'))
-			.map(name => path.join(targetPath, name));
-		
-		if (oldDirs.length > 0) {
-			console.log(`\n🧹 Cleaning up old node_modules...`);
-			for (const oldDir of oldDirs) {
-				try {
-					execSync(`rmdir /s /q "${oldDir}"`, {
-						stdio: 'pipe',
-						windowsHide: true
-					});
-					console.log(`   🗑️  Removed ${path.basename(oldDir)}`);
-				} catch {
-					console.log(`   ⚠️  Could not remove ${path.basename(oldDir)} (delete manually)`);
-				}
-			}
-		}
 
 		console.log(`\n📝 Creating injection info...`);
 		await createInjectionInfo(targetPath);
