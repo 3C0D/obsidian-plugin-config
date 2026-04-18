@@ -5,6 +5,7 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { isValidPath, gitExec } from './utils.js';
+import type { InjectionOptions } from './inject-options.js';
 
 export interface InjectionPlan {
 	targetPath: string;
@@ -272,7 +273,10 @@ export async function cleanOldLintFiles(targetPath: string): Promise<void> {
 /**
  * Inject scripts and config files
  */
-export async function injectScripts(targetPath: string): Promise<void> {
+export async function injectScripts(
+	targetPath: string,
+	options: InjectionOptions
+): Promise<void> {
 	const scriptsPath = path.join(targetPath, 'scripts');
 
 	if (!(await isValidPath(scriptsPath))) {
@@ -320,22 +324,41 @@ export async function injectScripts(targetPath: string): Promise<void> {
 
 	console.log(`\n📥 Copying scripts from local files...`);
 
-	for (const scriptFile of scriptFiles) {
-		try {
-			const content = copyFromLocal(scriptFile);
-			const fileName = path.basename(scriptFile);
-			const targetFile = path.join(scriptsPath, fileName);
-			fs.writeFileSync(targetFile, content, 'utf8');
-			console.log(`   ✅ ${fileName}`);
-		} catch (error) {
-			console.error(`   ❌ Failed to inject ${scriptFile}: ${error}`);
+	if (options.scripts) {
+		for (const scriptFile of scriptFiles) {
+			try {
+				const content = copyFromLocal(scriptFile);
+				const fileName = path.basename(scriptFile);
+				const targetFile = path.join(scriptsPath, fileName);
+				fs.writeFileSync(targetFile, content, 'utf8');
+				console.log(`   ✅ ${fileName}`);
+			} catch (error) {
+				console.error(`   ❌ Failed to inject ${scriptFile}: ${error}`);
+			}
 		}
+	} else {
+		console.log(`   ⏭️  Skipped (user choice)`);
 	}
 
 	console.log(`\n📥 Copying config files...`);
 
 	// Copy root config files
 	for (const [src, destName] of Object.entries(configFileMap)) {
+		// Check if this file should be injected based on options
+		const shouldInject =
+			(destName === 'tsconfig.json' && options.tsconfig) ||
+			(destName === 'eslint.config.mts' && options.eslint) ||
+			(destName === '.prettierrc' && options.prettier) ||
+			(destName === '.editorconfig' && options.editorconfig) ||
+			(destName === '.gitignore' && options.gitignore) ||
+			(destName === '.env' && options.env) ||
+			(destName === '.npmrc'); // Always inject .npmrc
+
+		if (!shouldInject) {
+			console.log(`   ⏭️  Skipped ${destName} (user choice)`);
+			continue;
+		}
+
 		try {
 			const targetFile = path.join(targetPath, destName);
 			const templateContent = copyFromLocal(src);
@@ -375,39 +398,47 @@ export async function injectScripts(targetPath: string): Promise<void> {
 	}
 
 	// Copy .vscode config files
-	for (const [src, destName] of Object.entries(configVscodeMap)) {
-		try {
-			const content = copyFromLocal(src);
-			const targetFile = path.join(targetPath, destName);
-			const targetDir = path.dirname(targetFile);
-			if (!(await isValidPath(targetDir))) {
-				fs.mkdirSync(targetDir, { recursive: true });
+	if (options.vscode) {
+		for (const [src, destName] of Object.entries(configVscodeMap)) {
+			try {
+				const content = copyFromLocal(src);
+				const targetFile = path.join(targetPath, destName);
+				const targetDir = path.dirname(targetFile);
+				if (!(await isValidPath(targetDir))) {
+					fs.mkdirSync(targetDir, { recursive: true });
+				}
+				fs.writeFileSync(targetFile, content, 'utf8');
+				console.log(`   ✅ ${destName}`);
+			} catch (error) {
+				console.error(`   ❌ Failed to inject ${destName}: ${error}`);
 			}
-			fs.writeFileSync(targetFile, content, 'utf8');
-			console.log(`   ✅ ${destName}`);
-		} catch (error) {
-			console.error(`   ❌ Failed to inject ${destName}: ${error}`);
 		}
+	} else {
+		console.log(`   ⏭️  Skipped .vscode/ (user choice)`);
 	}
 
 	console.log(`\n📥 Copying GitHub workflows from local files...`);
 
-	for (const workflowFile of workflowFiles) {
-		try {
-			const content = copyFromLocal(workflowFile);
-			const relativePath = workflowFile.replace('templates/', '');
-			const targetFile = path.join(targetPath, relativePath);
-			const targetDir = path.dirname(targetFile);
+	if (options.github) {
+		for (const workflowFile of workflowFiles) {
+			try {
+				const content = copyFromLocal(workflowFile);
+				const relativePath = workflowFile.replace('templates/', '');
+				const targetFile = path.join(targetPath, relativePath);
+				const targetDir = path.dirname(targetFile);
 
-			if (!(await isValidPath(targetDir))) {
-				fs.mkdirSync(targetDir, { recursive: true });
+				if (!(await isValidPath(targetDir))) {
+					fs.mkdirSync(targetDir, { recursive: true });
+				}
+
+				fs.writeFileSync(targetFile, content, 'utf8');
+				console.log(`   ✅ ${relativePath}`);
+			} catch (error) {
+				console.error(`   ❌ Failed to inject ${workflowFile}: ${error}`);
 			}
-
-			fs.writeFileSync(targetFile, content, 'utf8');
-			console.log(`   ✅ ${relativePath}`);
-		} catch (error) {
-			console.error(`   ❌ Failed to inject ${workflowFile}: ${error}`);
 		}
+	} else {
+		console.log(`   ⏭️  Skipped (user choice)`);
 	}
 }
 
@@ -416,12 +447,18 @@ export async function injectScripts(targetPath: string): Promise<void> {
  */
 export async function updatePackageJson(
 	targetPath: string,
+	options: InjectionOptions,
 	useSass: boolean = false
 ): Promise<void> {
 	const packageJsonPath = path.join(targetPath, 'package.json');
 
 	if (!(await isValidPath(packageJsonPath))) {
 		console.log(`❌ No package.json found, skipping package.json update`);
+		return;
+	}
+
+	if (!options.packageJson) {
+		console.log(`⏭️  Skipped package.json update (user choice)`);
 		return;
 	}
 
@@ -704,6 +741,7 @@ export async function runYarnInstall(targetPath: string): Promise<void> {
  */
 export async function performInjection(
 	targetPath: string,
+	options: InjectionOptions,
 	useSass: boolean = false
 ): Promise<void> {
 	console.log(`\n🚀 Starting injection process...`);
@@ -711,10 +749,10 @@ export async function performInjection(
 	try {
 		await cleanNpmArtifactsIfNeeded(targetPath);
 		await ensureTsxInstalled(targetPath);
-		await injectScripts(targetPath);
+		await injectScripts(targetPath, options);
 
 		console.log(`\n📦 Updating package.json...`);
-		await updatePackageJson(targetPath, useSass);
+		await updatePackageJson(targetPath, options, useSass);
 
 		await analyzeCentralizedImports(targetPath);
 

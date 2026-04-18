@@ -2,31 +2,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Build",
-      "type": "shell",
-      "command": "yarn build",
-      "group": { "kind": "build", "isDefault": true },
-      "presentation": { "reveal": "always", "panel": "shared" },
-      "problemMatcher": ["$tsc"]
-    },
-    {
-      "label": "Dev (watch)",
-      "type": "shell",
-      "command": "yarn dev",
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "shared" },
-      "problemMatcher": ["$tsc-watch"],
-      "isBackground": true
-    },
-    {
-      "label": "Real (build to vault)",
-      "type": "shell",
-      "command": "yarn real",
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "shared" },
-      "problemMatcher": ["$tsc"]
-    },
-    {
       "label": "Lint",
       "type": "shell",
       "command": "yarn lint",
@@ -59,14 +34,6 @@
       "problemMatcher": []
     },
     {
-      "label": "Update Exports",
-      "type": "shell",
-      "command": "yarn update-exports",
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "shared" },
-      "problemMatcher": []
-    },
-    {
       "label": "ACP (add, commit, push)",
       "type": "shell",
       "command": "yarn acp",
@@ -75,49 +42,18 @@
       "problemMatcher": []
     },
     {
-      "label": "BACP (build + acp)",
-      "type": "shell",
-      "command": "yarn bacp",
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "shared" },
-      "problemMatcher": []
-    },
-    {
-      "label": "Version update",
-      "type": "shell",
-      "command": "yarn v",
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "shared" },
-      "problemMatcher": []
-    },
-    {
-      "label": "Upgrade All (yarn upgrade + sync templates)",
-      "type": "shell",
-      "command": "yarn upgrade-all",
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "shared" },
-      "problemMatcher": []
-    },
-    {
       "label": "NPM Publish",
       "type": "shell",
-      "command": "yarn npm-publish --auto-update",
-      "group": "build",
+      "command": "yarn npm-publish",
+      "group": { "kind": "build", "isDefault": true },
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []
     },
+
     {
-      "label": "Install/Update obsidian-inject",
-      "type": "shell",
-      "command": "npm list -g obsidian-plugin-config --depth=0 && npm install -g obsidian-plugin-config@latest --force --engine-strict=false && npm list -g obsidian-plugin-config --depth=0",
-      "group": "build",
-      "presentation": { "reveal": "always", "panel": "shared" },
-      "problemMatcher": []
-    },
-    {
-      "label": "Cleanup: Lint + Prettier + Build",
+      "label": "Cleanup: Lint + Prettier",
       "dependsOrder": "sequence",
-      "dependsOn": ["Lint: Fix", "Prettier: Fix", "Build"],
+      "dependsOn": ["Lint: Fix", "Prettier: Fix"],
       "group": "build",
       "presentation": { "reveal": "always", "panel": "shared" },
       "problemMatcher": []

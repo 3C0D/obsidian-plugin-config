@@ -202,6 +202,36 @@ main();
 }
 
 /**
+ * Check NPM authentication and prompt login if needed
+ */
+async function ensureNpmAuth(): Promise<void> {
+	console.log(`🔐 Checking NPM authentication...`);
+
+	try {
+		const whoami = execSync('npm whoami --registry https://registry.npmjs.org/', {
+			stdio: 'pipe',
+			encoding: 'utf8'
+		}).trim();
+		console.log(`   ✅ Logged in as: ${whoami}\n`);
+	} catch {
+		console.log(`   ⚠️  Not logged in to NPM\n`);
+		console.log(`🔑 Please login to NPM to publish the package`);
+		console.log(`   Opening browser for authentication...\n`);
+
+		try {
+			execSync('npm login --auth-type=web --registry https://registry.npmjs.org/', {
+				stdio: 'inherit'
+			});
+			console.log(`\n   ✅ Successfully logged in to NPM\n`);
+		} catch {
+			console.error(`\n   ❌ NPM login failed`);
+			console.error(`   Please run 'npm login' manually and try again`);
+			throw new Error('NPM authentication required');
+		}
+	}
+}
+
+/**
  * Complete NPM workflow - Version, Commit, Push, Publish
  */
 async function buildAndPublishNpm(): Promise<void> {
@@ -209,6 +239,8 @@ async function buildAndPublishNpm(): Promise<void> {
 	console.log(`Automation: version → bin → verify → commit → publish\n`);
 
 	try {
+		// Step 0: Check NPM authentication
+		await ensureNpmAuth();
 
 		// Step 1: Update version
 		console.log(`📋 Step 1/5: Updating version...`);
@@ -225,11 +257,29 @@ async function buildAndPublishNpm(): Promise<void> {
 		// Step 4: Commit and push
 		console.log(`\n📤 Step 4/5: Committing and pushing changes...`);
 		try {
-			execSync('echo "Publish NPM package" | tsx scripts/acp.ts -b', {
-				stdio: 'inherit'
-			});
-		} catch {
-			console.log(`   ℹ️  No additional changes to commit`);
+			// Add all changes
+			execSync('git add -A', { stdio: 'pipe' });
+			
+			// Check if there are changes to commit
+			const status = execSync('git status --porcelain', { encoding: 'utf8' });
+			if (status.trim()) {
+				const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+				execSync(`git commit -m "Publish NPM package v${packageJson.version}"`, {
+					stdio: 'pipe'
+				});
+				
+				// Get current branch and push
+				const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', {
+					encoding: 'utf8'
+				}).trim();
+				execSync(`git push origin ${currentBranch}`, { stdio: 'inherit' });
+				console.log(`   ✅ Changes committed and pushed`);
+			} else {
+				console.log(`   ℹ️  No changes to commit`);
+			}
+		} catch (error) {
+			console.error(`   ❌ Commit/push failed: ${error instanceof Error ? error.message : String(error)}`);
+			throw error;
 		}
 
 		// Step 5: Publish to NPM
@@ -238,29 +288,15 @@ async function buildAndPublishNpm(): Promise<void> {
 			stdio: 'inherit'
 		});
 
-		// Optional: Update global CLI
-		console.log(`\n🌍 Update global CLI?`);
-		const autoUpdate = process.argv.includes('--auto-update');
-		let doUpdate = autoUpdate;
-		if (!autoUpdate) {
-			const { askConfirmation, createReadlineInterface } =
-				await import('./utils.js');
-			const rl = createReadlineInterface();
-			doUpdate = await askConfirmation(
-				`Install obsidian-plugin-config@latest globally?`,
-				rl
-			);
-			rl.close();
-		}
-		if (doUpdate) {
-			console.log(`   ⏳ Waiting 15s for NPM registry propagation...`);
-			await new Promise((resolve) => setTimeout(resolve, 15000));
-			execSync(
-				'npm install -g obsidian-plugin-config@latest --force --engine-strict=false',
-				{ stdio: 'inherit' }
-			);
-			console.log(`   ✅ Global CLI updated`);
-		}
+		// Optional: Update global CLI automatically
+		console.log(`\n🌍 Updating global CLI...`);
+		console.log(`   ⏳ Waiting 15s for NPM registry propagation...`);
+		await new Promise((resolve) => setTimeout(resolve, 15000));
+		execSync(
+			'npm install -g obsidian-plugin-config@latest --force --engine-strict=false',
+			{ stdio: 'inherit' }
+		);
+		console.log(`   ✅ Global CLI updated`);
 
 		console.log(`\n🎉 Complete workflow successful!`);
 		console.log(`   Test: cd any-plugin && obsidian-inject`);

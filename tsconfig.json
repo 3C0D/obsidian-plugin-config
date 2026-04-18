@@ -1,5 +1,6 @@
 {
   "compilerOptions": {
+    "types": ["node"],
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "NodeNext",

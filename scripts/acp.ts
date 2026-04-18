@@ -24,20 +24,16 @@ async function main(): Promise<void> {
 	try {
 		if (process.argv.includes('-b')) {
 			console.log('Building...');
-			gitExec('yarn build');
+			// For obsidian-plugin-config, just run TypeScript check
+			if (isInCentralizedRepo()) {
+				gitExec('npx tsc --noEmit');
+			} else {
+				gitExec('yarn build');
+			}
 			console.log('Build successful.');
 		}
 
-		// Only update exports if we're in the centralized repo and not explicitly disabled
-		if (
-			!process.argv.includes('-ne') &&
-			!process.argv.includes('--no-exports') &&
-			isInCentralizedRepo()
-		) {
-			console.log('Updating exports...');
-			gitExec('yarn run update-exports');
-			console.log('Exports updated.');
-		}
+
 
 		const input: string = await askQuestion('Enter commit message: ', rl);
 

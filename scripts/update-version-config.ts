@@ -52,10 +52,7 @@ async function updateJsonFile(
 
 async function updateConfigVersions(targetVersion: string): Promise<void> {
 	try {
-		await Promise.all([
-			updateJsonFile('package.json', (json) => (json.version = targetVersion)),
-			updateJsonFile('versions.json', (json) => (json[targetVersion] = '1.8.9'))
-		]);
+		await updateJsonFile('package.json', (json) => (json.version = targetVersion));
 	} catch (error) {
 		console.error(
 			'Error updating config versions:',
@@ -81,7 +78,7 @@ async function updateVersion(): Promise<void> {
 			console.log(`Files updated to version ${targetVersion}`);
 
 			// Add files to git
-			gitExec('git add package.json versions.json');
+			gitExec('git add package.json');
 			gitExec(`git commit -m "Updated to version ${targetVersion}"`);
 			console.log('Changes committed');
 		} catch (error) {
