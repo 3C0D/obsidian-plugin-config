@@ -290,14 +290,18 @@ async function buildAndPublishNpm(): Promise<void> {
 
 		// Optional: Update global CLI automatically
 		console.log(`\n🌍 Updating global CLI...`);
-		console.log(`   ⏳ Waiting 15s for NPM registry propagation...`);
-		await new Promise((resolve) => setTimeout(resolve, 15000));
-		execSync(
-			'npm install -g obsidian-plugin-config@latest --force --engine-strict=false',
-			{ stdio: 'inherit' }
-		);
-		console.log(`   ✅ Global CLI updated`);
-
+		console.log(`   ⏳ Waiting 30s for NPM registry propagation...`);
+		await new Promise((resolve) => setTimeout(resolve, 30000));
+		try {
+			execSync(
+				'npm install -g obsidian-plugin-config@latest --force --engine-strict=false',
+				{ stdio: 'inherit' }
+			);
+			console.log(`   ✅ Global CLI updated`);
+		} catch {
+			console.log(`   ⚠️  Global CLI update failed (NPM registry may need more time)`);
+			console.log(`   💡 Run manually in a few minutes: npm install -g obsidian-plugin-config@latest --force`);
+		}
 		console.log(`\n🎉 Complete workflow successful!`);
 		console.log(`   Test: cd any-plugin && obsidian-inject`);
 	} catch (error) {
