@@ -670,15 +670,37 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
 			}
 
 			if (fs.existsSync(nodeModulesPath)) {
+				console.log(`   ⏳ Removing node_modules (this may take a moment)...`);
 				try {
-					execSync(`rmdir /s /q "${nodeModulesPath}"`, { stdio: 'inherit' });
+					// Try standard rmdir first
+					execSync(`rmdir /s /q "${nodeModulesPath}"`, {
+						stdio: 'pipe',
+						windowsHide: true
+					});
+					console.log(
+						`   🗑️  Removed node_modules (will be reinstalled with Yarn)`
+					);
 				} catch {
-					// Fallback: fs.rmSync si rmdir échoue
-					fs.rmSync(nodeModulesPath, { recursive: true, force: true });
+					// If locked, rename it and let yarn install create a fresh one
+					try {
+						const timestamp = Date.now();
+						const oldPath = `${nodeModulesPath}.old.${timestamp}`;
+						fs.renameSync(nodeModulesPath, oldPath);
+						console.log(
+							`   🔄 Renamed locked node_modules to ${path.basename(oldPath)}`
+						);
+						console.log(
+							`   💡 You can delete it manually later when processes are closed`
+						);
+					} catch {
+						console.log(
+							`   ⚠️  Could not remove node_modules (files locked by running processes)`
+						);
+						console.log(
+							`   💡 Yarn will update it anyway, but close processes for clean install`
+						);
+					}
 				}
-				console.log(
-					`   🗑️  Removed node_modules (will be reinstalled with Yarn)`
-				);
 			}
 
 			console.log(`   ✅ Lock files and artifacts cleaned for fresh install`);
