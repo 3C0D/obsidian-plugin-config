@@ -1,9 +1,8 @@
 {
   "name": "obsidian-plugin-config",
   "version": "1.5.12",
-  "description": "Système d'injection pour plugins Obsidian autonomes",
+  "description": "Global CLI injection tool for Obsidian plugins",
   "type": "module",
-  "main": "src/index.ts",
   "bin": {
     "obsidian-inject": "./bin/obsidian-inject.js"
   },
@@ -13,39 +12,21 @@
     "obsidian-plugin",
     "typescript",
     "injection",
-    "autonomous",
     "cli",
-    "development-tools",
-    "plugin-utilities"
+    "development-tools"
   ],
   "scripts": {
-    "i": "yarn install",
     "acp": "tsx scripts/acp.ts",
-    "bacp": "tsx scripts/acp.ts -b",
-    "update-version": "tsx scripts/update-version-config.ts",
     "v": "tsx scripts/update-version-config.ts",
-    "update-exports": "node scripts/update-exports.js",
-    "ue": "node scripts/update-exports.js",
-    "build": "tsc -noEmit -skipLibCheck",
-    "dev": "tsx scripts/esbuild.config.ts",
-    "real": "tsx scripts/esbuild.config.ts production real",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
-    "prettier": "npx prettier --check '**/*.{ts,json}'",
-    "prettier:fix": "npx prettier --write '**/*.{ts,json}'",
     "inject-path": "tsx scripts/inject-path.ts",
     "inject-sass": "tsx scripts/inject-path.ts --sass",
     "inject-prompt": "tsx scripts/inject-prompt.ts",
     "inject": "tsx scripts/inject-prompt.ts",
     "check-plugin": "tsx scripts/inject-path.ts --dry-run",
-    "sync-template-deps": "tsx scripts/sync-template-deps.ts",
-    "upgrade-all": "yarn upgrade && tsx scripts/sync-template-deps.ts",
     "npm-publish": "tsx scripts/build-npm.ts",
-    "help": "tsx scripts/help.ts",
     "h": "tsx scripts/help.ts"
-  },
-  "exports": {
-    ".": "./src/index.ts"
   },
   "devDependencies": {
     "@types/eslint": "latest",
@@ -53,15 +34,10 @@
     "@types/semver": "^7.7.0",
     "@typescript-eslint/eslint-plugin": "^8.58.0",
     "@typescript-eslint/parser": "^8.58.0",
-    "builtin-modules": "3.3.0",
     "dedent": "^1.6.0",
-    "dotenv": "^16.4.5",
-    "esbuild": "latest",
     "eslint": "latest",
     "eslint-import-resolver-typescript": "latest",
     "jiti": "latest",
-    "obsidian": "*",
-    "obsidian-typings": "latest",
     "prettier": "^3.4.0",
     "semver": "^7.7.2",
     "tsx": "^4.21.0",

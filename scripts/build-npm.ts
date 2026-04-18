@@ -205,41 +205,25 @@ main();
  * Complete NPM workflow - Version, Commit, Push, Publish
  */
 async function buildAndPublishNpm(): Promise<void> {
-	console.log(`🚀 Obsidian Plugin Config - Complete NPM Workflow`);
-	console.log(`Full automation: version → exports → bin → commit → publish\n`);
+	console.log(`🚀 Obsidian Plugin Config - NPM Publish Workflow`);
+	console.log(`Automation: version → bin → verify → commit → publish\n`);
 
 	try {
-		// Step 0: Check NPM login
-		// console.log(`🔐 Checking NPM authentication...`);
-		// try {
-		// 	const whoami = execSync('npm whoami --registry https://registry.npmjs.org/', {
-		// 		stdio: 'pipe',
-		// 		encoding: 'utf8'
-		// 	}).trim();
-		// 	console.log(`   ✅ Logged in as: ${whoami}\n`);
-		// } catch {
-		// 	console.error(`   ❌ Not logged in to NPM. Run: npm login`);
-		// 	process.exit(1);
-		// }
 
 		// Step 1: Update version
-		console.log(`📋 Step 1/7: Updating version...`);
+		console.log(`📋 Step 1/5: Updating version...`);
 		execSync('tsx scripts/update-version-config.ts', { stdio: 'inherit' });
 
-		// Step 2: Update exports
-		console.log(`\n📦 Step 2/7: Updating exports...`);
-		execSync('yarn update-exports', { stdio: 'inherit' });
-
-		// Step 3: Generate bin file
-		console.log(`\n🔧 Step 3/7: Generating bin/obsidian-inject.js...`);
+		// Step 2: Generate bin file
+		console.log(`\n🔧 Step 2/5: Generating bin/obsidian-inject.js...`);
 		await generateBinFile();
 
-		// Step 4: Verify package and sync versions.json
-		console.log(`\n📋 Step 4/7: Verifying package...`);
+		// Step 3: Verify package
+		console.log(`\n📋 Step 3/5: Verifying package...`);
 		verifyPackage();
 
-		// Step 5: Commit and push
-		console.log(`\n📤 Step 5/7: Committing and pushing changes...`);
+		// Step 4: Commit and push
+		console.log(`\n📤 Step 4/5: Committing and pushing changes...`);
 		try {
 			execSync('echo "Publish NPM package" | tsx scripts/acp.ts -b', {
 				stdio: 'inherit'
@@ -248,14 +232,14 @@ async function buildAndPublishNpm(): Promise<void> {
 			console.log(`   ℹ️  No additional changes to commit`);
 		}
 
-		// Step 6: Publish to NPM
-		console.log(`\n📤 Step 6/7: Publishing to NPM...`);
+		// Step 5: Publish to NPM
+		console.log(`\n📤 Step 5/5: Publishing to NPM...`);
 		execSync('npm publish --registry https://registry.npmjs.org/', {
 			stdio: 'inherit'
 		});
 
-		// Step 7: Update global CLI (auto if --auto-update, else ask)
-		console.log(`\n🌍 Step 7/7: Update global CLI?`);
+		// Optional: Update global CLI
+		console.log(`\n🌍 Update global CLI?`);
 		const autoUpdate = process.argv.includes('--auto-update');
 		let doUpdate = autoUpdate;
 		if (!autoUpdate) {
@@ -296,8 +280,8 @@ function verifyPackage(): void {
 	const requiredScripts = [
 		'scripts/inject-path.ts',
 		'scripts/inject-prompt.ts',
+		'scripts/inject-core.ts',
 		'scripts/utils.ts',
-		'scripts/esbuild.config.ts',
 		'scripts/acp.ts',
 		'scripts/update-version-config.ts',
 		'scripts/help.ts'
@@ -334,26 +318,9 @@ function verifyPackage(): void {
 	}
 	console.log(`   ✅ Bin file ready`);
 
-	// Sync versions.json
-	const versionsPath = 'versions.json';
-	let versions: Record<string, string> = {};
-
-	if (fs.existsSync(versionsPath)) {
-		versions = JSON.parse(fs.readFileSync(versionsPath, 'utf8'));
-	}
-
-	if (!versions[packageJson.version]) {
-		const manifest = JSON.parse(fs.readFileSync('manifest.json', 'utf8'));
-		versions[packageJson.version] = manifest.minAppVersion;
-		fs.writeFileSync(versionsPath, JSON.stringify(versions, null, '  '), 'utf8');
-		console.log(`   ✅ Added version ${packageJson.version} to versions.json`);
-	} else {
-		console.log(`   ✅ Version ${packageJson.version} in versions.json`);
-	}
-
 	// Quick build test
-	execSync('yarn build', { stdio: 'pipe' });
-	console.log(`   ✅ Build test passed`);
+	execSync('tsc --noEmit', { stdio: 'pipe' });
+	console.log(`   ✅ TypeScript check passed`);
 }
 
 // Run the script

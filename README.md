@@ -1,6 +1,6 @@
 # Obsidian Plugin Config
 
-🎯 Injection system for standalone Obsidian plugins.
+🎯 Global CLI injection tool for Obsidian plugins.
 
 [![NPM Version](https://img.shields.io/npm/v/obsidian-plugin-config)](https://www.npmjs.com/package/obsidian-plugin-config)
 [![License](https://img.shields.io/npm/l/obsidian-plugin-config)](LICENSE)
@@ -62,7 +62,7 @@ yarn v              # Update version
 yarn release        # GitHub release
 yarn lint           # ESLint check
 yarn lint:fix       # ESLint fix
-yarn help           # Full help
+yarn h           # Full help
 ```
 
 ## SASS Support
@@ -78,7 +78,7 @@ What gets added:
 
 ## Architecture
 
-The plugin becomes **100% standalone** after injection:
+Target plugins become **100% standalone** after injection:
 
 - ✅ Scripts integrated locally (no external runtime dependency)
 - ✅ Updatable via re-injection
@@ -87,13 +87,7 @@ The plugin becomes **100% standalone** after injection:
 
 ---
 
-## Local Development (for contributors)
-
-This repo has **two roles**:
-
-1. **Injection system** — `templates/` + `scripts/inject-*.ts`
-2. **Snippet development** — `src/` is a local Obsidian plugin
-   used to develop and export reusable code (modals, helpers)
+## Development (for contributors)
 
 ### Setup
 
@@ -103,24 +97,7 @@ cd obsidian-plugin-config
 yarn install
 ```
 
-### Configure vault paths
-
-```bash
-# Edit .env
-TEST_VAULT=C:/path/to/test/vault
-REAL_VAULT=C:/path/to/real/vault
-```
-
-### Development commands
-
-```bash
-yarn dev            # Watch mode (test as local plugin)
-yarn real           # Install to real vault
-yarn lint:fix       # Fix linting issues
-yarn update-exports # Regenerate src/index.ts exports
-```
-
-### Injection commands (local)
+### Local injection commands
 
 ```bash
 yarn inject-prompt              # Interactive injection
@@ -132,16 +109,11 @@ yarn check-plugin ../my-plugin  # Dry-run only
 ### Publish workflow
 
 ```bash
-yarn npm-publish    # All-in-one (7 steps):
-                    # 0. NPM auth check
+yarn npm-publish    # All-in-one:
                     # 1. Version bump
-                    # 2. Update exports
-                    # 3. Generate bin/obsidian-inject.js
-                    # 4. Verify package
-                    # 5. Commit + push
-                    # 6. Publish to NPM
-                    # 7. Update global CLI (ask, or auto with --auto-update)
+                    # 2. Generate bin/obsidian-inject.js
+                    # 3. Verify package
+                    # 4. Commit + push
+                    # 5. Publish to NPM
+                    # 6. Update global CLI (optional)
 ```
-
-> `yarn acp` is only needed for intermediate commits —
-> not required before `yarn npm-publish`.

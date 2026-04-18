@@ -1,12 +1,5 @@
 {
   "compilerOptions": {
-    "types": ["obsidian-typings"],
-    "paths": {
-      "obsidian-typings/implementations": [
-        "./node_modules/obsidian-typings/dist/cjs/implementations.d.cts",
-        "./node_modules/obsidian-typings/dist/esm/implementations.mjs"
-      ]
-    },
     "inlineSourceMap": true,
     "inlineSources": true,
     "module": "NodeNext",
@@ -25,6 +18,6 @@
     "resolveJsonModule": true,
     "lib": ["DOM", "ES2021"]
   },
-  "include": ["./src/**/*.ts", "./scripts/**/*.ts"],
+  "include": ["./scripts/**/*.ts"],
   "exclude": ["node_modules", "eslint.config.ts"]
 }

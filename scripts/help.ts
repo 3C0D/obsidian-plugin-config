@@ -2,150 +2,88 @@
 
 console.log(`
 🎯 Obsidian Plugin Config - Quick Help
-Injection system for autonomous Obsidian plugins
+Global CLI injection tool for Obsidian plugins
 
 ═══════════════════════════════════════════════════════════════════
 
-📋 PLUGIN CONFIG COMMANDS
+📋 DEVELOPMENT COMMANDS
 
-INSTALLATION & SETUP:
-  yarn i, install                 # Install dependencies
-  yarn update-exports, ue         # Update package.json exports
-
-GIT & VERSION MANAGEMENT:
+GIT & VERSION:
   yarn acp                        # Add, commit, push
-  yarn bacp                       # Build + add, commit, push
-  yarn v, update-version          # Update version (package.json + versions.json)
+  yarn v, update-version          # Update version
 
-BUILD & TESTING:
-  yarn build                      # TypeScript check (no build needed)
-  yarn dev                        # Start development mode (watch)
-  yarn real                       # Build for production to real vault
+LINTING:
   yarn lint, lint:fix             # ESLint verification/correction
 
-INJECTION (Development phase):
-  yarn inject-prompt <path>       # Interactive injection (recommended)
-  yarn inject-path <path> --yes   # Direct injection with auto-confirm
+INJECTION (local testing):
+  yarn inject-prompt              # Interactive injection
+  yarn inject-path <path>         # Direct injection
   yarn inject <path> --sass       # Injection with SASS support
   yarn check-plugin <path>        # Verification only (dry-run)
 
-NPM PUBLISHING (all-in-one - no acp needed before):
-  yarn npm-publish                # Full workflow (7 steps):
-                                  # 0. NPM auth check
+NPM PUBLISHING:
+  yarn npm-publish                # Full workflow (5 steps):
                                   # 1. version bump
-                                  # 2. update exports
-                                  # 3. generate bin
-                                  # 4. verify package
-                                  # 5. commit + push
-                                  # 6. publish to NPM
-                                  # 7. offer global CLI update
-  yarn build-npm                  # Alias for npm-publish
-
-UPGRADE:
-  yarn upgrade-all                # yarn upgrade + sync template deps
+                                  # 2. generate bin
+                                  # 3. verify package
+                                  # 4. commit + push
+                                  # 5. publish to NPM
 
 HELP:
-  yarn help, h                    # This help
-
-═══════════════════════════════════════════════════════════════════
-
-📦 EXPORTS SYSTEM
-
-The package exposes a single entry point:
-  obsidian-plugin-config          # Main entry — re-exports all modules
-
-Src modules (auto-exported via src/index.ts):
-  modals, tools, utils
-
-After adding a new module to src/, run:
-  yarn update-exports             # Regenerates src/index.ts
+  yarn h                    # This help
 
 ═══════════════════════════════════════════════════════════════════
 
 🏗️  ARCHITECTURE
 
-TWO DISTINCT ROLES:
-  Root (src/, scripts/)           # Local plugin + NPM snippet exports
-  templates/                      # Source of truth for injection
+PURE INJECTION TOOL:
+  templates/                      # Files to inject into target plugins
+  scripts/inject-*.ts             # Injection logic
+  bin/obsidian-inject.js          # Global CLI entry point
 
 templates/ → what gets injected:
   templates/package.json          # Base deps/scripts for target plugins
   templates/package-sass.json     # Extra deps when --sass is used
-  templates/tsconfig.json         # TypeScript config for target plugins
-  templates/scripts/*             # Scripts copied to <target>/scripts/
-  templates/eslint.config.mts     # ESLint config for target plugins
+  templates/tsconfig.json         # TypeScript config
+  templates/scripts/*             # Scripts copied to target
+  templates/eslint.config.mts     # ESLint config
+  templates/.github/workflows/*   # GitHub Actions
 
 inject-core.ts — shared injection logic:
-  updatePackageJson()             # Reads templates/package.json (not hardcoded)
-  injectScripts()                 # Copies templates/ files to target
-  performInjection()              # Main orchestration function
+  updatePackageJson()             # Merges template package.json
+  injectScripts()                 # Copies template files to target
+  performInjection()              # Main orchestration
 
 inject-path.ts — CLI entry point:
   Parses --yes, --dry-run, --sass flags
 
-inject-prompt.ts — interactive entry point:
-  Prompts for target path interactively
+inject-prompt.ts — interactive entry:
+  Prompts for target path
 
 ═══════════════════════════════════════════════════════════════════
 
-🔧 DEVELOPMENT WORKFLOWS
+🔧 WORKFLOWS
 
-Plugin Config Development:
-  1. yarn i                       # Install dependencies
-  2. yarn update-exports          # Update exports
-  3. yarn dev                     # Test as plugin (optional)
-  4. yarn lint:fix                # Fix code issues
-  5. yarn v                       # Update version + commit + push
-  6. yarn npm-publish             # Publish to NPM
+Development:
+  1. Make changes to templates/ or scripts/
+  2. yarn lint:fix                # Fix code issues
+  3. yarn npm-publish             # Version, commit, publish
 
-Injection Usage:
-  Usage (from plugin directory or by path):
-    obsidian-inject               # Inject in current dir
-    obsidian-inject ../my-plugin  # Inject by path
-    obsidian-inject ../my-plugin --sass  # With SASS
+Global CLI Usage:
+  obsidian-inject                 # Inject in current dir
+  obsidian-inject ../my-plugin    # Inject by path
+  obsidian-inject ../my-plugin --sass  # With SASS
+  obsidian-inject --help          # Show help
 
-  Or with local yarn commands:
-    yarn inject-prompt            # Interactive
-    yarn inject-path ../my-plugin # Direct injection
-    yarn check-plugin ../my-plugin # Dry-run only
+Local Testing:
+  yarn inject-prompt              # Interactive
+  yarn inject-path ../my-plugin   # Direct
+  yarn check-plugin ../my-plugin  # Dry-run
 
 SASS Support (--sass flag):
-  What gets added to the target plugin:
-    ✅ esbuild-sass-plugin dependency
-    ✅ Automatic .scss file detection (src/styles.scss priority)
-    ✅ CSS cleanup after compilation
-
-  The standard esbuild.config.ts handles SASS via dynamic import —
-  no separate template needed.
-
-═══════════════════════════════════════════════════════════════════
-
-🚀 COMPLETE WORKFLOWS
-
-STANDARD DEVELOPMENT WORKFLOW:
-  1. yarn i                       # Install dependencies
-  2. Make changes to src/ or templates/
-  3. yarn lint:fix                # Fix any linting issues
-  4. yarn npm-publish             # Does EVERYTHING:
-                                  # → Ask for version bump type
-                                  # → Update exports
-                                  # → Generate bin file
-                                  # → Verify package
-                                  # → Commit + push to GitHub
-                                  # → Publish to NPM
-
-  Note: yarn acp is only needed for intermediate commits
-  (not required before npm-publish).
-
-AFTER NPM PUBLISH - Update global CLI:
-  npm install -g obsidian-plugin-config@latest --force
-  obsidian-inject                 # Test in current plugin dir
-  obsidian-inject ../test-plugin --sass
-
-TESTING AS PLUGIN (Optional):
-  1. Configure .env with TEST_VAULT and REAL_VAULT paths
-  2. yarn dev                     # Watch mode for development
-  3. yarn real                    # Install to real vault
+  ✅ esbuild-sass-plugin dependency
+  ✅ Automatic .scss detection (src/styles.scss priority)
+  ✅ CSS cleanup after compilation
 
 ═══════════════════════════════════════════════════════════════════
 
