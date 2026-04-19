@@ -1,6 +1,6 @@
 {
   "name": "obsidian-plugin-config",
-  "version": "1.6.13",
+  "version": "1.6.14",
   "description": "Global CLI injection tool for Obsidian plugins",
   "type": "module",
   "bin": {
