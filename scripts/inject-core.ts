@@ -522,7 +522,6 @@ export async function injectScripts(
 		}
 
 		try {
-			const targetFile = path.join(targetPath, destName);
 			const templateContent = copyFromLocal(src);
 
 			// For .env: merge existing values into the template
