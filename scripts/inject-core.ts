@@ -181,14 +181,14 @@ export async function showInjectionPlan(
 	console.log(`   🔍 Analyze centralized imports (manual commenting may be needed)`);
 
 	if (autoConfirm) {
-		console.log(`\n✅ Auto-confirming injection...`);
+		console.log(`\n✅ Auto-confirming all file replacements...`);
 		rl.close();
 		return true;
 	}
 
-	const result = await askConfirmation(`\nProceed with injection?`, rl);
+	// No global confirmation needed - file-by-file confirmation will happen in diffAndPromptFiles
 	rl.close();
-	return result;
+	return true;
 }
 
 /**
