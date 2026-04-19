@@ -257,7 +257,8 @@ export async function cleanOldLintFiles(targetPath: string): Promise<void> {
 		if (await isValidPath(filePath)) {
 			fs.unlinkSync(filePath);
 			console.log(
-				`🗑️  Removed old ESLint file: ${fileName} (replaced by eslint.config.ts)`
+				`🗑️  Removed old ESLint file: ${fileName} (replaced by 1
+				fig.ts)`
 			);
 		}
 	}
@@ -394,6 +395,19 @@ export async function diffAndPromptFiles(
 		if (!fs.existsSync(entry.dest)) {
 			approved.add(entry.dest);
 			continue;
+		}
+
+		// Special case: eslint.config.mts - auto-approve if old .eslintrc exists
+		if (entry.dest.endsWith('eslint.config.mts')) {
+			const oldEslintFiles = ['.eslintrc', '.eslintrc.js', '.eslintrc.json', '.eslintrc.cjs'];
+			const hasOldEslint = oldEslintFiles.some(file => 
+				fs.existsSync(path.join(targetPath, file))
+			);
+			if (hasOldEslint) {
+				console.log(`   🔄 ${path.relative(targetPath, entry.dest)} (migrating from old .eslintrc format)`);
+				approved.add(entry.dest);
+				continue;
+			}
 		}
 
 		const destContent = fs.readFileSync(entry.dest, 'utf8');
