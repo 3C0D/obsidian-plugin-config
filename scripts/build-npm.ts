@@ -317,18 +317,6 @@ async function buildAndPublishNpm(): Promise<void> {
 		}
 		console.log(`\n🎉 Complete workflow successful!`);
 		console.log(`   Test: cd any-plugin && obsidian-inject`);
-		console.log(`\n✅ Press any key to exit...`);
-		
-		// Wait for user to press any key
-		process.stdin.setRawMode(true);
-		process.stdin.resume();
-		await new Promise<void>((resolve) => {
-			process.stdin.once('data', () => {
-				process.stdin.setRawMode(false);
-				process.stdin.pause();
-				resolve();
-			});
-		});
 	} catch (error) {
 		console.error(
 			`\n❌ Workflow failed: ${error instanceof Error ? error.message : String(error)}`

@@ -10,9 +10,7 @@ import {
 	readInjectionInfo,
 	showInjectionPlan
 } from './inject-core.js';
-import { createReadlineInterface, isValidPath } from './utils.js';
-
-const rl = createReadlineInterface();
+import { isValidPath } from './utils.js';
 
 async function main(): Promise<void> {
 	try {
@@ -168,8 +166,6 @@ async function main(): Promise<void> {
 			`💥 Error: ${error instanceof Error ? error.message : String(error)}`
 		);
 		process.exit(1);
-	} finally {
-		rl.close();
 	}
 }
 
