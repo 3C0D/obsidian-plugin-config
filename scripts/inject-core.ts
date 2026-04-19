@@ -5,7 +5,6 @@ import path from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { isValidPath, gitExec } from './utils.js';
-import type { InjectionOptions } from './inject-options.js';
 
 export interface InjectionPlan {
 	targetPath: string;
@@ -277,14 +276,13 @@ export async function cleanOldLintFiles(targetPath: string): Promise<void> {
 interface FileEntry {
 	src: string; // path relative to configRoot
 	dest: string; // absolute path in target plugin
-	optionKey: keyof InjectionOptions | null; // null = always inject
 	mergeEnv?: boolean; // special .env merge logic
 }
 
 /**
  * Build the full list of files to inject, with source and destination paths
  */
-function buildFileList(targetPath: string, options: InjectionOptions): FileEntry[] {
+function buildFileList(targetPath: string): FileEntry[] {
 	const scriptsPath = path.join(targetPath, 'scripts');
 	const entries: FileEntry[] = [];
 
@@ -300,27 +298,25 @@ function buildFileList(targetPath: string, options: InjectionOptions): FileEntry
 	for (const src of scriptFiles) {
 		entries.push({
 			src,
-			dest: path.join(scriptsPath, path.basename(src)),
-			optionKey: 'scripts'
+			dest: path.join(scriptsPath, path.basename(src))
 		});
 	}
 
 	// Root config files
-	const configFileMap: Array<[string, string, keyof InjectionOptions | null, boolean?]> =
-		[
-			['templates/tsconfig.json', 'tsconfig.json', 'tsconfig'],
-			['templates/gitignore.template', '.gitignore', 'gitignore'],
-			['templates/eslint.config.mts', 'eslint.config.mts', 'eslint'],
-			['templates/.editorconfig', '.editorconfig', 'editorconfig'],
-			['templates/.prettierrc', '.prettierrc', 'prettier'],
-			['templates/npmrc.template', '.npmrc', null],
-			['templates/env.template', '.env', 'env', true]
-		];
-	for (const [src, destName, optionKey, mergeEnv] of configFileMap) {
+	const configFileMap: Array<[string, string, boolean?]> = [
+		['templates/tsconfig.json', 'tsconfig.json'],
+		['templates/gitignore.template', '.gitignore'],
+		['templates/eslint.config.mts', 'eslint.config.mts'],
+		['templates/.editorconfig', '.editorconfig'],
+		['templates/.prettierrc', '.prettierrc'],
+		['templates/.prettierignore', '.prettierignore'],
+		['templates/npmrc.template', '.npmrc'],
+		['templates/env.template', '.env', true]
+	];
+	for (const [src, destName, mergeEnv] of configFileMap) {
 		entries.push({
 			src,
 			dest: path.join(targetPath, destName),
-			optionKey,
 			mergeEnv: !!mergeEnv
 		});
 	}
@@ -328,13 +324,13 @@ function buildFileList(targetPath: string, options: InjectionOptions): FileEntry
 	// VSCode config files
 	const configVscodeMap: Array<[string, string]> = [
 		['templates/.vscode/settings.json', '.vscode/settings.json'],
-		['templates/.vscode/tasks.json', '.vscode/tasks.json']
+		['templates/.vscode/tasks.json', '.vscode/tasks.json'],
+		['templates/.vscode/extensions.json', '.vscode/extensions.json']
 	];
 	for (const [src, destName] of configVscodeMap) {
 		entries.push({
 			src,
-			dest: path.join(targetPath, destName),
-			optionKey: 'vscode'
+			dest: path.join(targetPath, destName)
 		});
 	}
 
@@ -346,8 +342,7 @@ function buildFileList(targetPath: string, options: InjectionOptions): FileEntry
 	for (const src of workflowFiles) {
 		entries.push({
 			src,
-			dest: path.join(targetPath, src.replace('templates/', '')),
-			optionKey: 'github'
+			dest: path.join(targetPath, src.replace('templates/', ''))
 		});
 	}
 
@@ -361,12 +356,12 @@ function buildFileList(targetPath: string, options: InjectionOptions): FileEntry
  */
 export async function diffAndPromptFiles(
 	targetPath: string,
-	options: InjectionOptions
+	autoConfirm: boolean
 ): Promise<Set<string>> {
 	const { askConfirmation, createReadlineInterface } = await import('./utils.js');
-	const rl = createReadlineInterface();
+	const rl = autoConfirm ? null : createReadlineInterface();
 	const configRoot = findPluginConfigRoot();
-	const entries = buildFileList(targetPath, options);
+	const entries = buildFileList(targetPath);
 	const approved = new Set<string>();
 
 	console.log(`\n🔍 Comparing files with existing content...`);
@@ -374,8 +369,6 @@ export async function diffAndPromptFiles(
 	let hasChanges = false;
 
 	for (const entry of entries) {
-		// Skip if disabled by options
-		if (entry.optionKey !== null && !options[entry.optionKey]) continue;
 		// Skip .env merge (always approved, merge logic handled separately)
 		if (entry.mergeEnv) {
 			approved.add(entry.dest);
@@ -418,17 +411,23 @@ export async function diffAndPromptFiles(
 			continue;
 		}
 
-		// Different → ask user
+		// Different → ask user (or auto-approve if autoConfirm)
 		hasChanges = true;
 		const relDest = path.relative(targetPath, entry.dest);
-		const update = await askConfirmation(
-			`   Update ${relDest}? (content differs)`,
-			rl
-		);
-		if (update) {
+		
+		if (autoConfirm) {
+			console.log(`   ✅ ${relDest} (will be updated)`);
 			approved.add(entry.dest);
 		} else {
-			console.log(`   ⏭️  Kept existing ${relDest}`);
+			const update = await askConfirmation(
+				`   Update ${relDest}? (content differs)`,
+				rl!
+			);
+			if (update) {
+				approved.add(entry.dest);
+			} else {
+				console.log(`   ⏭️  Kept existing ${relDest}`);
+			}
 		}
 	}
 
@@ -436,7 +435,7 @@ export async function diffAndPromptFiles(
 		console.log(`   ✅ All existing files are up to date`);
 	}
 
-	rl.close();
+	if (rl) rl.close();
 	return approved;
 }
 
@@ -445,7 +444,6 @@ export async function diffAndPromptFiles(
  */
 export async function injectScripts(
 	targetPath: string,
-	options: InjectionOptions,
 	approvedDests: Set<string>
 ): Promise<void> {
 	const scriptsPath = path.join(targetPath, 'scripts');
@@ -479,13 +477,15 @@ export async function injectScripts(
 		'templates/eslint.config.mts': 'eslint.config.mts',
 		'templates/.editorconfig': '.editorconfig',
 		'templates/.prettierrc': '.prettierrc',
+		'templates/.prettierignore': '.prettierignore',
 		'templates/npmrc.template': '.npmrc',
 		'templates/env.template': '.env'
 	};
 
 	const configVscodeMap: Record<string, string> = {
 		'templates/.vscode/settings.json': '.vscode/settings.json',
-		'templates/.vscode/tasks.json': '.vscode/tasks.json'
+		'templates/.vscode/tasks.json': '.vscode/tasks.json',
+		'templates/.vscode/extensions.json': '.vscode/extensions.json'
 	};
 
 	const workflowFiles = [
@@ -495,45 +495,26 @@ export async function injectScripts(
 
 	console.log(`\n📥 Copying scripts from local files...`);
 
-	if (options.scripts) {
-		for (const scriptFile of scriptFiles) {
-			try {
-				const fileName = path.basename(scriptFile);
-				const targetFile = path.join(scriptsPath, fileName);
-				if (!approvedDests.has(targetFile)) {
-					console.log(`   ⏭️  Skipped ${fileName} (kept existing)`);
-					continue;
-				}
-				const content = copyFromLocal(scriptFile);
-				fs.writeFileSync(targetFile, content, 'utf8');
-				console.log(`   ✅ ${fileName}`);
-			} catch (error) {
-				console.error(`   ❌ Failed to inject ${scriptFile}: ${error}`);
+	for (const scriptFile of scriptFiles) {
+		try {
+			const fileName = path.basename(scriptFile);
+			const targetFile = path.join(scriptsPath, fileName);
+			if (!approvedDests.has(targetFile)) {
+				console.log(`   ⏭️  Skipped ${fileName} (kept existing)`);
+				continue;
 			}
+			const content = copyFromLocal(scriptFile);
+			fs.writeFileSync(targetFile, content, 'utf8');
+			console.log(`   ✅ ${fileName}`);
+		} catch (error) {
+			console.error(`   ❌ Failed to inject ${scriptFile}: ${error}`);
 		}
-	} else {
-		console.log(`   ⏭️  Skipped (user choice)`);
 	}
 
 	console.log(`\n📥 Copying config files...`);
 
 	// Copy root config files
 	for (const [src, destName] of Object.entries(configFileMap)) {
-		// Check if this file should be injected based on options
-		const shouldInject =
-			(destName === 'tsconfig.json' && options.tsconfig) ||
-			(destName === 'eslint.config.mts' && options.eslint) ||
-			(destName === '.prettierrc' && options.prettier) ||
-			(destName === '.editorconfig' && options.editorconfig) ||
-			(destName === '.gitignore' && options.gitignore) ||
-			(destName === '.env' && options.env) ||
-			(destName === '.npmrc'); // Always inject .npmrc
-
-		if (!shouldInject) {
-			console.log(`   ⏭️  Skipped ${destName} (user choice)`);
-			continue;
-		}
-
 		// Skip if not approved by diff step
 		const targetFile = path.join(targetPath, destName);
 		if (!approvedDests.has(targetFile)) {
@@ -579,49 +560,41 @@ export async function injectScripts(
 	}
 
 	// Copy .vscode config files
-	if (options.vscode) {
-		for (const [src, destName] of Object.entries(configVscodeMap)) {
-			try {
-				const targetFile = path.join(targetPath, destName);
-				if (!approvedDests.has(targetFile)) continue;
-				const content = copyFromLocal(src);
-				const targetDir = path.dirname(targetFile);
-				if (!(await isValidPath(targetDir))) {
-					fs.mkdirSync(targetDir, { recursive: true });
-				}
-				fs.writeFileSync(targetFile, content, 'utf8');
-				console.log(`   ✅ ${destName}`);
-			} catch (error) {
-				console.error(`   ❌ Failed to inject ${destName}: ${error}`);
+	for (const [src, destName] of Object.entries(configVscodeMap)) {
+		try {
+			const targetFile = path.join(targetPath, destName);
+			if (!approvedDests.has(targetFile)) continue;
+			const content = copyFromLocal(src);
+			const targetDir = path.dirname(targetFile);
+			if (!(await isValidPath(targetDir))) {
+				fs.mkdirSync(targetDir, { recursive: true });
 			}
+			fs.writeFileSync(targetFile, content, 'utf8');
+			console.log(`   ✅ ${destName}`);
+		} catch (error) {
+			console.error(`   ❌ Failed to inject ${destName}: ${error}`);
 		}
-	} else {
-		console.log(`   ⏭️  Skipped .vscode/ (user choice)`);
 	}
 
 	console.log(`\n📥 Copying GitHub workflows from local files...`);
 
-	if (options.github) {
-		for (const workflowFile of workflowFiles) {
-			try {
-				const content = copyFromLocal(workflowFile);
-				const relativePath = workflowFile.replace('templates/', '');
-				const targetFile = path.join(targetPath, relativePath);
-				if (!approvedDests.has(targetFile)) continue;
-				const targetDir = path.dirname(targetFile);
+	for (const workflowFile of workflowFiles) {
+		try {
+			const content = copyFromLocal(workflowFile);
+			const relativePath = workflowFile.replace('templates/', '');
+			const targetFile = path.join(targetPath, relativePath);
+			if (!approvedDests.has(targetFile)) continue;
+			const targetDir = path.dirname(targetFile);
 
-				if (!(await isValidPath(targetDir))) {
-					fs.mkdirSync(targetDir, { recursive: true });
-				}
-
-				fs.writeFileSync(targetFile, content, 'utf8');
-				console.log(`   ✅ ${relativePath}`);
-			} catch (error) {
-				console.error(`   ❌ Failed to inject ${workflowFile}: ${error}`);
+			if (!(await isValidPath(targetDir))) {
+				fs.mkdirSync(targetDir, { recursive: true });
 			}
+
+			fs.writeFileSync(targetFile, content, 'utf8');
+			console.log(`   ✅ ${relativePath}`);
+		} catch (error) {
+			console.error(`   ❌ Failed to inject ${workflowFile}: ${error}`);
 		}
-	} else {
-		console.log(`   ⏭️  Skipped (user choice)`);
 	}
 }
 
@@ -630,18 +603,12 @@ export async function injectScripts(
  */
 export async function updatePackageJson(
 	targetPath: string,
-	options: InjectionOptions,
 	useSass: boolean = false
 ): Promise<void> {
 	const packageJsonPath = path.join(targetPath, 'package.json');
 
 	if (!(await isValidPath(packageJsonPath))) {
 		console.log(`❌ No package.json found, skipping package.json update`);
-		return;
-	}
-
-	if (!options.packageJson) {
-		console.log(`⏭️  Skipped package.json update (user choice)`);
 		return;
 	}
 
@@ -943,19 +910,19 @@ export async function runYarnInstall(targetPath: string): Promise<void> {
  */
 export async function performInjection(
 	targetPath: string,
-	options: InjectionOptions,
+	autoConfirm: boolean = false,
 	useSass: boolean = false
 ): Promise<void> {
 	console.log(`\n🚀 Starting injection process...`);
 
 	try {
-		const approvedDests = await diffAndPromptFiles(targetPath, options);
+		const approvedDests = await diffAndPromptFiles(targetPath, autoConfirm);
 		await cleanNpmArtifactsIfNeeded(targetPath);
 		await ensureTsxInstalled(targetPath);
-		await injectScripts(targetPath, options, approvedDests);
+		await injectScripts(targetPath, approvedDests);
 
 		console.log(`\n📦 Updating package.json...`);
-		await updatePackageJson(targetPath, options, useSass);
+		await updatePackageJson(targetPath, useSass);
 
 		await analyzeCentralizedImports(targetPath);
 

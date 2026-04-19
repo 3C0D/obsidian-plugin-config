@@ -11,7 +11,6 @@ import {
 	showInjectionPlan
 } from './inject-core.js';
 import { createReadlineInterface, isValidPath } from './utils.js';
-import { askInjectionOptions, DEFAULT_OPTIONS, getPresetOptions } from './inject-options.js';
 
 const rl = createReadlineInterface();
 
@@ -36,8 +35,6 @@ async function main(): Promise<void> {
 		const autoConfirm = args.includes('--yes') || args.includes('-y');
 		const dryRun = args.includes('--dry-run') || args.includes('--check');
 		const useSass = args.includes('--sass');
-		const interactive = args.includes('--interactive') || args.includes('-i');
-		const preset = args.find(arg => arg.startsWith('--preset='))?.split('=')[1];
 		const targetPath = args.find((arg) => !arg.startsWith('-'));
 
 		if (!targetPath) {
@@ -47,8 +44,6 @@ async function main(): Promise<void> {
 			console.error(`     --yes, -y           Auto-confirm injection`);
 			console.error(`     --dry-run           Check only (no injection)`);
 			console.error(`     --sass              Add esbuild-sass-plugin dependency`);
-			console.error(`     --interactive, -i   Choose what to inject`);
-			console.error(`     --preset=<name>     Use preset (minimal, scripts-only, config-only)`);
 			console.error(`   Shortcuts:`);
 			console.error(`     yarn check-plugin ../plugin    # Verification only`);
 			process.exit(1);
@@ -167,16 +162,7 @@ async function main(): Promise<void> {
 			process.exit(0);
 		}
 
-		// Get injection options
-		let options = DEFAULT_OPTIONS;
-		if (preset) {
-			options = getPresetOptions(preset);
-			console.log(`\n🎯 Using preset: ${preset}`);
-		} else if (interactive) {
-			options = await askInjectionOptions(rl);
-		}
-
-		await performInjection(resolvedPath, options, useSass);
+		await performInjection(resolvedPath, autoConfirm, useSass);
 	} catch (error) {
 		console.error(
 			`💥 Error: ${error instanceof Error ? error.message : String(error)}`

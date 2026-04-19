@@ -14,7 +14,6 @@ import {
 	createReadlineInterface,
 	isValidPath
 } from './utils.js';
-import { DEFAULT_OPTIONS } from './inject-options.js';
 
 const rl = createReadlineInterface();
 
@@ -96,7 +95,7 @@ async function main(): Promise<void> {
 			process.exit(0);
 		}
 
-		await performInjection(targetPath, DEFAULT_OPTIONS, useSass);
+		await performInjection(targetPath, false, useSass);
 	} catch (error) {
 		console.error(
 			`💥 Error: ${error instanceof Error ? error.message : String(error)}`

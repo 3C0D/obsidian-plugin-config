@@ -20,25 +20,24 @@ npm install -g obsidian-plugin-config@latest --force
 ## Usage (global CLI)
 
 ```bash
-# Inject in current plugin directory (with confirmation)
+# Inject in current plugin directory
+# Prompts for confirmation before replacing each existing file
 obsidian-inject
 
-# Inject by path (with confirmation)
+# Inject by path
+# Prompts for confirmation before replacing each existing file
 obsidian-inject ../my-plugin
 
 # Inject without confirmation
+# Auto-confirms all file replacements (no prompts)
 obsidian-inject ../my-plugin --no
 
-# Inject with SASS support (adds esbuild-sass-plugin)
+# Inject with SASS support
+# Adds esbuild-sass-plugin dependency and SCSS compilation
 obsidian-inject ../my-plugin --sass
 
-# Interactive mode (choose what to inject)
-obsidian-inject ../my-plugin --interactive
-
-# Use preset
-obsidian-inject ../my-plugin --preset=minimal
-
-# Verification only (no changes)
+# Verification only (dry-run)
+# Shows what would be injected without making any changes
 obsidian-inject ../my-plugin --dry-run
 
 # Help
@@ -49,8 +48,6 @@ obsidian-inject --help
 
 - `--no`, `-n` - Skip confirmation prompts (auto-confirm)
 - `--sass` - Add SASS support (esbuild-sass-plugin)
-- `--interactive`, `-i` - Choose what to inject interactively
-- `--preset=<name>` - Use preset (minimal, scripts-only, config-only)
 - `--dry-run` - Verification only (no changes)
 
 ## What is injected
