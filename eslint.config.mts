@@ -8,8 +8,7 @@ import type {
 const configs: Linter.Config[] = [
   {
     ignores: [
-      "eslint.config.mts",
-      "templates/**"
+      "eslint.config.mts"
     ]
   },
   {

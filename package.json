@@ -20,6 +20,8 @@
     "v": "tsx scripts/update-version-config.ts",
     "lint": "eslint . --ext .ts",
     "lint:fix": "eslint . --ext .ts --fix",
+    "prettier": "prettier --check '**/*.{ts,json}'",
+    "prettier:fix": "prettier --write '**/*.{ts,json}'",
     "inject-path": "tsx scripts/inject-path.ts",
     "inject-sass": "tsx scripts/inject-path.ts --sass",
     "inject-prompt": "tsx scripts/inject-prompt.ts",

@@ -2,7 +2,8 @@
   "type": "module",
   "engines": {
     "npm": "please-use-yarn",
-    "yarn": ">=1.22.0"
+    "yarn": ">=1.22.0",
+    "node": ">=16.0.0"
   },
   "scripts": {
     "start": "yarn install && yarn dev",
@@ -38,9 +39,14 @@
     "obsidian": "*",
     "obsidian-typings": "latest",
     "prettier": "latest",
-    "tslib": "2.4.0",
     "semver": "latest",
+    "tslib": "2.4.0",
     "tsx": "^4.21.0",
     "typescript": "^5.8.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/3C0D/obsidian-plugin-config.git"
+  },
+  "author": "3C0D"
 }
