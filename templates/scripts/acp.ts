@@ -7,7 +7,7 @@ import {
   createReadlineInterface,
   gitExec,
   ensureGitSync
-} from './utils.js';
+} from './utils.ts';
 
 const rl = createReadlineInterface();
 

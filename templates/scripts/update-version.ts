@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'fs/promises';
 import dedent from 'dedent';
-import { askQuestion, createReadlineInterface, gitExec, ensureGitSync } from './utils.js';
+import { askQuestion, createReadlineInterface, gitExec, ensureGitSync } from './utils.ts';
 
 // Simple version increment functions to avoid semver compatibility issues
 function incrementVersion(version: string, type: 'patch' | 'minor' | 'major'): string {

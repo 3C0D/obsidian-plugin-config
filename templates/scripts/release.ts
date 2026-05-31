@@ -7,7 +7,7 @@ import {
   askQuestion,
   createReadlineInterface,
   ensureGitSync
-} from './utils.js';
+} from './utils.ts';
 
 const rl = createReadlineInterface();
 

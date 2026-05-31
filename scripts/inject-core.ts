@@ -154,7 +154,7 @@ export async function showInjectionPlan(
   autoConfirm: boolean = false,
   useSass: boolean = false
 ): Promise<boolean> {
-  const { askConfirmation, createReadlineInterface } = await import('./utils.js');
+  const { createReadlineInterface } = await import('./utils.js');
   const rl = createReadlineInterface();
 
   console.log(`\n🎯 Injection Plan for: ${plan.targetPath}`);
