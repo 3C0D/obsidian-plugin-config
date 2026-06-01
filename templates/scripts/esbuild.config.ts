@@ -1,4 +1,3 @@
-// to update
 import esbuild from 'esbuild';
 import process from 'process';
 import { config } from 'dotenv';

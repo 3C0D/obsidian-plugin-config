@@ -105,11 +105,11 @@ Inject .env (template)? [Y/n]: y
 Proceed with these options? [Y/n]: y
 ```
 
-## Fichiers Modifiés
+## Fichiers Concernés
 
-1. **scripts/inject-options.ts** (nouveau) - Gestion des options
-2. **scripts/inject-core.ts** - Ajout paramètre `options` aux fonctions
-3. **scripts/inject-path.ts** - Ajout flags `--interactive` et `--preset`
+1. **scripts/inject-core.ts** - Logique d'injection principale (options support)
+2. **scripts/inject-prompt.ts** - Entrée interactive
+3. **scripts/inject-path.ts** - Entrée CLI avec flags `--interactive` et `--preset`
 
 ## Cas d'Usage
 

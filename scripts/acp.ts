@@ -53,7 +53,7 @@ async function main(): Promise<void> {
 
     try {
       gitExec(`git push origin ${currentBranch}`);
-      console.log('Commit and push successful.');
+      console.log(`Commit and push successful to origin/${currentBranch}`);
     } catch {
       // new branch
       console.log(`New branch detected. Setting upstream for ${currentBranch}...`);

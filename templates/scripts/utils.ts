@@ -1,4 +1,3 @@
-// to update
 import { access, mkdir, copyFile, rm, writeFile } from 'fs/promises';
 import { existsSync, readFileSync } from 'fs';
 import path from 'path';

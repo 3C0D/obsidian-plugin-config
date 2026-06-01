@@ -1,6 +1,4 @@
 import { execSync } from 'child_process';
-import fs from 'fs';
-import path from 'path';
 import {
   askQuestion,
   cleanInput,
@@ -11,32 +9,12 @@ import {
 
 const rl = createReadlineInterface();
 
-// Check if we're in the centralized config repo
-function isInCentralizedRepo(): boolean {
-  const packageJsonPath = path.join(process.cwd(), 'package.json');
-  if (!fs.existsSync(packageJsonPath)) return false;
-
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-  return packageJson.name === 'obsidian-plugin-config';
-}
-
 async function main(): Promise<void> {
   try {
     if (process.argv.includes('-b')) {
       console.log('Building...');
       gitExec('yarn build');
       console.log('Build successful.');
-    }
-
-    // Only update exports if we're in the centralized repo and not explicitly disabled
-    if (
-      !process.argv.includes('-ne') &&
-      !process.argv.includes('--no-exports') &&
-      isInCentralizedRepo()
-    ) {
-      console.log('Updating exports...');
-      gitExec('yarn run update-exports');
-      console.log('Exports updated.');
     }
 
     const input: string = await askQuestion('Enter commit message: ', rl);

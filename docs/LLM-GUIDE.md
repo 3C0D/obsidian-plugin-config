@@ -66,11 +66,18 @@ Creates `.injection-info.json` in target with version and date.
 
 Scripts in `templates/scripts/` that get copied to target plugins:
 
-- `esbuild.config.ts` — build configuration (handles SASS automatically)
+**Build system (modular):**
+- `esbuild.config.ts` — build entry point, orchestrates all build modules
+- `constants.ts` — shared constants (external deps list, banner, REST port)
+- `env.ts` — environment validation, manifest check, build path resolution
+- `reload.ts` — Obsidian hot-reload via Local REST API
+- `typingsPlugin.ts` — esbuild plugin for obsidian-typings resolution
+- `utils.ts` — shared utilities (readline, file ops, git, vault path helpers)
+
+**Workflow scripts:**
 - `acp.ts` — add, commit, push workflow
 - `update-version.ts` — version bump utility
 - `release.ts` — GitHub release automation
-- `utils.ts` — shared utilities
 - `help.ts` — help documentation
 
 ---
@@ -83,6 +90,8 @@ When `--sass` flag is used:
 2. Adds `esbuild-sass-plugin` dependency
 3. The injected `esbuild.config.ts` automatically detects `.scss` files and uses the plugin
 
+Without `--sass`, the build still works — the SASS import in `esbuild.config.ts` is conditional and only activates if `.scss` files exist.
+
 ---
 
 ## What NOT to do
@@ -90,6 +99,7 @@ When `--sass` flag is used:
 - ❌ Do not hardcode deps/scripts in `inject-core.ts` — they must come from `templates/package.json`
 - ❌ Do not modify root config files thinking it will affect injected plugins — always modify `templates/`
 - ❌ Do not add `obsidian-plugin-config` as a dependency in `templates/package.json` — injected plugins are standalone
+- ❌ Do not inject `esbuild.config.ts` without its dependencies (`constants.ts`, `env.ts`, `reload.ts`, `typingsPlugin.ts`, `utils.ts`) — they are all required
 
 ---
 

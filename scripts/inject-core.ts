@@ -175,7 +175,7 @@ export async function showInjectionPlan(
   }
 
   console.log(`\n📋 Will inject:`);
-  console.log(`   ✅ Local scripts (utils.ts, esbuild.config.ts, acp.ts, etc.)`);
+  console.log(`   ✅ Local scripts (esbuild.config.ts, utils.ts, env.ts, constants.ts, etc.)`);
   console.log(`   ✅ Updated package.json scripts`);
   console.log(`   ✅ Required dependencies`);
   console.log(`   🔍 Analyze centralized imports (manual commenting may be needed)`);
@@ -204,7 +204,11 @@ export async function cleanOldScripts(
     'acp',
     'update-version',
     'release',
-    'help'
+    'help',
+    'constants',
+    'env',
+    'reload',
+    'typingsPlugin'
   ];
   const extensions = ['.ts', '.mts', '.js', '.mjs'];
 
@@ -293,7 +297,11 @@ function buildFileList(targetPath: string): FileEntry[] {
     'templates/scripts/acp.ts',
     'templates/scripts/update-version.ts',
     'templates/scripts/release.ts',
-    'templates/scripts/help.ts'
+    'templates/scripts/help.ts',
+    'templates/scripts/constants.ts',
+    'templates/scripts/env.ts',
+    'templates/scripts/reload.ts',
+    'templates/scripts/typingsPlugin.ts'
   ];
   for (const src of scriptFiles) {
     entries.push({
@@ -469,7 +477,11 @@ export async function injectScripts(
     'templates/scripts/acp.ts',
     'templates/scripts/update-version.ts',
     'templates/scripts/release.ts',
-    'templates/scripts/help.ts'
+    'templates/scripts/help.ts',
+    'templates/scripts/constants.ts',
+    'templates/scripts/env.ts',
+    'templates/scripts/reload.ts',
+    'templates/scripts/typingsPlugin.ts'
   ];
 
   // Files that need value-preserving merge instead
