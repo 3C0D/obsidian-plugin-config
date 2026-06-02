@@ -1,6 +1,6 @@
 {
   "name": "obsidian-plugin-config",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "description": "Global CLI injection tool for Obsidian plugins",
   "type": "module",
   "bin": {
@@ -23,7 +23,6 @@
     "prettier": "prettier --check '**/*.{ts,json}'",
     "prettier:fix": "prettier --write '**/*.{ts,json}'",
     "inject-path": "tsx scripts/inject-path.ts",
-    "inject-sass": "tsx scripts/inject-path.ts --sass",
     "inject-prompt": "tsx scripts/inject-prompt.ts",
     "inject": "tsx scripts/inject-prompt.ts",
     "check-plugin": "tsx scripts/inject-path.ts --dry-run",
