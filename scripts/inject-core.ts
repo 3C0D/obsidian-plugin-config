@@ -151,8 +151,7 @@ export async function ensurePluginConfigClean(): Promise<void> {
  */
 export async function showInjectionPlan(
   plan: InjectionPlan,
-  autoConfirm: boolean = false,
-  useSass: boolean = false
+  autoConfirm: boolean = false
 ): Promise<boolean> {
   const { createReadlineInterface } = await import('./utils.js');
   const rl = createReadlineInterface();
@@ -165,9 +164,6 @@ export async function showInjectionPlan(
     `📂 Scripts folder: ${plan.hasScriptsFolder ? '✅ (will be updated)' : '❌ (will be created)'}`
   );
   console.log(`🔌 Obsidian plugin: ${plan.isObsidianPlugin ? '✅' : '❌'}`);
-  console.log(
-    `🎨 SASS support: ${useSass ? '✅ (esbuild-sass-plugin will be added)' : '❌'}`
-  );
 
   if (!plan.isObsidianPlugin) {
     console.log(`\n⚠️  Warning: This doesn't appear to be a valid Obsidian plugin`);
@@ -178,7 +174,6 @@ export async function showInjectionPlan(
   console.log(`   ✅ Local scripts (esbuild.config.ts, utils.ts, env.ts, constants.ts, etc.)`);
   console.log(`   ✅ Updated package.json scripts`);
   console.log(`   ✅ Required dependencies`);
-  console.log(`   🔍 Analyze centralized imports (manual commenting may be needed)`);
 
   if (autoConfirm) {
     console.log(`\n✅ Auto-confirming all file replacements...`);
@@ -620,8 +615,7 @@ export async function injectScripts(
  * Update package.json with autonomous configuration
  */
 export async function updatePackageJson(
-  targetPath: string,
-  useSass: boolean = false
+  targetPath: string
 ): Promise<void> {
   const packageJsonPath = path.join(targetPath, 'package.json');
 
@@ -637,13 +631,6 @@ export async function updatePackageJson(
     const templatePkg = JSON.parse(
       fs.readFileSync(path.join(configRoot, 'templates/package.json'), 'utf8')
     );
-
-    if (useSass) {
-      const sassPkg = JSON.parse(
-        fs.readFileSync(path.join(configRoot, 'templates/package-sass.json'), 'utf8')
-      );
-      Object.assign(templatePkg.devDependencies, sassPkg.devDependencies);
-    }
 
     const obsoleteScripts = ['version'];
     for (const script of obsoleteScripts) {
@@ -685,66 +672,6 @@ export async function updatePackageJson(
     );
   } catch (error) {
     console.error(`   ❌ Failed to update package.json: ${error}`);
-  }
-}
-
-/**
- * Analyze centralized imports in source files (without modifying)
- */
-export async function analyzeCentralizedImports(targetPath: string): Promise<void> {
-  const srcPath = path.join(targetPath, 'src');
-
-  if (!(await isValidPath(srcPath))) {
-    console.log(`   ℹ️  No src directory found`);
-    return;
-  }
-
-  console.log(`\n🔍 Analyzing centralized imports...`);
-
-  try {
-    const findTsFiles = (dir: string): string[] => {
-      const files: string[] = [];
-      for (const item of fs.readdirSync(dir)) {
-        const fullPath = path.join(dir, item);
-        if (fs.statSync(fullPath).isDirectory()) {
-          files.push(...findTsFiles(fullPath));
-        } else if (item.endsWith('.ts') || item.endsWith('.tsx')) {
-          files.push(fullPath);
-        }
-      }
-      return files;
-    };
-
-    const tsFiles = findTsFiles(srcPath);
-    let filesWithImports = 0;
-
-    for (const filePath of tsFiles) {
-      try {
-        const content = fs.readFileSync(filePath, 'utf8');
-        const importRegex = /import\s+.*from\s+["']obsidian-plugin-config[^"']*["']/g;
-        if (importRegex.test(content)) {
-          filesWithImports++;
-          console.log(
-            `   ⚠️  ${path.relative(targetPath, filePath)} - contains centralized imports`
-          );
-        }
-      } catch (error) {
-        console.warn(
-          `   ⚠️  Could not analyze ${path.relative(targetPath, filePath)}: ${error}`
-        );
-      }
-    }
-
-    if (filesWithImports === 0) {
-      console.log(`   ✅ No centralized imports found`);
-    } else {
-      console.log(`   ⚠️  Found ${filesWithImports} files with centralized imports`);
-      console.log(
-        `   💡 You may need to manually comment these imports for the plugin to work`
-      );
-    }
-  } catch (error) {
-    console.error(`   ❌ Failed to analyze imports: ${error}`);
   }
 }
 
@@ -922,8 +849,7 @@ export async function runYarnInstall(targetPath: string): Promise<void> {
  */
 export async function performInjection(
   targetPath: string,
-  autoConfirm: boolean = false,
-  useSass: boolean = false
+  autoConfirm: boolean = false
 ): Promise<void> {
   console.log(`\n🚀 Starting injection process...`);
 
@@ -934,9 +860,7 @@ export async function performInjection(
     await injectScripts(targetPath, approvedDests);
 
     console.log(`\n📦 Updating package.json...`);
-    await updatePackageJson(targetPath, useSass);
-
-    await analyzeCentralizedImports(targetPath);
+    await updatePackageJson(targetPath);
 
     console.log(`\n📁 Creating required directories...`);
     await createRequiredDirectories(targetPath);

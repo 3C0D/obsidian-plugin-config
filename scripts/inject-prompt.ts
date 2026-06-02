@@ -21,8 +21,6 @@ async function promptForTargetPath(): Promise<string> {
   console.log(`\n📁 Select target plugin directory:`);
   console.log(`   Common paths (copy-paste ready):`);
   console.log(`   - ../test-sample-plugin`);
-  console.log(`   - ../sample-plugin-modif`);
-  console.log(`   - ../my-obsidian-plugin`);
   console.log(`   💡 Tip: You can paste paths with or without quotes`);
 
   while (true) {
@@ -54,7 +52,6 @@ async function main(): Promise<void> {
     console.log(`📥 Inject autonomous configuration with prompts\n`);
 
     const args = process.argv.slice(2);
-    const useSass = args.includes('--sass');
     let targetPath: string;
 
     const pathArg = args.find((arg) => !arg.startsWith('-'));
@@ -88,14 +85,14 @@ async function main(): Promise<void> {
     console.log(`\n🔍 Analyzing plugin...`);
     const plan = await analyzePlugin(targetPath);
 
-    const confirmed = await showInjectionPlan(plan, false, useSass);
+    const confirmed = await showInjectionPlan(plan, false);
 
     if (!confirmed) {
       console.log(`❌ Injection cancelled by user`);
       process.exit(0);
     }
 
-    await performInjection(targetPath, false, useSass);
+    await performInjection(targetPath, false);
   } catch (error) {
     console.error(`💥 Error: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);

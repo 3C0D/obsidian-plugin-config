@@ -52,19 +52,16 @@ USAGE:
   obsidian-inject                    # Inject in current directory (with confirmation)
   obsidian-inject <path>             # Inject by path (with confirmation)
   obsidian-inject <path> --no        # Inject without confirmation
-  obsidian-inject <path> --sass      # Inject with SASS support
   obsidian-inject --help, -h         # Show this help
 
 OPTIONS:
   --no, -n                           # Skip confirmation prompts (auto-confirm all)
-  --sass                             # Add SASS support (esbuild-sass-plugin)
   --dry-run                          # Verification only (no changes)
 
 EXAMPLES:
   cd my-plugin && obsidian-inject
   obsidian-inject ../my-other-plugin
   obsidian-inject ../my-plugin --no
-  obsidian-inject ../my-plugin --sass
   obsidian-inject "C:\\\\Users\\\\dev\\\\plugins\\\\my-plugin"
 
 WHAT IS INJECTED:
@@ -73,7 +70,6 @@ WHAT IS INJECTED:
   ✅ Config files (tsconfig, eslint, prettier, vscode, github)
   ✅ Yarn protection enforced
   ✅ Automatic dependency installation
-  🎨 SASS support (with --sass option): esbuild-sass-plugin + SCSS compilation
 
 ARCHITECTURE:
   - Plugin becomes AUTONOMOUS with local scripts
@@ -102,7 +98,6 @@ function main() {
 
   // Parse arguments
   const noConfirm = args.includes('--no') || args.includes('-n');
-  const sassFlag = args.includes('--sass');
   const dryRun = args.includes('--dry-run');
   const pathArg = args.find(arg => !arg.startsWith('-'));
 
@@ -117,7 +112,6 @@ function main() {
 
   console.log(\`🎯 Obsidian Plugin Config - Global Injection\`);
   console.log(\`📁 Target: \${targetPath}\`);
-  console.log(\`🎨 SASS: \${sassFlag ? 'Enabled' : 'Disabled'}\`);
   console.log(\`❓ Confirmation: \${noConfirm ? 'Disabled (auto-confirm)' : 'Enabled'}\`);
   console.log(\`📦 From: \${packageRoot}\\n\`);
 
@@ -163,7 +157,6 @@ function main() {
     }
 
     // Check if tsx is available locally in target
-    let tsxCommand = 'npx tsx';
     try {
       execSync('npx tsx --version', {
         cwd: targetPath,
@@ -188,10 +181,9 @@ function main() {
     }
 
     // Execute the injection script with tsx
-    const sassOption = sassFlag ? ' --sass' : '';
     const yesOption = noConfirm ? ' --yes' : '';
     const dryRunOption = dryRun ? ' --dry-run' : '';
-    const command = \`npx tsx "\${injectScriptPath}" "\${targetPath}"\${yesOption}\${sassOption}\${dryRunOption}\`;
+    const command = \`npx tsx "\${injectScriptPath}" "\${targetPath}"\${yesOption}\${dryRunOption}\`;
 
     execSync(command, {
       stdio: 'inherit',
@@ -215,33 +207,50 @@ main();
 }
 
 /**
- * Check NPM authentication and prompt login if needed
+ * Ensure NPM authentication, prompting login if needed, then verifying success.
  */
 async function ensureNpmAuth(): Promise<void> {
   console.log(`🔐 Checking NPM authentication...`);
 
-  try {
-    const whoami = execSync('npm whoami --registry https://registry.npmjs.org/', {
-      stdio: 'pipe',
-      encoding: 'utf8'
-    }).trim();
-    console.log(`   ✅ Logged in as: ${whoami}\n`);
-  } catch {
-    console.log(`   ⚠️  Not logged in to NPM\n`);
-    console.log(`🔑 Please login to NPM to publish the package`);
-    console.log(`   Opening browser for authentication...\n`);
-
+  const checkWhoami = (): string | null => {
     try {
-      execSync('npm login --auth-type=web --registry https://registry.npmjs.org/', {
-        stdio: 'inherit'
-      });
-      console.log(`\n   ✅ Successfully logged in to NPM\n`);
+      return execSync('npm whoami --registry https://registry.npmjs.org/', {
+        stdio: 'pipe',
+        encoding: 'utf8'
+      }).trim();
     } catch {
-      console.error(`\n   ❌ NPM login failed`);
-      console.error(`   Please run 'npm login' manually and try again`);
-      throw new Error('NPM authentication required');
+      return null;
     }
+  };
+
+  const whoami = checkWhoami();
+  if (whoami) {
+    console.log(`   ✅ Logged in as: ${whoami}\n`);
+    return;
   }
+
+  console.log(`   ⚠️  Not logged in to NPM`);
+  console.log(`🔑 Please login to NPM to publish the package`);
+  console.log(`   Opening browser for authentication...\n`);
+
+  try {
+    execSync('npm login --auth-type=web --registry https://registry.npmjs.org/', {
+      stdio: 'inherit'
+    });
+  } catch {
+    console.error(`\n   ❌ NPM login failed`);
+    console.error(`   Please run 'npm login' manually and try again`);
+    throw new Error('NPM authentication required');
+  }
+
+  // Verify login actually succeeded
+  const whoamiAfter = checkWhoami();
+  if (!whoamiAfter) {
+    console.error(`\n   ❌ Login appeared to complete but authentication could not be verified`);
+    throw new Error('NPM authentication required');
+  }
+
+  console.log(`\n   ✅ Successfully logged in as: ${whoamiAfter}\n`);
 }
 
 /**
