@@ -163,7 +163,6 @@ function main() {
     }
 
     // Check if tsx is available locally in target
-    let tsxCommand = 'npx tsx';
     try {
       execSync('npx tsx --version', {
         cwd: targetPath,
@@ -215,33 +214,50 @@ main();
 }
 
 /**
- * Check NPM authentication and prompt login if needed
+ * Ensure NPM authentication, prompting login if needed, then verifying success.
  */
 async function ensureNpmAuth(): Promise<void> {
   console.log(`🔐 Checking NPM authentication...`);
 
-  try {
-    const whoami = execSync('npm whoami --registry https://registry.npmjs.org/', {
-      stdio: 'pipe',
-      encoding: 'utf8'
-    }).trim();
-    console.log(`   ✅ Logged in as: ${whoami}\n`);
-  } catch {
-    console.log(`   ⚠️  Not logged in to NPM\n`);
-    console.log(`🔑 Please login to NPM to publish the package`);
-    console.log(`   Opening browser for authentication...\n`);
-
+  const checkWhoami = (): string | null => {
     try {
-      execSync('npm login --auth-type=web --registry https://registry.npmjs.org/', {
-        stdio: 'inherit'
-      });
-      console.log(`\n   ✅ Successfully logged in to NPM\n`);
+      return execSync('npm whoami --registry https://registry.npmjs.org/', {
+        stdio: 'pipe',
+        encoding: 'utf8'
+      }).trim();
     } catch {
-      console.error(`\n   ❌ NPM login failed`);
-      console.error(`   Please run 'npm login' manually and try again`);
-      throw new Error('NPM authentication required');
+      return null;
     }
+  };
+
+  const whoami = checkWhoami();
+  if (whoami) {
+    console.log(`   ✅ Logged in as: ${whoami}\n`);
+    return;
   }
+
+  console.log(`   ⚠️  Not logged in to NPM`);
+  console.log(`🔑 Please login to NPM to publish the package`);
+  console.log(`   Opening browser for authentication...\n`);
+
+  try {
+    execSync('npm login --auth-type=web --registry https://registry.npmjs.org/', {
+      stdio: 'inherit'
+    });
+  } catch {
+    console.error(`\n   ❌ NPM login failed`);
+    console.error(`   Please run 'npm login' manually and try again`);
+    throw new Error('NPM authentication required');
+  }
+
+  // Verify login actually succeeded
+  const whoamiAfter = checkWhoami();
+  if (!whoamiAfter) {
+    console.error(`\n   ❌ Login appeared to complete but authentication could not be verified`);
+    throw new Error('NPM authentication required');
+  }
+
+  console.log(`\n   ✅ Successfully logged in as: ${whoamiAfter}\n`);
 }
 
 /**

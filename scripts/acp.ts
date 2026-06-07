@@ -11,7 +11,7 @@ import {
 
 const rl = createReadlineInterface();
 
-// Check if we're in the centralized config repo
+/** Check if we're in the centralized config repo */
 function isInCentralizedRepo(): boolean {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
   if (!fs.existsSync(packageJsonPath)) return false;

@@ -90,7 +90,6 @@ async function main(): Promise<void> {
       console.log(`   ✅ Local scripts (utils.ts, esbuild.config.ts, acp.ts, etc.)`);
       console.log(`   ✅ Updated package.json scripts`);
       console.log(`   ✅ Required dependencies`);
-      console.log(`   🔍 Analyze centralized imports (manual commenting may be needed)`);
 
       const injectionInfo = readInjectionInfo(resolvedPath);
 

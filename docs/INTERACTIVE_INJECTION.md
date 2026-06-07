@@ -1,137 +1,76 @@
-# Système d'Injection Interactive
+# Injection interactive
 
-## ✅ Fonctionnalité Ajoutée
+L'injection est **interactive par défaut** : elle compare chaque fichier du template
+avec le fichier existant de la cible et ne demande confirmation que lorsque le contenu
+diffère.
 
-Un système de sélection interactive permet maintenant de choisir quels fichiers injecter.
-
-## Utilisation
-
-### Mode par défaut (tout injecter)
-```bash
-obsidian-inject ../my-plugin
-```
-
-### Mode interactif (choisir quoi injecter)
-```bash
-obsidian-inject ../my-plugin --interactive
-# ou
-obsidian-inject ../my-plugin -i
-```
-
-### Presets rapides
-```bash
-# Minimal : scripts + package.json + .env
-obsidian-inject ../my-plugin --preset=minimal
-
-# Scripts uniquement
-obsidian-inject ../my-plugin --preset=scripts-only
-
-# Config uniquement (tsconfig, eslint, prettier, etc.)
-obsidian-inject ../my-plugin --preset=config-only
-```
-
-## Options Disponibles
-
-Le mode interactif permet de choisir :
-
-1. **scripts** - Scripts (esbuild.config.ts, acp.ts, utils.ts, etc.)
-2. **packageJson** - package.json (scripts & dependencies)
-3. **tsconfig** - tsconfig.json
-4. **eslint** - eslint.config.mts
-5. **prettier** - .prettierrc & .prettierignore
-6. **editorconfig** - .editorconfig
-7. **vscode** - .vscode/ (settings.json, tasks.json, extensions.json)
-8. **github** - .github/workflows/ (release workflow)
-9. **gitignore** - .gitignore
-10. **env** - .env (template)
-
-## Presets
-
-### minimal
-- ✅ scripts
-- ✅ packageJson
-- ✅ env
-- ❌ Tout le reste
-
-### scripts-only
-- ✅ scripts uniquement
-- ❌ Tout le reste
-
-### config-only
-- ✅ tsconfig
-- ✅ eslint
-- ✅ prettier
-- ✅ editorconfig
-- ✅ vscode
-- ✅ gitignore
-- ❌ scripts, packageJson, github, env
-
-## Exemple d'Utilisation
+## Points d'entrée
 
 ```bash
-# Lancer en mode interactif
-$ obsidian-inject ../my-plugin -i
+# CLI globale
+obsidian-inject                 # Injection dans le dossier courant
+obsidian-inject ../my-plugin    # Injection par chemin
 
-🎯 Injection Options
-Select what you want to inject (default: all)
-
-Use default options (inject everything)? [Y/n]: n
-
-📋 Select individual options:
-
-Inject Scripts (esbuild.config.ts, acp.ts, utils.ts, etc.)? [Y/n]: y
-Inject package.json (scripts & dependencies)? [Y/n]: y
-Inject tsconfig.json? [Y/n]: n
-Inject eslint.config.mts? [Y/n]: n
-Inject .prettierrc & .prettierignore? [Y/n]: y
-Inject .editorconfig? [Y/n]: y
-Inject .vscode/ (settings.json, tasks.json, extensions.json)? [Y/n]: y
-Inject .github/workflows/ (release workflow)? [Y/n]: n
-Inject .gitignore? [Y/n]: y
-Inject .env (template)? [Y/n]: y
-
-📋 Selected options:
-   ✅ Scripts (esbuild.config.ts, acp.ts, utils.ts, etc.)
-   ✅ package.json (scripts & dependencies)
-   ❌ tsconfig.json
-   ❌ eslint.config.mts
-   ✅ .prettierrc & .prettierignore
-   ✅ .editorconfig
-   ✅ .vscode/ (settings.json, tasks.json, extensions.json)
-   ❌ .github/workflows/ (release workflow)
-   ✅ .gitignore
-   ✅ .env (template)
-
-Proceed with these options? [Y/n]: y
+# Scripts locaux (développement de ce repo)
+yarn inject-prompt              # Demande le chemin du plugin cible, puis injecte
+yarn inject-path ../my-plugin   # Injection directe par chemin
+yarn check-plugin ../my-plugin  # Dry-run (vérification seule, aucune modification)
 ```
 
-## Fichiers Concernés
+## Comportement fichier par fichier
 
-1. **scripts/inject-core.ts** - Logique d'injection principale (options support)
-2. **scripts/inject-prompt.ts** - Entrée interactive
-3. **scripts/inject-path.ts** - Entrée CLI avec flags `--interactive` et `--preset`
+Pendant l'injection, chaque fichier est traité ainsi :
 
-## Cas d'Usage
+- **La cible n'existe pas encore** → le fichier est injecté sans demander.
+- **Contenu identique** → ignoré silencieusement (`✅ ... (unchanged)`).
+- **Contenu différent** → l'outil demande `Update <fichier>? (content differs)`.
+  - `y` → le fichier est remplacé.
+  - `n` → le fichier existant est conservé (`⏭️ Kept existing ...`).
 
-### Ne pas écraser esbuild.config.ts existant
+Cas particuliers :
+
+- `.env` est toujours **fusionné** : le template est réécrit en préservant les
+  valeurs déjà renseignées (chemins de vault, etc.).
+- `.npmrc` est toujours injecté (protection Yarn).
+- `eslint.config.mts` est approuvé automatiquement si un ancien `.eslintrc*`
+  est détecté (migration depuis l'ancien format).
+
+## Options
+
 ```bash
-obsidian-inject ../my-plugin -i
-# Répondre 'n' à "Inject Scripts"
+# Auto-confirmer tous les remplacements (aucune question)
+obsidian-inject ../my-plugin --no      # CLI globale : --no / -n
+yarn inject-path ../my-plugin --yes    # Scripts locaux : --yes / -y
+
+# Vérification seule (n'écrit rien)
+obsidian-inject ../my-plugin --dry-run
 ```
 
-### Injecter uniquement les configs
-```bash
-obsidian-inject ../my-plugin --preset=config-only
-```
+| Option           | Effet                                              |
+| ---------------- | -------------------------------------------------- |
+| `--no`, `-n`     | (CLI globale) auto-confirme tous les remplacements |
+| `--yes`, `-y`    | (scripts locaux) auto-confirme tous les remplacements |
+| `--dry-run`      | vérification seule, aucune modification            |
 
-### Tout sauf GitHub workflows
-```bash
-obsidian-inject ../my-plugin -i
-# Répondre 'n' uniquement à ".github/workflows/"
-```
+## Ce qui est injecté
 
-## Notes
+Tous les fichiers du template sont pris en compte à chaque injection (pas de
+sélection par composant) :
 
-- Le fichier `.npmrc` est toujours injecté (protection Yarn)
-- En mode non-interactif, tout est injecté par défaut
-- Les options peuvent être combinées : `--interactive --sass`
+- `templates/scripts/*` → `<cible>/scripts/`
+- `templates/tsconfig.json`, `eslint.config.mts`, `.editorconfig`,
+  `.prettierrc`, `.prettierignore`, `.npmrc`, `.env`
+- `templates/.vscode/*`
+- `templates/.github/workflows/*`
+- `templates/gitignore.template` → `<cible>/.gitignore`
+
+La confirmation fichier par fichier permet de conserver un fichier existant
+(par exemple un `esbuild.config.ts` personnalisé) en répondant `n` lorsque la
+question apparaît.
+
+## Fichiers concernés
+
+1. **scripts/inject-core.ts** — logique d'injection (`diffAndPromptFiles`,
+   `injectScripts`, `updatePackageJson`, `performInjection`).
+2. **scripts/inject-prompt.ts** — entrée interactive (demande le chemin).
+3. **scripts/inject-path.ts** — entrée CLI (parse `--yes`, `--dry-run`).

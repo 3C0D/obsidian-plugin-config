@@ -4,7 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import { isValidPath, gitExec } from './utils.js';
+import { isValidPath, gitExec } from './utils.ts';
 
 export interface InjectionPlan {
   targetPath: string;
@@ -154,7 +154,7 @@ export async function showInjectionPlan(
   autoConfirm: boolean = false,
   useSass: boolean = false
 ): Promise<boolean> {
-  const { createReadlineInterface } = await import('./utils.js');
+  const { createReadlineInterface } = await import('./utils.ts');
   const rl = createReadlineInterface();
 
   console.log(`\n🎯 Injection Plan for: ${plan.targetPath}`);
@@ -178,7 +178,6 @@ export async function showInjectionPlan(
   console.log(`   ✅ Local scripts (esbuild.config.ts, utils.ts, env.ts, constants.ts, etc.)`);
   console.log(`   ✅ Updated package.json scripts`);
   console.log(`   ✅ Required dependencies`);
-  console.log(`   🔍 Analyze centralized imports (manual commenting may be needed)`);
 
   if (autoConfirm) {
     console.log(`\n✅ Auto-confirming all file replacements...`);
@@ -366,7 +365,7 @@ export async function diffAndPromptFiles(
   targetPath: string,
   autoConfirm: boolean
 ): Promise<Set<string>> {
-  const { askConfirmation, createReadlineInterface } = await import('./utils.js');
+  const { askConfirmation, createReadlineInterface } = await import('./utils.ts');
   const rl = autoConfirm ? null : createReadlineInterface();
   const configRoot = findPluginConfigRoot();
   const entries = buildFileList(targetPath);

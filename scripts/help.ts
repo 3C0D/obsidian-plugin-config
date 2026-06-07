@@ -84,6 +84,7 @@ SASS Support (--sass flag):
   ✅ esbuild-sass-plugin dependency
   ✅ Automatic .scss detection (src/styles.scss priority)
   ✅ CSS cleanup after compilation
+  💡 Install esbuild-sass-plugin manually if you use SCSS
 
 ═══════════════════════════════════════════════════════════════════
 

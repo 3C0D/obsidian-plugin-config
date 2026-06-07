@@ -21,8 +21,6 @@ async function promptForTargetPath(): Promise<string> {
   console.log(`\n📁 Select target plugin directory:`);
   console.log(`   Common paths (copy-paste ready):`);
   console.log(`   - ../test-sample-plugin`);
-  console.log(`   - ../sample-plugin-modif`);
-  console.log(`   - ../my-obsidian-plugin`);
   console.log(`   💡 Tip: You can paste paths with or without quotes`);
 
   while (true) {

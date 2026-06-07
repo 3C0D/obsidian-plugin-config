@@ -3,7 +3,7 @@
 /**
  * Obsidian Plugin Config - CLI Entry Point
  * Global command: obsidian-inject
- * Version: 1.7.0
+ * Version: 1.7.1
  */
 
 import { execSync } from 'child_process';
@@ -139,7 +139,6 @@ function main() {
     }
 
     // Check if tsx is available locally in target
-    let tsxCommand = 'npx tsx';
     try {
       execSync('npx tsx --version', {
         cwd: targetPath,

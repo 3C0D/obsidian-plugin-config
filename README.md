@@ -98,6 +98,12 @@ What gets added:
 - ✅ Automatic `.scss` detection (`src/styles.scss` priority)
 - ✅ CSS cleanup after compilation
 
+If your plugin uses SCSS, install the plugin once:
+
+```bash
+yarn add -D esbuild-sass-plugin
+```
+
 ## Architecture
 
 Target plugins become **100% standalone** after injection:
