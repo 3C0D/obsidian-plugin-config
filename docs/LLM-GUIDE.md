@@ -14,7 +14,6 @@
 
 - `templates/scripts/` — scripts copied into `<target>/scripts/`
 - `templates/package.json` — base deps/scripts merged into `<target>/package.json`
-- `templates/package-sass.json` — additional deps merged when `--sass` flag is used
 - `templates/tsconfig.json` — TypeScript config injected as `<target>/tsconfig.json`
 - `templates/eslint.config.mts` — ESLint config injected into target
 - `templates/.editorconfig`, `templates/.prettierrc`, etc. — config files injected into target
@@ -38,7 +37,7 @@
 
 ### 1. Package.json merge
 
-`inject-core.ts → updatePackageJson()` reads `templates/package.json` (and `templates/package-sass.json` if `--sass`) and merges into the target plugin's `package.json`:
+`inject-core.ts → updatePackageJson()` reads `templates/package.json` and merges into the target plugin's `package.json`:
 
 - All `scripts` are overwritten with template values
 - All `devDependencies` from template are added/updated
@@ -84,13 +83,13 @@ Scripts in `templates/scripts/` that get copied to target plugins:
 
 ## SASS support
 
-When `--sass` flag is used:
+SCSS is handled automatically by the injected `esbuild.config.ts`:
 
-1. `templates/package-sass.json` deps are merged into target's `package.json`
-2. Adds `esbuild-sass-plugin` dependency
-3. The injected `esbuild.config.ts` automatically detects `.scss` files and uses the plugin
+1. The build detects `.scss` files (e.g. `src/styles.scss`)
+2. When found, it dynamically imports `esbuild-sass-plugin` and compiles the SCSS
+3. The generated `main.css` is cleaned up after compilation
 
-Without `--sass`, the build still works — the SASS import in `esbuild.config.ts` is conditional and only activates if `.scss` files exist.
+The `esbuild-sass-plugin` dependency is **not** injected automatically. If a plugin uses SCSS, install it once with `yarn add -D esbuild-sass-plugin` (the build prints a clear warning if it is missing). Plugins without `.scss` files build normally with no extra dependency.
 
 ---
 

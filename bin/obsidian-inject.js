@@ -28,19 +28,16 @@ USAGE:
   obsidian-inject                    # Inject in current directory (with confirmation)
   obsidian-inject <path>             # Inject by path (with confirmation)
   obsidian-inject <path> --no        # Inject without confirmation
-  obsidian-inject <path> --sass      # Inject with SASS support
   obsidian-inject --help, -h         # Show this help
 
 OPTIONS:
   --no, -n                           # Skip confirmation prompts (auto-confirm all)
-  --sass                             # Add SASS support (esbuild-sass-plugin)
   --dry-run                          # Verification only (no changes)
 
 EXAMPLES:
   cd my-plugin && obsidian-inject
   obsidian-inject ../my-other-plugin
   obsidian-inject ../my-plugin --no
-  obsidian-inject ../my-plugin --sass
   obsidian-inject "C:\\Users\\dev\\plugins\\my-plugin"
 
 WHAT IS INJECTED:
@@ -49,7 +46,6 @@ WHAT IS INJECTED:
   ✅ Config files (tsconfig, eslint, prettier, vscode, github)
   ✅ Yarn protection enforced
   ✅ Automatic dependency installation
-  🎨 SASS support (with --sass option): esbuild-sass-plugin + SCSS compilation
 
 ARCHITECTURE:
   - Plugin becomes AUTONOMOUS with local scripts
@@ -78,7 +74,6 @@ function main() {
 
   // Parse arguments
   const noConfirm = args.includes('--no') || args.includes('-n');
-  const sassFlag = args.includes('--sass');
   const dryRun = args.includes('--dry-run');
   const pathArg = args.find(arg => !arg.startsWith('-'));
 
@@ -93,7 +88,6 @@ function main() {
 
   console.log(`🎯 Obsidian Plugin Config - Global Injection`);
   console.log(`📁 Target: ${targetPath}`);
-  console.log(`🎨 SASS: ${sassFlag ? 'Enabled' : 'Disabled'}`);
   console.log(`❓ Confirmation: ${noConfirm ? 'Disabled (auto-confirm)' : 'Enabled'}`);
   console.log(`📦 From: ${packageRoot}\n`);
 
@@ -163,10 +157,9 @@ function main() {
     }
 
     // Execute the injection script with tsx
-    const sassOption = sassFlag ? ' --sass' : '';
     const yesOption = noConfirm ? ' --yes' : '';
     const dryRunOption = dryRun ? ' --dry-run' : '';
-    const command = `npx tsx "${injectScriptPath}" "${targetPath}"${yesOption}${sassOption}${dryRunOption}`;
+    const command = `npx tsx "${injectScriptPath}" "${targetPath}"${yesOption}${dryRunOption}`;
 
     execSync(command, {
       stdio: 'inherit',

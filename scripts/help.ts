@@ -18,7 +18,6 @@ LINTING:
 INJECTION (local testing):
   yarn inject-prompt              # Interactive injection
   yarn inject-path <path>         # Direct injection
-  yarn inject <path> --sass       # Injection with SASS support
   yarn check-plugin <path>        # Verification only (dry-run)
 
 NPM PUBLISHING:
@@ -43,7 +42,6 @@ PURE INJECTION TOOL:
 
 templates/ → what gets injected:
   templates/package.json          # Base deps/scripts for target plugins
-  templates/package-sass.json     # Extra deps when --sass is used
   templates/tsconfig.json         # TypeScript config
   templates/scripts/*             # Scripts copied to target
   templates/eslint.config.mts     # ESLint config
@@ -55,7 +53,7 @@ inject-core.ts — shared injection logic:
   performInjection()              # Main orchestration
 
 inject-path.ts — CLI entry point:
-  Parses --yes, --dry-run, --sass flags
+  Parses --yes, --dry-run flags
 
 inject-prompt.ts — interactive entry:
   Prompts for target path
@@ -72,7 +70,6 @@ Development:
 Global CLI Usage:
   obsidian-inject                 # Inject in current dir
   obsidian-inject ../my-plugin    # Inject by path
-  obsidian-inject ../my-plugin --sass  # With SASS
   obsidian-inject --help          # Show help
 
 Local Testing:
@@ -80,8 +77,7 @@ Local Testing:
   yarn inject-path ../my-plugin   # Direct
   yarn check-plugin ../my-plugin  # Dry-run
 
-SASS Support (--sass flag):
-  ✅ esbuild-sass-plugin dependency
+SASS Support (automatic):
   ✅ Automatic .scss detection (src/styles.scss priority)
   ✅ CSS cleanup after compilation
   💡 Install esbuild-sass-plugin manually if you use SCSS

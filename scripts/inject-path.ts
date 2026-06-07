@@ -32,7 +32,6 @@ async function main(): Promise<void> {
     const args = process.argv.slice(2);
     const autoConfirm = args.includes('--yes') || args.includes('-y');
     const dryRun = args.includes('--dry-run') || args.includes('--check');
-    const useSass = args.includes('--sass');
     const targetPath = args.find((arg) => !arg.startsWith('-'));
 
     if (!targetPath) {
@@ -41,7 +40,6 @@ async function main(): Promise<void> {
       console.error(`   Options:`);
       console.error(`     --yes, -y           Auto-confirm injection`);
       console.error(`     --dry-run           Check only (no injection)`);
-      console.error(`     --sass              Add esbuild-sass-plugin dependency`);
       console.error(`   Shortcuts:`);
       console.error(`     yarn check-plugin ../plugin    # Verification only`);
       process.exit(1);
@@ -77,9 +75,6 @@ async function main(): Promise<void> {
         `📂 Scripts folder: ${plan.hasScriptsFolder ? '✅ (will be updated)' : '❌ (will be created)'}`
       );
       console.log(`🔌 Obsidian plugin: ${plan.isObsidianPlugin ? '✅' : '❌'}`);
-      console.log(
-        `🎨 SASS support: ${useSass ? '✅ (esbuild-sass-plugin will be added)' : '❌'}`
-      );
 
       if (!plan.isObsidianPlugin) {
         console.log(`\n⚠️  Warning: This doesn't appear to be a valid Obsidian plugin`);
@@ -144,14 +139,14 @@ async function main(): Promise<void> {
     console.log(`\n🔍 Checking plugin-config repository status...`);
     await ensurePluginConfigClean();
 
-    const confirmed = await showInjectionPlan(plan, autoConfirm, useSass);
+    const confirmed = await showInjectionPlan(plan, autoConfirm);
 
     if (!confirmed) {
       console.log(`❌ Injection cancelled by user`);
       process.exit(0);
     }
 
-    await performInjection(resolvedPath, autoConfirm, useSass);
+    await performInjection(resolvedPath, autoConfirm);
   } catch (error) {
     console.error(`💥 Error: ${error instanceof Error ? error.message : String(error)}`);
     process.exit(1);

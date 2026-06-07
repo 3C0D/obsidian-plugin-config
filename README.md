@@ -32,10 +32,6 @@ obsidian-inject ../my-plugin
 # Auto-confirms all file replacements (no prompts)
 obsidian-inject ../my-plugin --no
 
-# Inject with SASS support
-# Adds esbuild-sass-plugin dependency and SCSS compilation
-obsidian-inject ../my-plugin --sass
-
 # Verification only (dry-run)
 # Shows what would be injected without making any changes
 obsidian-inject ../my-plugin --dry-run
@@ -47,7 +43,6 @@ obsidian-inject --help
 ## CLI Options
 
 - `--no`, `-n` - Skip confirmation prompts (auto-confirm)
-- `--sass` - Add SASS support (esbuild-sass-plugin)
 - `--dry-run` - Verification only (no changes)
 
 ## What is injected
@@ -61,7 +56,7 @@ obsidian-inject --help
   `.env`, `.vscode/settings.json`, `.vscode/tasks.json`
 - ✅ **GitHub Actions**: release workflow
 - ✅ **Traceability**: `.injection-info.json` (version, date)
-- 🎨 **SASS support**: optional, via `--sass` flag
+- 🎨 **SCSS support**: automatic detection in the injected `esbuild.config.ts`
 
 ## Commands available after injection
 
@@ -89,12 +84,8 @@ yarn upgrade        # Update all dependencies to latest
 
 ## SASS Support
 
-```bash
-obsidian-inject ../my-plugin --sass
-```
+SCSS is detected automatically by the injected `esbuild.config.ts`:
 
-What gets added:
-- ✅ `esbuild-sass-plugin` dependency
 - ✅ Automatic `.scss` detection (`src/styles.scss` priority)
 - ✅ CSS cleanup after compilation
 
@@ -198,7 +189,6 @@ yarn install
 ```bash
 yarn inject-prompt              # Interactive injection
 yarn inject-path ../my-plugin   # Direct injection
-yarn inject ../my-plugin --sass # With SASS support
 yarn check-plugin ../my-plugin  # Dry-run only
 ```
 
