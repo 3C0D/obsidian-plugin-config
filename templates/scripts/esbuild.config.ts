@@ -16,7 +16,7 @@ import {
   copyFilesToTargetDir,
   createReadlineInterface,
   isValidPath,
-  removeMainCss
+  renameMainCss
 } from './utils.ts';
 import { reloadObsidian } from './reload.ts';
 
@@ -56,11 +56,11 @@ async function createBuildContext(
             }
           })(),
           {
-            name: 'remove-main-css',
+            name: 'rename-main-css',
             setup(build: esbuild.PluginBuild): void {
               build.onEnd(async (result) => {
                 if (result.errors.length === 0) {
-                  await removeMainCss(buildPath);
+                  await renameMainCss(buildPath);
                 }
               });
             }

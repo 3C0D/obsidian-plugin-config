@@ -13,8 +13,8 @@
 `templates/` contains everything that gets injected into target plugins:
 
 - `templates/scripts/` — scripts copied into `<target>/scripts/`
-- `templates/package.json` — base deps/scripts merged into `<target>/package.json`
-- `templates/tsconfig.json` — TypeScript config injected as `<target>/tsconfig.json`
+- `templates/package.json.template` — base deps/scripts merged into `<target>/package.json`
+- `templates/tsconfig.json.template` — TypeScript config injected as `<target>/tsconfig.json`
 - `templates/eslint.config.mts` — ESLint config injected into target
 - `templates/.editorconfig`, `templates/.prettierrc`, etc. — config files injected into target
 - `templates/.github/workflows/` — GitHub Actions workflows
@@ -37,7 +37,7 @@
 
 ### 1. Package.json merge
 
-`inject-core.ts → updatePackageJson()` reads `templates/package.json` and merges into the target plugin's `package.json`:
+`inject-core.ts → updatePackageJson()` reads `templates/package.json.template` and merges into the target plugin's `package.json`:
 
 - All `scripts` are overwritten with template values
 - All `devDependencies` from template are added/updated
@@ -51,7 +51,8 @@
 - `templates/scripts/*` → `<target>/scripts/`
 - `templates/tsconfig.json` → `<target>/tsconfig.json`
 - `templates/eslint.config.mts` → `<target>/eslint.config.mts`
-- `templates/.editorconfig`, `.prettierrc`, `.npmrc`, `.env` → `<target>/`
+- `templates/.editorconfig`, `.prettierrc`, `.npmrc`, `.env`, `.gitattributes` → `<target>/`
+- `templates/.vscode/*` → `<target>/.vscode/`
 - `templates/.github/workflows/*` → `<target>/.github/workflows/`
 - `templates/gitignore.template` → `<target>/.gitignore`
 
@@ -95,9 +96,9 @@ The `esbuild-sass-plugin` dependency is **not** injected automatically. If a plu
 
 ## What NOT to do
 
-- ❌ Do not hardcode deps/scripts in `inject-core.ts` — they must come from `templates/package.json`
+- ❌ Do not hardcode deps/scripts in `inject-core.ts` — they must come from `templates/package.json.template`
 - ❌ Do not modify root config files thinking it will affect injected plugins — always modify `templates/`
-- ❌ Do not add `obsidian-plugin-config` as a dependency in `templates/package.json` — injected plugins are standalone
+- ❌ Do not add `obsidian-plugin-config` as a dependency in `templates/package.json.template` — injected plugins are standalone
 - ❌ Do not inject `esbuild.config.ts` without its dependencies (`constants.ts`, `env.ts`, `reload.ts`, `typingsPlugin.ts`, `utils.ts`) — they are all required
 
 ---
@@ -115,7 +116,7 @@ To change what gets injected:
 
 ## obsidian-typings paths
 
-The correct paths for `obsidian-typings` in `templates/tsconfig.json`:
+The correct paths for `obsidian-typings` in `templates/tsconfig.json.template`:
 
 ```json
 "types": ["obsidian-typings"],

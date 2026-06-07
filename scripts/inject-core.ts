@@ -106,11 +106,8 @@ export async function ensurePluginConfigClean(): Promise<void> {
     return;
   }
 
-  const originalCwd = process.cwd();
-
   try {
-    process.chdir(configRoot);
-    const gitStatus = execSync('git status --porcelain', { encoding: 'utf8' }).trim();
+    const gitStatus = execSync('git status --porcelain', { cwd: configRoot, encoding: 'utf8' }).trim();
 
     if (gitStatus) {
       console.log(`\n⚠️  Plugin-config has uncommitted changes:`);
@@ -118,21 +115,23 @@ export async function ensurePluginConfigClean(): Promise<void> {
       console.log(`\n🔧 Auto-committing changes...`);
 
       const msg = '🔧 Update plugin-config templates';
-      gitExec('git add -A');
-      gitExec(`git commit -m "${msg}"`);
+      gitExec('git add -A', configRoot);
+      gitExec(`git commit -m "${msg}"`, configRoot);
 
       try {
         const branch = execSync('git rev-parse --abbrev-ref HEAD', {
+          cwd: configRoot,
           encoding: 'utf8'
         }).trim();
-        gitExec(`git push origin ${branch}`);
+        gitExec(`git push origin ${branch}`, configRoot);
         console.log(`✅ Changes committed and pushed`);
       } catch {
         try {
           const branch = execSync('git rev-parse --abbrev-ref HEAD', {
+            cwd: configRoot,
             encoding: 'utf8'
           }).trim();
-          gitExec(`git push --set-upstream origin ${branch}`);
+          gitExec(`git push --set-upstream origin ${branch}`, configRoot);
           console.log(`✅ New branch pushed with upstream`);
         } catch {
           console.log(`⚠️  Committed locally, push failed`);
@@ -141,8 +140,8 @@ export async function ensurePluginConfigClean(): Promise<void> {
     } else {
       console.log(`✅ Plugin-config repo is clean`);
     }
-  } finally {
-    process.chdir(originalCwd);
+  } catch (error) {
+    console.error(`⚠️  Failed to check or commit plugin-config: ${error}`);
   }
 }
 
@@ -255,8 +254,7 @@ export async function cleanOldLintFiles(targetPath: string): Promise<void> {
     if (await isValidPath(filePath)) {
       fs.unlinkSync(filePath);
       console.log(
-        `🗑️  Removed old ESLint file: ${fileName} (replaced by 1
-				fig.ts)`
+        `🗑️  Removed old ESLint file: ${fileName} (replaced by eslint.config.mts)`
       );
     }
   }
@@ -307,13 +305,14 @@ function buildFileList(targetPath: string): FileEntry[] {
 
   // Root config files
   const configFileMap: Array<[string, string, boolean?]> = [
-    ['templates/tsconfig.json', 'tsconfig.json'],
+    ['templates/tsconfig.json.template', 'tsconfig.json'],
     ['templates/gitignore.template', '.gitignore'],
     ['templates/eslint.config.mts', 'eslint.config.mts'],
     ['templates/.editorconfig', '.editorconfig'],
     ['templates/.prettierrc', '.prettierrc'],
     ['templates/.prettierignore', '.prettierignore'],
     ['templates/npmrc.template', '.npmrc'],
+    ['templates/.gitattributes', '.gitattributes'],
     ['templates/env.template', '.env', true]
   ];
   for (const [src, destName, mergeEnv] of configFileMap) {
@@ -486,13 +485,14 @@ export async function injectScripts(
   // Files with .template suffix (NPM excludes dotfiles)
   // Map: { source: targetName }
   const configFileMap: Record<string, string> = {
-    'templates/tsconfig.json': 'tsconfig.json',
+    'templates/tsconfig.json.template': 'tsconfig.json',
     'templates/gitignore.template': '.gitignore',
     'templates/eslint.config.mts': 'eslint.config.mts',
     'templates/.editorconfig': '.editorconfig',
     'templates/.prettierrc': '.prettierrc',
     'templates/.prettierignore': '.prettierignore',
     'templates/npmrc.template': '.npmrc',
+    'templates/.gitattributes': '.gitattributes',
     'templates/env.template': '.env'
   };
 
@@ -629,7 +629,7 @@ export async function updatePackageJson(
 
     const configRoot = findPluginConfigRoot();
     const templatePkg = JSON.parse(
-      fs.readFileSync(path.join(configRoot, 'templates/package.json'), 'utf8')
+      fs.readFileSync(path.join(configRoot, 'templates/package.json.template'), 'utf8')
     );
 
     const obsoleteScripts = ['version'];
@@ -750,10 +750,11 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
       if (fs.existsSync(nodeModulesPath)) {
         console.log(`   ⏳ Removing node_modules (this may take a moment)...`);
 
-        execSync(`rmdir /s /q "${nodeModulesPath}"`, {
-          stdio: 'pipe',
-          windowsHide: true
-        });
+        try {
+          fs.rmSync(nodeModulesPath, { recursive: true, force: true });
+        } catch {
+          // Ignore initial error, lock detection checks if it still exists below
+        }
 
         if (fs.existsSync(nodeModulesPath)) {
           // rmdir failed silently (locked .exe files) - rename instead

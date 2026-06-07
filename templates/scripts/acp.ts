@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { execSync, spawnSync } from 'child_process';
 import {
   askQuestion,
   cleanInput,
@@ -23,7 +23,10 @@ async function main(): Promise<void> {
 
     try {
       gitExec('git add -A');
-      gitExec(`git commit -m "${cleanedInput}"`);
+      const result = spawnSync('git', ['commit', '-m', cleanedInput], { stdio: 'inherit' });
+      if (result.status !== 0) {
+        throw new Error('Commit failed');
+      }
     } catch {
       console.log('Commit already exists or failed.');
       return;

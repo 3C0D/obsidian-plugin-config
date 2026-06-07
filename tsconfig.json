@@ -19,6 +19,6 @@
     "resolveJsonModule": true,
     "lib": ["DOM", "ES2024"]
   },
-  "include": ["./scripts/**/*.ts"],
-  "exclude": ["node_modules", "eslint.config.ts", "templates"]
+  "include": ["./scripts/**/*.ts", "templates/**/*.ts"],
+  "exclude": ["node_modules", "eslint.config.ts"]
 }

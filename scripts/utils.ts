@@ -115,9 +115,9 @@ export async function copyFilesToTargetDir(buildPath: string): Promise<void> {
   }
 }
 
-export function gitExec(command: string): void {
+export function gitExec(command: string, cwd?: string): void {
   try {
-    execSync(command, { stdio: 'inherit' });
+    execSync(command, { stdio: 'inherit', ...(cwd ? { cwd } : {}) });
   } catch (error: unknown) {
     console.error(`Error executing '${command}':`, (error as Error).message);
     throw error;

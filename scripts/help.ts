@@ -41,8 +41,8 @@ PURE INJECTION TOOL:
   bin/obsidian-inject.js          # Global CLI entry point
 
 templates/ → what gets injected:
-  templates/package.json          # Base deps/scripts for target plugins
-  templates/tsconfig.json         # TypeScript config
+  templates/package.json.template # Base deps/scripts for target plugins
+  templates/tsconfig.json.template # TypeScript config
   templates/scripts/*             # Scripts copied to target
   templates/eslint.config.mts     # ESLint config
   templates/.github/workflows/*   # GitHub Actions

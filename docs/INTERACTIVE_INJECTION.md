@@ -58,7 +58,7 @@ Tous les fichiers du template sont pris en compte à chaque injection (pas de
 sélection par composant) :
 
 - `templates/scripts/*` → `<cible>/scripts/`
-- `templates/tsconfig.json`, `eslint.config.mts`, `.editorconfig`,
+- `templates/tsconfig.json.template`, `eslint.config.mts`, `.editorconfig`,
   `.prettierrc`, `.prettierignore`, `.npmrc`, `.env`
 - `templates/.vscode/*`
 - `templates/.github/workflows/*`
