@@ -27,17 +27,17 @@ Injection system for autonomous Obsidian plugins
 USAGE:
   obsidian-inject                    # Inject in current directory (with confirmation)
   obsidian-inject <path>             # Inject by path (with confirmation)
-  obsidian-inject <path> --no        # Inject without confirmation
+  obsidian-inject <path> --yes       # Inject without confirmation
   obsidian-inject --help, -h         # Show this help
 
 OPTIONS:
-  --no, -n                           # Skip confirmation prompts (auto-confirm all)
+  --yes, -y                          # Skip confirmation prompts (auto-confirm all)
   --dry-run                          # Verification only (no changes)
 
 EXAMPLES:
   cd my-plugin && obsidian-inject
   obsidian-inject ../my-other-plugin
-  obsidian-inject ../my-plugin --no
+  obsidian-inject ../my-plugin --yes
   obsidian-inject "C:\\Users\\dev\\plugins\\my-plugin"
 
 WHAT IS INJECTED:
@@ -73,7 +73,7 @@ function main() {
   }
 
   // Parse arguments
-  const noConfirm = args.includes('--no') || args.includes('-n');
+  const noConfirm = args.includes('--yes') || args.includes('-y');
   const dryRun = args.includes('--dry-run');
   const pathArg = args.find(arg => !arg.startsWith('-'));
 

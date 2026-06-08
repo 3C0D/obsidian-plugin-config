@@ -39,8 +39,8 @@ Cas particuliers :
 
 ```bash
 # Auto-confirmer tous les remplacements (aucune question)
-obsidian-inject ../my-plugin --no      # CLI globale : --no / -n
-yarn inject-path ../my-plugin --yes    # Scripts locaux : --yes / -y
+obsidian-inject ../my-plugin --yes    # CLI globale : --yes / -y
+yarn inject-path ../my-plugin --yes   # Scripts locaux : --yes / -y
 
 # Vérification seule (n'écrit rien)
 obsidian-inject ../my-plugin --dry-run
@@ -48,7 +48,7 @@ obsidian-inject ../my-plugin --dry-run
 
 | Option           | Effet                                              |
 | ---------------- | -------------------------------------------------- |
-| `--no`, `-n`     | (CLI globale) auto-confirme tous les remplacements |
+| `--yes`, `-y`    | (CLI globale) auto-confirme tous les remplacements |
 | `--yes`, `-y`    | (scripts locaux) auto-confirme tous les remplacements |
 | `--dry-run`      | vérification seule, aucune modification            |
 

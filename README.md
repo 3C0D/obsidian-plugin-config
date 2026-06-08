@@ -30,7 +30,7 @@ obsidian-inject ../my-plugin
 
 # Inject without confirmation
 # Auto-confirms all file replacements (no prompts)
-obsidian-inject ../my-plugin --no
+obsidian-inject ../my-plugin --yes
 
 # Verification only (dry-run)
 # Shows what would be injected without making any changes
@@ -42,7 +42,7 @@ obsidian-inject --help
 
 ## CLI Options
 
-- `--no`, `-n` - Skip confirmation prompts (auto-confirm)
+- `--yes`, `-y` - Skip confirmation prompts (auto-confirm)
 - `--dry-run` - Verification only (no changes)
 
 ## What is injected

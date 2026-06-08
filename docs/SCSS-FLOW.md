@@ -21,13 +21,13 @@ buildPath/<id>/
   ├── main.js
   └── main.css        ← produit par esbuild-sass-plugin
       │
-      │  plugin "remove-main-css" (esbuild.config.ts) → utils.removeMainCss
+      │  plugin "rename-main-css" (esbuild.config.ts) → utils.renameMainCss
       │  + plugin "copy-to-plugins-folder" (esbuild.config.ts) → utils.copyFilesToTargetDir
       ▼
 buildPath/<id>/
   ├── manifest.json   (copié)
   ├── main.js
-  └── styles.css      ← renommé depuis main.css ? non : voir point 3
+  └── styles.css      ← renommé depuis main.css par renameMainCss
 ```
 
 Les deux moments clés sont :
@@ -41,7 +41,7 @@ Les deux moments clés sont :
 
 ### 2.1 Détection du fichier SCSS
 
-Dans `templates/scripts/esbuild.config.ts`, fonction `main()` (lignes 115-140) :
+Dans `templates/scripts/esbuild.config.ts`, fonction `main()` (lignes 115-157) :
 
 ```ts
 // Check for SCSS first, then CSS in src, then in root
@@ -69,7 +69,7 @@ const context = await createBuildContext(buildPath, isProd, entryPoints, scssExi
 
 ### 2.2 Compilation via esbuild + sassPlugin
 
-Toujours dans `templates/scripts/esbuild.config.ts`, fonction `createBuildContext()` (lignes 33-69) :
+Toujours dans `templates/scripts/esbuild.config.ts`, fonction `createBuildContext()` (lignes 33-113) :
 
 ```ts
 const plugins = [
@@ -92,11 +92,11 @@ const plugins = [
           }
         })(),
         {
-          name: 'remove-main-css',
+          name: 'rename-main-css',
           setup(build: esbuild.PluginBuild): void {
             build.onEnd(async (result) => {
               if (result.errors.length === 0) {
-                await removeMainCss(buildPath);
+                await renameMainCss(buildPath);
               }
             });
           }
@@ -108,7 +108,7 @@ const plugins = [
 - Le `sassPlugin` n'est importé que si `hasSass` est `true` (donc si `src/styles.scss` existe).
 - Il est configuré en syntaxe `scss` et style `expanded` (non minifié, lisible).
 - esbuild produit un fichier `main.css` à côté de `main.js` dans `outdir` (= `buildPath`).
-- Un second plugin esbuild interne, `remove-main-css`, supprime ce `main.css` à la fin du build (voir 3.1).
+- Un second plugin esbuild interne, `rename-main-css`, renomme ce `main.css` en `styles.css` à la fin du build (voir 3.1).
 
 ### 2.3 Dépendance : `esbuild-sass-plugin`
 
@@ -123,30 +123,31 @@ const plugins = [
 
 ## 3. Comment c'est copié dans le dossier plugins
 
-### 3.1 Nettoyage du `main.css` parasite
+### 3.1 Renommage du `main.css` en `styles.css`
 
-Dans `templates/scripts/utils.ts`, fonction `removeMainCss()` (lignes 169-180) :
+Dans `templates/scripts/utils.ts`, fonction `renameMainCss()` (lignes 187-204) :
 
 ```ts
-export async function removeMainCss(outdir: string): Promise<void> {
+export async function renameMainCss(outdir: string): Promise<void> {
   const mainCssPath = path.join(outdir, 'main.css');
+  const stylesCssPath = path.join(outdir, 'styles.css');
   try {
-    await rm(mainCssPath);
-  } catch (error: unknown) {
-    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-      console.warn(
-        `Warning: Could not remove main.css: ${error instanceof Error ? error.message : String(error)}`
-      );
+    if (await isValidPath(mainCssPath)) {
+      await rename(mainCssPath, stylesCssPath);
     }
+  } catch (error: unknown) {
+    console.warn(
+      `Warning: Could not rename main.css to styles.css: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 ```
 
-Pourquoi ? Le `sassPlugin` d'esbuild génère un fichier `main.css` parce qu'il hérite du `name` (`main`) de l'entry point. Or Obsidian attend `styles.css` dans le dossier du plugin. `removeMainCss` supprime donc ce fichier temporaire immédiatement après chaque build (uniquement si le build n'a pas d'erreur, cf. `if (result.errors.length === 0)` dans `esbuild.config.ts`).
+Pourquoi ? Le `sassPlugin` d'esbuild génère un fichier `main.css` parce qu'il hérite du `name` (`main`) de l'entry point. Or Obsidian attend `styles.css` dans le dossier du plugin. `renameMainCss` renomme donc ce fichier en `styles.css` immédiatement après chaque build (uniquement si le build n'a pas d'erreur, cf. `if (result.errors.length === 0)` dans `esbuild.config.ts`).
 
 ### 3.2 Copie vers le dossier plugins
 
-Dans `templates/scripts/utils.ts`, fonction `copyFilesToTargetDir()` (lignes 74-123) :
+Dans `templates/scripts/utils.ts`, fonction `copyFilesToTargetDir()` (lignes 73-122) :
 
 ```ts
 export async function copyFilesToTargetDir(buildPath: string): Promise<void> {
@@ -176,7 +177,7 @@ export async function copyFilesToTargetDir(buildPath: string): Promise<void> {
 }
 ```
 
-> Note importante : `copyFilesToTargetDir` ne copie **que** `manifest.json` et un éventuel `styles.css` / `styles.css` racine. Le `main.css` généré par esbuild-sass-plugin est supprimé à l'étape précédente (3.1).
+> Note importante : `copyFilesToTargetDir` ne copie **que** `manifest.json` et un éventuel `styles.css` à la racine. Le `main.css` généré par esbuild-sass-plugin est renommé en `styles.css` à l'étape précédente (3.1).
 
 ### 3.3 Branchement sur le cycle de vie esbuild
 
@@ -231,7 +232,7 @@ Donc concrètement, le résultat final pour le SCSS est :
 
 ## 4. Où l'injecteur installe tout ça dans le plugin cible
 
-L'injection des templates se fait dans `scripts/inject-core.ts`, fonction `injectScripts()` (lignes 455-612). Le tableau `scriptFiles` (lignes 469-480) liste explicitement les fichiers copiés dans le dossier `scripts/` du plugin cible :
+L'injection des templates se fait dans `scripts/inject-core.ts`, fonction `injectScripts()` (lignes 460-613). Le tableau `scriptFiles` (lignes 474-485) liste explicitement les fichiers copiés dans le dossier `scripts/` du plugin cible :
 
 ```ts
 const scriptFiles = [
@@ -248,7 +249,7 @@ const scriptFiles = [
 ];
 ```
 
-Donc après injection, le plugin Obsidian cible contient `scripts/esbuild.config.ts` (avec la logique SCSS) et `scripts/utils.ts` (avec `removeMainCss` et `copyFilesToTargetDir`).
+Donc après injection, le plugin Obsidian cible contient `scripts/esbuild.config.ts` (avec la logique SCSS) et `scripts/utils.ts` (avec `renameMainCss` et `copyFilesToTargetDir`).
 
 Le `.gitignore` injecté (`templates/gitignore.template`, ligne 25-26) ignore explicitement le fichier intermédiaire :
 
@@ -263,11 +264,11 @@ main.css
 
 | Rôle | Fichier | Fonctions / lignes |
 |------|---------|--------------------|
-| Détection SCSS + build esbuild | `templates/scripts/esbuild.config.ts` | `main()` ~l. 115-140, `createBuildContext()` ~l. 33-69 |
-| Plugin esbuild pour compiler SCSS | `esbuild-sass-plugin` (importé dynamiquement) | `esbuild.config.ts` ~l. 41-58 |
-| Suppression du `main.css` transitoire | `templates/scripts/utils.ts` | `removeMainCss()` ~l. 169-180 |
-| Copie finale vers le dossier plugins | `templates/scripts/utils.ts` | `copyFilesToTargetDir()` ~l. 74-123 |
+| Détection SCSS + build esbuild | `templates/scripts/esbuild.config.ts` | `main()` ~l. 115-157, `createBuildContext()` ~l. 33-113 |
+| Plugin esbuild pour compiler SCSS | `esbuild-sass-plugin` (importé dynamiquement) | `esbuild.config.ts` ~l. 41-57 |
+| Renommage du `main.css` en `styles.css` | `templates/scripts/utils.ts` | `renameMainCss()` ~l. 187-204 |
+| Copie finale vers le dossier plugins | `templates/scripts/utils.ts` | `copyFilesToTargetDir()` ~l. 73-122 |
 | Branchement sur `onEnd` esbuild | `templates/scripts/esbuild.config.ts` | plugin `copy-to-plugins-folder` ~l. 70-94 |
-| Copie des templates vers le plugin cible | `scripts/inject-core.ts` | `injectScripts()` ~l. 455-612, `buildFileList()` ~l. 284-353 |
+| Copie des templates vers le plugin cible | `scripts/inject-core.ts` | `injectScripts()` ~l. 460-613, `buildFileList()` ~l. 285-355 |
 | Dépendance optionnelle | `esbuild-sass-plugin` (ajoutée par l'utilisateur si SCSS) | `README.md` § SASS Support, ~l. 85-96 |
 | Ignore du fichier transitoire | `templates/gitignore.template` | `main.css` ligne 25-26 |
