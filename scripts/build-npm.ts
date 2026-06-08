@@ -34,7 +34,7 @@ async function generateBinFile(): Promise<void> {
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join, isAbsolute, resolve } from 'path';
-import { readFile, access } from 'fs/promises';
+import { readFile, access, unlink, rm } from 'fs/promises';
 
 // Get the directory of this script
 const __filename = fileURLToPath(import.meta.url);
@@ -44,7 +44,7 @@ const packageRoot = dirname(__dirname);
 // Path to the injection script
 const injectScriptPath = join(packageRoot, 'scripts', 'inject-path.ts');
 
-async function pathExists(p: string): Promise<boolean> {
+async function pathExists(p) {
   try {
     await access(p);
     return true;
@@ -161,7 +161,7 @@ async function main() {
         console.log(\`   ✅ NPM artifacts cleaned to avoid Yarn conflicts\`);
 
       } catch (cleanError) {
-        console.error(\`   ❌ Cleanup failed:\`, cleanError.message);
+        console.error(\`   ❌ Cleanup failed:\`, cleanError instanceof Error ? cleanError.message : String(cleanError));
         console.log(\`   💡 Manually remove package-lock.json and node_modules\`);
       }
     }
@@ -255,7 +255,9 @@ async function ensureNpmAuth(): Promise<void> {
   // Verify login actually succeeded
   const whoamiAfter = checkWhoami();
   if (!whoamiAfter) {
-    console.error(`\n   ❌ Login appeared to complete but authentication could not be verified`);
+    console.error(
+      `\n   ❌ Login appeared to complete but authentication could not be verified`
+    );
     throw new Error('NPM authentication required');
   }
 

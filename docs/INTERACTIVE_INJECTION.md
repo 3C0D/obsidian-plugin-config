@@ -1,76 +1,67 @@
-# Injection interactive
+# Interactive Injection
 
-L'injection est **interactive par défaut** : elle compare chaque fichier du template
-avec le fichier existant de la cible et ne demande confirmation que lorsque le contenu
-diffère.
+Injection is **interactive by default**: it compares each template file with the target's existing file and only prompts for confirmation when the content differs.
 
-## Points d'entrée
+## Entry Points
 
 ```bash
-# CLI globale
-obsidian-inject                 # Injection dans le dossier courant
-obsidian-inject ../my-plugin    # Injection par chemin
+# Global CLI
+obsidian-inject                 # Inject in current directory
+obsidian-inject ../my-plugin    # Inject by path
 
-# Scripts locaux (développement de ce repo)
-yarn inject-prompt              # Demande le chemin du plugin cible, puis injecte
-yarn inject-path ../my-plugin   # Injection directe par chemin
-yarn check-plugin ../my-plugin  # Dry-run (vérification seule, aucune modification)
+# Local scripts (development of this repo)
+yarn inject-prompt              # Prompts for target plugin path, then injects
+yarn inject-path ../my-plugin   # Direct injection by path
+yarn check-plugin ../my-plugin  # Dry-run (verification only, no modifications)
 ```
 
-## Comportement fichier par fichier
+## File-by-File Behavior
 
-Pendant l'injection, chaque fichier est traité ainsi :
+During injection, each file is handled as follows:
 
-- **La cible n'existe pas encore** → le fichier est injecté sans demander.
-- **Contenu identique** → ignoré silencieusement (`✅ ... (unchanged)`).
-- **Contenu différent** → l'outil demande `Update <fichier>? (content differs)`.
-  - `y` → le fichier est remplacé.
-  - `n` → le fichier existant est conservé (`⏭️ Kept existing ...`).
+- **Target does not exist yet** → the file is injected without asking.
+- **Identical content** → silently ignored (`✅ ... (unchanged)`).
+- **Different content** → the tool asks `Update <file>? (content differs)`.
+  - `y` → the file is replaced.
+  - `n` → the existing file is kept (`⏭️ Kept existing ...`).
 
-Cas particuliers :
+Special cases:
 
-- `.env` est toujours **fusionné** : le template est réécrit en préservant les
-  valeurs déjà renseignées (chemins de vault, etc.).
-- `.npmrc` est toujours injecté (protection Yarn).
-- `eslint.config.mts` est approuvé automatiquement si un ancien `.eslintrc*`
-  est détecté (migration depuis l'ancien format).
+- `.env` is always **merged**: the template is rewritten while preserving existing values (vault paths, etc.).
+- `.npmrc` is always injected (Yarn protection).
+- `eslint.config.mts` is automatically approved if an old `.eslintrc*` is detected (migration from the old format).
 
 ## Options
 
 ```bash
-# Auto-confirmer tous les remplacements (aucune question)
-obsidian-inject ../my-plugin --yes    # CLI globale : --yes / -y
-yarn inject-path ../my-plugin --yes   # Scripts locaux : --yes / -y
+# Auto-confirm all replacements (no questions)
+obsidian-inject ../my-plugin --yes    # Global CLI: --yes / -y
+yarn inject-path ../my-plugin --yes   # Local scripts: --yes / -y
 
-# Vérification seule (n'écrit rien)
+# Verification only (writes nothing)
 obsidian-inject ../my-plugin --dry-run
 ```
 
-| Option           | Effet                                              |
-| ---------------- | -------------------------------------------------- |
-| `--yes`, `-y`    | (CLI globale) auto-confirme tous les remplacements |
-| `--yes`, `-y`    | (scripts locaux) auto-confirme tous les remplacements |
-| `--dry-run`      | vérification seule, aucune modification            |
+| Option        | Effect                                         |
+| ------------- | ---------------------------------------------- |
+| `--yes`, `-y` | (Global CLI) auto-confirms all replacements    |
+| `--yes`, `-y` | (Local scripts) auto-confirms all replacements |
+| `--dry-run`   | Verification only, no modifications            |
 
-## Ce qui est injecté
+## What is Injected
 
-Tous les fichiers du template sont pris en compte à chaque injection (pas de
-sélection par composant) :
+All template files are considered during each injection (no component selection):
 
-- `templates/scripts/*` → `<cible>/scripts/`
-- `templates/tsconfig.json.template`, `eslint.config.mts`, `.editorconfig`,
-  `.prettierrc`, `.prettierignore`, `.npmrc`, `.env`
+- `templates/scripts/*` → `<target>/scripts/`
+- `templates/tsconfig.json.template`, `eslint.config.mts`, `.editorconfig`, `.prettierrc`, `.prettierignore`, `.npmrc`, `.env`
 - `templates/.vscode/*`
 - `templates/.github/workflows/*`
-- `templates/gitignore.template` → `<cible>/.gitignore`
+- `templates/gitignore.template` → `<target>/.gitignore`
 
-La confirmation fichier par fichier permet de conserver un fichier existant
-(par exemple un `esbuild.config.ts` personnalisé) en répondant `n` lorsque la
-question apparaît.
+File-by-file confirmation allows keeping an existing file (for example, a custom `esbuild.config.ts`) by answering `n` when the prompt appears.
 
-## Fichiers concernés
+## Related Files
 
-1. **scripts/inject-core.ts** — logique d'injection (`diffAndPromptFiles`,
-   `injectScripts`, `updatePackageJson`, `performInjection`).
-2. **scripts/inject-prompt.ts** — entrée interactive (demande le chemin).
-3. **scripts/inject-path.ts** — entrée CLI (parse `--yes`, `--dry-run`).
+1. **scripts/inject-core.ts** — injection logic (`diffAndPromptFiles`, `injectScripts`, `updatePackageJson`, `performInjection`).
+2. **scripts/inject-prompt.ts** — interactive entry (prompts for path).
+3. **scripts/inject-path.ts** — CLI entry (parses `--yes`, `--dry-run`).

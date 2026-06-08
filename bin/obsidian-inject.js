@@ -9,7 +9,7 @@
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join, isAbsolute, resolve } from 'path';
-import fs from 'fs';
+import { readFile, access, unlink, rm } from 'fs/promises';
 
 // Get the directory of this script
 const __filename = fileURLToPath(import.meta.url);
@@ -19,6 +19,15 @@ const packageRoot = dirname(__dirname);
 // Path to the injection script
 const injectScriptPath = join(packageRoot, 'scripts', 'inject-path.ts');
 
+async function pathExists(p) {
+  try {
+    await access(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function showHelp() {
   console.log(`
 Obsidian Plugin Config - Global CLI
@@ -27,17 +36,17 @@ Injection system for autonomous Obsidian plugins
 USAGE:
   obsidian-inject                    # Inject in current directory (with confirmation)
   obsidian-inject <path>             # Inject by path (with confirmation)
-  obsidian-inject <path> --yes       # Inject without confirmation
+  obsidian-inject <path> --no        # Inject without confirmation
   obsidian-inject --help, -h         # Show this help
 
 OPTIONS:
-  --yes, -y                          # Skip confirmation prompts (auto-confirm all)
+  --no, -n                           # Skip confirmation prompts (auto-confirm all)
   --dry-run                          # Verification only (no changes)
 
 EXAMPLES:
   cd my-plugin && obsidian-inject
   obsidian-inject ../my-other-plugin
-  obsidian-inject ../my-plugin --yes
+  obsidian-inject ../my-plugin --no
   obsidian-inject "C:\\Users\\dev\\plugins\\my-plugin"
 
 WHAT IS INJECTED:
@@ -56,7 +65,7 @@ More info: https://github.com/3C0D/obsidian-plugin-config
 `);
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
 
   // Handle help flags
@@ -66,14 +75,14 @@ function main() {
   }
 
   // Check if injection script exists
-  if (!fs.existsSync(injectScriptPath)) {
+  if (!(await pathExists(injectScriptPath))) {
     console.error(`❌ Error: Injection script not found at ${injectScriptPath}`);
     console.error(`   Make sure obsidian-plugin-config is properly installed.`);
     process.exit(1);
   }
 
   // Parse arguments
-  const noConfirm = args.includes('--yes') || args.includes('-y');
+  const noConfirm = args.includes('--no') || args.includes('-n');
   const dryRun = args.includes('--dry-run');
   const pathArg = args.find(arg => !arg.startsWith('-'));
 
@@ -94,14 +103,14 @@ function main() {
   try {
     // Check if target directory has package.json
     const targetPackageJson = join(targetPath, 'package.json');
-    if (!fs.existsSync(targetPackageJson)) {
+    if (!(await pathExists(targetPackageJson))) {
       console.error(`❌ Error: package.json not found in ${targetPath}`);
       console.error(`   Make sure this is a valid Node.js project.`);
       process.exit(1);
     }
 
     // Prevent injecting into obsidian-plugin-config itself
-    const pkg = JSON.parse(fs.readFileSync(targetPackageJson, 'utf8'));
+    const pkg = JSON.parse(await readFile(targetPackageJson, 'utf8'));
     if (pkg.name === 'obsidian-plugin-config') {
       console.error(`❌ Cannot inject into obsidian-plugin-config itself.`);
       process.exit(1);
@@ -109,25 +118,25 @@ function main() {
 
     // Clean NPM artifacts if package-lock.json exists
     const packageLockPath = join(targetPath, 'package-lock.json');
-    if (fs.existsSync(packageLockPath)) {
+    if (await pathExists(packageLockPath)) {
       console.log(`🧹 NPM installation detected, cleaning...`);
 
       try {
         // Remove package-lock.json
-        fs.unlinkSync(packageLockPath);
+        await unlink(packageLockPath);
         console.log(`   🗑️  package-lock.json removed`);
 
         // Remove node_modules if it exists
         const nodeModulesPath = join(targetPath, 'node_modules');
-        if (fs.existsSync(nodeModulesPath)) {
-          fs.rmSync(nodeModulesPath, { recursive: true, force: true });
+        if (await pathExists(nodeModulesPath)) {
+          await rm(nodeModulesPath, { recursive: true, force: true });
           console.log(`   🗑️  node_modules removed (will be reinstalled with Yarn)`);
         }
 
         console.log(`   ✅ NPM artifacts cleaned to avoid Yarn conflicts`);
 
       } catch (cleanError) {
-        console.error(`   ❌ Cleanup failed:`, cleanError.message);
+        console.error(`   ❌ Cleanup failed:`, cleanError instanceof Error ? cleanError.message : String(cleanError));
         console.log(`   💡 Manually remove package-lock.json and node_modules`);
       }
     }
@@ -174,5 +183,4 @@ function main() {
   }
 }
 
-// Run the CLI
-main();
+main().catch(console.error);
