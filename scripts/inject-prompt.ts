@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import fs from 'fs';
+import { readFile } from 'fs/promises';
 import path from 'path';
 import {
   analyzePlugin,
@@ -71,8 +71,8 @@ async function main(): Promise<void> {
 
     // Prevent injecting into obsidian-plugin-config itself
     const selfPkg = path.join(targetPath, 'package.json');
-    if (fs.existsSync(selfPkg)) {
-      const pkg = JSON.parse(fs.readFileSync(selfPkg, 'utf8'));
+    if (await isValidPath(selfPkg)) {
+      const pkg = JSON.parse(await readFile(selfPkg, 'utf8'));
       if (pkg.name === 'obsidian-plugin-config') {
         console.error(`❌ Cannot inject into obsidian-plugin-config itself.`);
         process.exit(1);

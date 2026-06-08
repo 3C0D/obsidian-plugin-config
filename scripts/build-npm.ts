@@ -1,8 +1,9 @@
 #!/usr/bin/env tsx
 
-import fs from 'fs';
+import { readFile, writeFile, mkdir } from 'fs/promises';
 import path from 'path';
 import { execSync } from 'child_process';
+import { gitExec, gitOutput, isValidPath } from './utils.ts';
 
 /**
  * Generate bin/obsidian-inject.js from template
@@ -14,13 +15,13 @@ async function generateBinFile(): Promise<void> {
   const binPath = path.join(binDir, 'obsidian-inject.js');
 
   // Ensure bin directory exists
-  if (!fs.existsSync(binDir)) {
-    fs.mkdirSync(binDir, { recursive: true });
+  if (!(await isValidPath(binDir))) {
+    await mkdir(binDir, { recursive: true });
     console.log(`   📁 Created ${binDir} directory`);
   }
 
   // Read package.json for version info
-  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
 
   const binContent = `#!/usr/bin/env node
 
@@ -33,7 +34,7 @@ async function generateBinFile(): Promise<void> {
 import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join, isAbsolute, resolve } from 'path';
-import fs from 'fs';
+import { readFile, access } from 'fs/promises';
 
 // Get the directory of this script
 const __filename = fileURLToPath(import.meta.url);
@@ -42,6 +43,15 @@ const packageRoot = dirname(__dirname);
 
 // Path to the injection script
 const injectScriptPath = join(packageRoot, 'scripts', 'inject-path.ts');
+
+async function pathExists(p: string): Promise<boolean> {
+  try {
+    await access(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 function showHelp() {
   console.log(\`
@@ -80,7 +90,7 @@ More info: https://github.com/3C0D/obsidian-plugin-config
 \`);
 }
 
-function main() {
+async function main() {
   const args = process.argv.slice(2);
 
   // Handle help flags
@@ -90,7 +100,7 @@ function main() {
   }
 
   // Check if injection script exists
-  if (!fs.existsSync(injectScriptPath)) {
+  if (!(await pathExists(injectScriptPath))) {
     console.error(\`❌ Error: Injection script not found at \${injectScriptPath}\`);
     console.error(\`   Make sure obsidian-plugin-config is properly installed.\`);
     process.exit(1);
@@ -118,14 +128,14 @@ function main() {
   try {
     // Check if target directory has package.json
     const targetPackageJson = join(targetPath, 'package.json');
-    if (!fs.existsSync(targetPackageJson)) {
+    if (!(await pathExists(targetPackageJson))) {
       console.error(\`❌ Error: package.json not found in \${targetPath}\`);
       console.error(\`   Make sure this is a valid Node.js project.\`);
       process.exit(1);
     }
 
     // Prevent injecting into obsidian-plugin-config itself
-    const pkg = JSON.parse(fs.readFileSync(targetPackageJson, 'utf8'));
+    const pkg = JSON.parse(await readFile(targetPackageJson, 'utf8'));
     if (pkg.name === 'obsidian-plugin-config') {
       console.error(\`❌ Cannot inject into obsidian-plugin-config itself.\`);
       process.exit(1);
@@ -133,18 +143,18 @@ function main() {
 
     // Clean NPM artifacts if package-lock.json exists
     const packageLockPath = join(targetPath, 'package-lock.json');
-    if (fs.existsSync(packageLockPath)) {
+    if (await pathExists(packageLockPath)) {
       console.log(\`🧹 NPM installation detected, cleaning...\`);
 
       try {
         // Remove package-lock.json
-        fs.unlinkSync(packageLockPath);
+        await unlink(packageLockPath);
         console.log(\`   🗑️  package-lock.json removed\`);
 
         // Remove node_modules if it exists
         const nodeModulesPath = join(targetPath, 'node_modules');
-        if (fs.existsSync(nodeModulesPath)) {
-          fs.rmSync(nodeModulesPath, { recursive: true, force: true });
+        if (await pathExists(nodeModulesPath)) {
+          await rm(nodeModulesPath, { recursive: true, force: true });
           console.log(\`   🗑️  node_modules removed (will be reinstalled with Yarn)\`);
         }
 
@@ -198,11 +208,10 @@ function main() {
   }
 }
 
-// Run the CLI
-main();
+main().catch(console.error);
 `;
 
-  fs.writeFileSync(binPath, binContent, 'utf8');
+  await writeFile(binPath, binContent, 'utf8');
   console.log(`   ✅ Generated ${binPath}`);
 }
 
@@ -266,7 +275,7 @@ async function buildAndPublishNpm(): Promise<void> {
 
     // Step 1: Update version
     console.log(`📋 Step 1/5: Updating version...`);
-    execSync('tsx scripts/update-version-config.ts', { stdio: 'inherit' });
+    gitExec('npx tsx scripts/update-version-config.ts');
 
     // Step 2: Generate bin file
     console.log(`\n🔧 Step 2/5: Generating bin/obsidian-inject.js...`);
@@ -274,27 +283,23 @@ async function buildAndPublishNpm(): Promise<void> {
 
     // Step 3: Verify package
     console.log(`\n📋 Step 3/5: Verifying package...`);
-    verifyPackage();
+    await verifyPackage();
 
     // Step 4: Commit and push
     console.log(`\n📤 Step 4/5: Committing and pushing changes...`);
     try {
       // Add all changes
-      execSync('git add -A', { stdio: 'pipe' });
+      gitExec('git add -A');
 
       // Check if there are changes to commit
-      const status = execSync('git status --porcelain', { encoding: 'utf8' });
+      const status = gitOutput('git status --porcelain');
       if (status.trim()) {
-        const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-        execSync(`git commit -m "Publish NPM package v${packageJson.version}"`, {
-          stdio: 'pipe'
-        });
+        const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
+        gitExec(`git commit -m "Publish NPM package v${packageJson.version}"`);
 
         // Get current branch and push
-        const currentBranch = execSync('git rev-parse --abbrev-ref HEAD', {
-          encoding: 'utf8'
-        }).trim();
-        execSync(`git push origin ${currentBranch}`, { stdio: 'inherit' });
+        const currentBranch = gitOutput('git rev-parse --abbrev-ref HEAD');
+        gitExec(`git push origin ${currentBranch}`);
         console.log(`   ✅ Changes committed and pushed`);
       } else {
         console.log(`   ℹ️  No changes to commit`);
@@ -308,18 +313,15 @@ async function buildAndPublishNpm(): Promise<void> {
 
     // Step 5: Publish to NPM
     console.log(`\n📤 Step 5/5: Publishing to NPM...`);
-    execSync('npm publish --registry https://registry.npmjs.org/', {
-      stdio: 'inherit'
-    });
+    gitExec('npm publish --registry https://registry.npmjs.org/');
 
     // Optional: Update global CLI automatically
     console.log(`\n🌍 Updating global CLI...`);
     console.log(`   ⏳ Waiting 30s for NPM registry propagation...`);
     await new Promise((resolve) => setTimeout(resolve, 30000));
     try {
-      execSync(
-        'npm install -g obsidian-plugin-config@latest --force --engine-strict=false',
-        { stdio: 'inherit' }
+      gitExec(
+        'npm install -g obsidian-plugin-config@latest --force --engine-strict=false'
       );
       console.log(`   ✅ Global CLI updated`);
     } catch {
@@ -341,7 +343,7 @@ async function buildAndPublishNpm(): Promise<void> {
 /**
  * Verify package is ready for publication
  */
-function verifyPackage(): void {
+async function verifyPackage(): Promise<void> {
   // Check required scripts
   const requiredScripts = [
     'scripts/inject-path.ts',
@@ -354,14 +356,14 @@ function verifyPackage(): void {
   ];
 
   for (const script of requiredScripts) {
-    if (!fs.existsSync(script)) {
+    if (!(await isValidPath(script))) {
       throw new Error(`Missing required script: ${script}`);
     }
   }
   console.log(`   ✅ All required scripts present`);
 
   // Check package.json
-  const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+  const packageJson = JSON.parse(await readFile('package.json', 'utf8'));
   const requiredFields = [
     'name',
     'version',
@@ -379,13 +381,13 @@ function verifyPackage(): void {
   console.log(`   ✅ Package.json valid (v${packageJson.version})`);
 
   // Check bin file exists
-  if (!fs.existsSync('bin/obsidian-inject.js')) {
+  if (!(await isValidPath('bin/obsidian-inject.js'))) {
     throw new Error(`Missing bin file: bin/obsidian-inject.js`);
   }
   console.log(`   ✅ Bin file ready`);
 
-  // Quick build test
-  execSync('tsc --noEmit', { stdio: 'pipe' });
+  // Quick build test (suppress tsc output, only show pass/fail)
+  gitExec('tsc --noEmit', undefined, true);
   console.log(`   ✅ TypeScript check passed`);
 }
 

@@ -1,26 +1,32 @@
-# Audit — obsidian-plugin-config
-
-Audit mis à jour du repo d'injection de configuration pour plugins Obsidian.
-
----
-
-## 1. Bugs & problèmes fonctionnels restants ou nouveaux
-
-### 🔴 BUG — Erreurs de compilation TypeScript dans les templates & conflits d'IDE
-
-Le fait d'avoir un fichier `package.json` et `tsconfig.json` directement sous `templates/` perturbe les IDE et cause des erreurs de types car `node_modules` n'y est plus présent.
-De plus, la racine du projet (`tsconfig.json` de la racine) inclut `templates/**/*.ts` mais son `package.json` ne contient pas les dépendances de développement utilisées par les templates (`dotenv`, `builtin-modules`, `esbuild`, `obsidian`, `obsidian-typings`, `tslib`). Cela produit des erreurs `Cannot find module 'dotenv'` lors de l'exécution de `tsc` à la racine.
-
-**Actions recommandées :**
-1. Renommer `templates/package.json` en `templates/package.json.template`.
-2. Renommer `templates/tsconfig.json` en `templates/tsconfig.json.template`.
-3. Installer les dépendances requises par les templates en tant que `devDependencies` dans le `package.json` racine pour que le compilateur TS de la racine résolve correctement les types sans nécessiter de dossier `node_modules` dans `templates/`.
-4. Mettre à jour le code d'injection dans [inject-core.ts](file:///c:/Users/dd200/Documents/Mes_projets/Mes%20repo%20obsidian%20new/obsidian-plugin-config/scripts/inject-core.ts) pour copier à partir des fichiers `.template` et les restaurer sans suffixe dans la cible.
-5. Mettre à jour la documentation et les scripts d'aide pour mentionner les nouveaux noms de templates.
-
----
-
 ## 2. Incohérences & améliorations de code restantes
+
+### ✅ APPLIQUÉ — Mix fs sync/async unifié dans `inject-core.ts`
+
+Toutes les opérations `fs` sync ont été remplacées par leur équivalent `fs/promises` :
+
+- `fs.readFileSync` → `await readFile`
+- `fs.writeFileSync` → `await writeFile`
+- `fs.existsSync` → helper local `pathExists` (basé sur `access`)
+- `fs.unlinkSync` → `await unlink`
+- `fs.mkdirSync` → `await mkdir`
+- `fs.rmSync` → `await rm`
+- `fs.renameSync` → `await rename`
+- `fs.readdirSync` → `await readdir`
+
+Fonctions converties en `async` (et leurs appelants mis à jour) :
+
+- `findPluginConfigRoot()` → `Promise<string>`
+- `copyFromLocal()` → `Promise<string>`
+- `readInjectionInfo()` → `Promise<Record<string, string> | null>`
+
+Bonus appliqués :
+
+- Suppression de l'import dynamique inutile dans `showInjectionPlan` et `diffAndPromptFiles` (utilitaires remontés en import statique).
+- Déduplication du bloc `git rev-parse` dans `ensurePluginConfigClean` (la branche est lue une seule fois).
+
+Fichier mis à jour : `scripts/inject-core.ts` + `scripts/inject-path.ts`. Vérification `tsc --noEmit` : OK.
+
+---
 
 ### 🟡 INCOHÉRENCE — Flags CLI inversés dans la doc
 
@@ -35,5 +41,5 @@ Le tableau indique `--no, -n` pour la CLI globale comme « auto-confirme tous le
 | # | Suggestion | Impact |
 |---|-----------|--------|
 | 1 | Unifier les flags `--yes`/`--no` entre CLI globale et scripts locaux | UX |
-| 2 | Remplacer le mix fs sync/async dans `inject-core.ts` par une approche uniforme | Propreté |
+| 2 | ~~Remplacer le mix fs sync/async dans `inject-core.ts` par une approche uniforme~~ ✅ APPLIQUÉ | Propreté |
 | 3 | Nettoyer les numéros de lignes obsolètes dans `docs/SCSS-FLOW.md` | Doc maintenance |

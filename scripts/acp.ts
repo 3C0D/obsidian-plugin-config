@@ -1,22 +1,23 @@
-import { execSync, spawnSync } from 'child_process';
-import fs from 'fs';
+import { readFile } from 'fs/promises';
 import path from 'path';
 import {
   askQuestion,
   cleanInput,
   createReadlineInterface,
   gitExec,
-  ensureGitSync
+  gitOutput,
+  ensureGitSync,
+  isValidPath
 } from './utils.js';
 
 const rl = createReadlineInterface();
 
 /** Check if we're in the centralized config repo */
-function isInCentralizedRepo(): boolean {
+async function isInCentralizedRepo(): Promise<boolean> {
   const packageJsonPath = path.join(process.cwd(), 'package.json');
-  if (!fs.existsSync(packageJsonPath)) return false;
+  if (!(await isValidPath(packageJsonPath))) return false;
 
-  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
   return packageJson.name === 'obsidian-plugin-config';
 }
 
@@ -25,7 +26,7 @@ async function main(): Promise<void> {
     if (process.argv.includes('-b')) {
       console.log('Building...');
       // For obsidian-plugin-config, just run TypeScript check
-      if (isInCentralizedRepo()) {
+      if (await isInCentralizedRepo()) {
         gitExec('npx tsc --noEmit');
       } else {
         gitExec('yarn build');
@@ -39,17 +40,14 @@ async function main(): Promise<void> {
 
     try {
       gitExec('git add -A');
-      const result = spawnSync('git', ['commit', '-m', cleanedInput], { stdio: 'inherit' });
-      if (result.status !== 0) {
-        throw new Error('Commit failed');
-      }
+      gitExec(`git commit -m "${cleanedInput}"`);
     } catch {
       console.log('Commit already exists or failed.');
       return;
     }
 
     // get current branch name
-    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
+    const currentBranch = gitOutput('git rev-parse --abbrev-ref HEAD');
 
     // Ensure Git is synchronized before pushing
     await ensureGitSync();

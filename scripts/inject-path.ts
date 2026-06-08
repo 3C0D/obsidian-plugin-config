@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 
-import fs from 'fs';
+import { readFile } from 'fs/promises';
 import path from 'path';
 import {
   analyzePlugin,
@@ -15,12 +15,10 @@ import { isValidPath } from './utils.js';
 async function main(): Promise<void> {
   try {
     // Show version
-    const configRoot = findPluginConfigRoot();
+    const configRoot = await findPluginConfigRoot();
     let version = 'unknown';
     try {
-      const pkg = JSON.parse(
-        fs.readFileSync(path.join(configRoot, 'package.json'), 'utf8')
-      );
+      const pkg = JSON.parse(await readFile(path.join(configRoot, 'package.json'), 'utf8'));
       version = pkg.version || 'unknown';
     } catch {
       // Ignore
@@ -54,12 +52,14 @@ async function main(): Promise<void> {
 
     // Prevent injecting into obsidian-plugin-config itself
     const selfPkg = path.join(resolvedPath, 'package.json');
-    if (fs.existsSync(selfPkg)) {
-      const pkg = JSON.parse(fs.readFileSync(selfPkg, 'utf8'));
+    try {
+      const pkg = JSON.parse(await readFile(selfPkg, 'utf8'));
       if (pkg.name === 'obsidian-plugin-config') {
         console.error(`❌ Cannot inject into obsidian-plugin-config itself.`);
         process.exit(1);
       }
+    } catch {
+      // No package.json or unreadable - not the self case
     }
 
     console.log(`📁 Target directory: ${resolvedPath}`);
@@ -86,7 +86,7 @@ async function main(): Promise<void> {
       console.log(`   ✅ Updated package.json scripts`);
       console.log(`   ✅ Required dependencies`);
 
-      const injectionInfo = readInjectionInfo(resolvedPath);
+      const injectionInfo = await readInjectionInfo(resolvedPath);
 
       if (injectionInfo) {
         console.log(`\n✅ Status: Plugin is already injected`);
@@ -100,10 +100,9 @@ async function main(): Promise<void> {
           }`
         );
 
-        const configRoot = findPluginConfigRoot();
         try {
           const configPackageJson = JSON.parse(
-            fs.readFileSync(path.join(configRoot, 'package.json'), 'utf8')
+            await readFile(path.join(configRoot, 'package.json'), 'utf8')
           );
           const currentVersion = configPackageJson.version;
           if (
@@ -119,7 +118,7 @@ async function main(): Promise<void> {
           // Ignore version comparison errors
         }
       } else {
-        const hasInjectedScripts = fs.existsSync(
+        const hasInjectedScripts = await isValidPath(
           path.join(resolvedPath, 'scripts', 'utils.ts')
         );
         if (hasInjectedScripts) {

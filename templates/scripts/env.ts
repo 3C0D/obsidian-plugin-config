@@ -1,6 +1,5 @@
 import path from 'path';
-import { readFileSync } from 'fs';
-import fs from 'fs';
+import { readFile } from 'fs/promises';
 import { type Interface } from 'readline';
 import {
   isValidPath,
@@ -18,11 +17,11 @@ interface Manifest {
 
 export type { Manifest };
 
-export function checkManifest(pluginDir: string): Manifest {
+export async function checkManifest(pluginDir: string): Promise<Manifest> {
   const manifestPath = path.join(pluginDir, 'manifest.json');
 
   // Check if manifest exists (for plugin-config itself, it might not exist)
-  if (!fs.existsSync(manifestPath)) {
+  if (!(await isValidPath(manifestPath))) {
     console.log(
       '⚠️  No manifest.json found - this script is designed for Obsidian plugins'
     );
@@ -30,7 +29,7 @@ export function checkManifest(pluginDir: string): Manifest {
     process.exit(0);
   }
 
-  return JSON.parse(readFileSync(manifestPath, 'utf-8'));
+  return JSON.parse(await readFile(manifestPath, 'utf-8'));
 }
 
 /**

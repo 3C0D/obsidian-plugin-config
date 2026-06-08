@@ -1,9 +1,9 @@
-import { execSync, spawnSync } from 'child_process';
 import {
   askQuestion,
   cleanInput,
   createReadlineInterface,
   gitExec,
+  gitOutput,
   ensureGitSync
 } from './utils.ts';
 
@@ -23,17 +23,14 @@ async function main(): Promise<void> {
 
     try {
       gitExec('git add -A');
-      const result = spawnSync('git', ['commit', '-m', cleanedInput], { stdio: 'inherit' });
-      if (result.status !== 0) {
-        throw new Error('Commit failed');
-      }
+      gitExec(`git commit -m "${cleanedInput}"`);
     } catch {
       console.log('Commit already exists or failed.');
       return;
     }
 
     // get current branch name
-    const currentBranch = execSync('git rev-parse --abbrev-ref HEAD').toString().trim();
+    const currentBranch = gitOutput('git rev-parse --abbrev-ref HEAD');
 
     // Ensure Git is synchronized before pushing
     await ensureGitSync();

@@ -1,5 +1,4 @@
-import { access, mkdir, copyFile, rm, writeFile, rename } from 'fs/promises';
-import { existsSync, readFileSync } from 'fs';
+import { access, mkdir, copyFile, rm, writeFile, rename, readFile } from 'fs/promises';
 import path from 'path';
 import * as readline from 'readline';
 import { execSync } from 'child_process';
@@ -122,9 +121,18 @@ export async function copyFilesToTargetDir(buildPath: string): Promise<void> {
   }
 }
 
-export function gitExec(command: string, cwd?: string): void {
+/**
+ * Execute a shell command.
+ * Uses shell spawning for cross-platform compatibility (Windows + Linux).
+ * @param pipe - set to true to suppress stdout/stderr output
+ */
+export function gitExec(command: string, cwd?: string, pipe = false): void {
   try {
-    execSync(command, { stdio: 'inherit', ...(cwd ? { cwd } : {}) });
+    execSync(command, {
+      stdio: pipe ? 'pipe' : 'inherit',
+      shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/sh',
+      cwd
+    });
   } catch (error: unknown) {
     console.error(
       `Error executing '${command}':`,
@@ -135,6 +143,19 @@ export function gitExec(command: string, cwd?: string): void {
 }
 
 /**
+ * Execute a shell command and return its stdout as a trimmed string.
+ * Uses shell spawning for cross-platform compatibility (Windows + Linux).
+ */
+export function gitOutput(command: string, cwd?: string): string {
+  const result = execSync(command, {
+    encoding: 'utf8',
+    shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/sh',
+    cwd
+  });
+  return result.trim();
+}
+
+/**
  * Ensure Git repository is synchronized with remote before pushing
  */
 export async function ensureGitSync(): Promise<void> {
@@ -142,14 +163,14 @@ export async function ensureGitSync(): Promise<void> {
     console.log('🔄 Checking Git synchronization...');
 
     // Fetch latest changes from remote
-    execSync('git fetch origin', { stdio: 'pipe' });
+    gitExec('git fetch origin');
 
     // Check if branch is behind remote
-    const status = execSync('git status --porcelain -b', { encoding: 'utf8' });
+    const status = gitOutput('git status --porcelain -b');
 
     if (status.includes('behind')) {
       console.log('📥 Branch behind remote. Pulling changes...');
-      execSync('git pull', { stdio: 'inherit' });
+      gitExec('git pull');
       console.log('✅ Successfully pulled remote changes');
     } else {
       console.log('✅ Repository is synchronized with remote');
@@ -170,7 +191,7 @@ export async function renameMainCss(outdir: string): Promise<void> {
   const mainCssPath = path.join(outdir, 'main.css');
   const stylesCssPath = path.join(outdir, 'styles.css');
   try {
-    if (existsSync(mainCssPath)) {
+    if (await isValidPath(mainCssPath)) {
       await rename(mainCssPath, stylesCssPath);
     }
   } catch (error: unknown) {
@@ -186,22 +207,17 @@ export function isInPluginsFolder(currentPath: string): boolean {
 }
 
 /** Validates that a path points to an Obsidian vault with a plugins directory */
-export function validateVaultPath(vaultPath: string): boolean {
+export async function validateVaultPath(vaultPath: string): Promise<boolean> {
   // Normalize path to handle both forward and backward slashes
   const normalizedPath = path.normalize(vaultPath);
   return (
-    existsSync(path.join(normalizedPath, '.obsidian')) &&
-    existsSync(path.join(normalizedPath, '.obsidian', 'plugins'))
+    await isValidPath(path.join(normalizedPath, '.obsidian')) &&
+    await isValidPath(path.join(normalizedPath, '.obsidian', 'plugins'))
   );
 }
 
 /** Resolves the full plugin install path from a vault path */
 export function getVaultPath(vaultPath: string, pluginId: string): string {
-  if (!validateVaultPath(vaultPath)) {
-    console.error(`❌ Invalid vault path: ${vaultPath}`);
-    console.error(`   The path must contain a .obsidian/plugins directory`);
-    process.exit(1);
-  }
   const pluginsPath = path.join('.obsidian', 'plugins');
   return vaultPath.includes(pluginsPath)
     ? path.join(vaultPath, pluginId)
@@ -216,7 +232,7 @@ export async function updateEnvFile(
 ): Promise<void> {
   let envContent = '';
   try {
-    envContent = readFileSync(envPath, 'utf8');
+    envContent = await readFile(envPath, 'utf8');
   } catch {
     /* file doesn't exist yet */
   }

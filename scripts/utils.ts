@@ -115,13 +115,35 @@ export async function copyFilesToTargetDir(buildPath: string): Promise<void> {
   }
 }
 
-export function gitExec(command: string, cwd?: string): void {
+/**
+ * Execute a shell command.
+ * Uses shell spawning for cross-platform compatibility (Windows + Linux).
+ * @param pipe - set to true to suppress stdout/stderr output
+ */
+export function gitExec(command: string, cwd?: string, pipe = false): void {
   try {
-    execSync(command, { stdio: 'inherit', ...(cwd ? { cwd } : {}) });
+    execSync(command, {
+      stdio: pipe ? 'pipe' : 'inherit',
+      shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/sh',
+      cwd
+    });
   } catch (error: unknown) {
     console.error(`Error executing '${command}':`, (error as Error).message);
     throw error;
   }
+}
+
+/**
+ * Execute a shell command and return its stdout as a trimmed string.
+ * Uses shell spawning for cross-platform compatibility (Windows + Linux).
+ */
+export function gitOutput(command: string, cwd?: string): string {
+  const result = execSync(command, {
+    encoding: 'utf8',
+    shell: process.platform === 'win32' ? 'cmd.exe' : '/bin/sh',
+    cwd
+  });
+  return result.trim();
 }
 
 /**
@@ -132,14 +154,14 @@ export async function ensureGitSync(): Promise<void> {
     console.log('🔄 Checking Git synchronization...');
 
     // Fetch latest changes from remote
-    execSync('git fetch origin', { stdio: 'pipe' });
+    gitExec('git fetch origin');
 
     // Check if branch is behind remote
-    const status = execSync('git status --porcelain -b', { encoding: 'utf8' });
+    const status = gitOutput('git status --porcelain -b');
 
     if (status.includes('behind')) {
       console.log('📥 Branch behind remote. Pulling changes...');
-      execSync('git pull', { stdio: 'inherit' });
+      gitExec('git pull');
       console.log('✅ Successfully pulled remote changes');
     } else {
       console.log('✅ Repository is synchronized with remote');

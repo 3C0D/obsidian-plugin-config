@@ -1,10 +1,23 @@
 #!/usr/bin/env tsx
 
-import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 import { fileURLToPath } from 'url';
-import { isValidPath, gitExec } from './utils.ts';
+import {
+  mkdir,
+  readdir,
+  readFile,
+  rename,
+  rm,
+  unlink,
+  writeFile
+} from 'fs/promises';
+import {
+  askConfirmation,
+  createReadlineInterface,
+  gitExec,
+  gitOutput,
+  isValidPath
+} from './utils.ts';
 
 export interface InjectionPlan {
   targetPath: string;
@@ -14,6 +27,7 @@ export interface InjectionPlan {
   hasScriptsFolder: boolean;
   currentDependencies: string[];
 }
+
 
 /**
  * Analyze the target plugin directory
@@ -34,7 +48,7 @@ export async function analyzePlugin(pluginPath: string): Promise<InjectionPlan> 
 
   if (plan.hasManifest) {
     try {
-      const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf8'));
+      const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
       plan.isObsidianPlugin = !!(manifest.id && manifest.name && manifest.version);
     } catch {
       console.warn('Warning: Could not parse manifest.json');
@@ -43,7 +57,7 @@ export async function analyzePlugin(pluginPath: string): Promise<InjectionPlan> 
 
   if (plan.hasPackageJson) {
     try {
-      const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+      const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
       plan.currentDependencies = [
         ...Object.keys(packageJson.dependencies || {}),
         ...Object.keys(packageJson.devDependencies || {})
@@ -59,14 +73,14 @@ export async function analyzePlugin(pluginPath: string): Promise<InjectionPlan> 
 /**
  * Find plugin-config root directory (handles NPM global installs)
  */
-export function findPluginConfigRoot(): string {
+export async function findPluginConfigRoot(): Promise<string> {
   const scriptDir = path.dirname(fileURLToPath(import.meta.url));
   const npmPackageRoot = path.resolve(scriptDir, '..');
   const npmPackageJson = path.join(npmPackageRoot, 'package.json');
 
-  if (fs.existsSync(npmPackageJson)) {
+  if (await isValidPath(npmPackageJson)) {
     try {
-      const packageContent = JSON.parse(fs.readFileSync(npmPackageJson, 'utf8'));
+      const packageContent = JSON.parse(await readFile(npmPackageJson, 'utf8'));
       if (packageContent.name === 'obsidian-plugin-config') {
         return npmPackageRoot;
       }
@@ -81,12 +95,12 @@ export function findPluginConfigRoot(): string {
 /**
  * Copy file content from local plugin-config directory
  */
-export function copyFromLocal(filePath: string): string {
-  const configRoot = findPluginConfigRoot();
+export async function copyFromLocal(filePath: string): Promise<string> {
+  const configRoot = await findPluginConfigRoot();
   const sourcePath = path.join(configRoot, filePath);
 
   try {
-    return fs.readFileSync(sourcePath, 'utf8');
+    return await readFile(sourcePath, 'utf8');
   } catch (error) {
     throw new Error(`Failed to copy ${filePath}: ${error}`);
   }
@@ -96,18 +110,18 @@ export function copyFromLocal(filePath: string): string {
  * Check if plugin-config repo is clean and commit if needed
  */
 export async function ensurePluginConfigClean(): Promise<void> {
-  const configRoot = findPluginConfigRoot();
+  const configRoot = await findPluginConfigRoot();
   const gitDir = path.join(configRoot, '.git');
 
   // Skip git check if not a git repo
   // (e.g. NPM global install)
-  if (!fs.existsSync(gitDir)) {
+  if (!(await isValidPath(gitDir))) {
     console.log(`✅ Plugin-config repo is clean` + ` (NPM install, no git check)`);
     return;
   }
 
   try {
-    const gitStatus = execSync('git status --porcelain', { cwd: configRoot, encoding: 'utf8' }).trim();
+    const gitStatus = gitOutput('git status --porcelain', configRoot);
 
     if (gitStatus) {
       console.log(`\n⚠️  Plugin-config has uncommitted changes:`);
@@ -118,19 +132,13 @@ export async function ensurePluginConfigClean(): Promise<void> {
       gitExec('git add -A', configRoot);
       gitExec(`git commit -m "${msg}"`, configRoot);
 
+      const branch = gitOutput('git rev-parse --abbrev-ref HEAD', configRoot);
+
       try {
-        const branch = execSync('git rev-parse --abbrev-ref HEAD', {
-          cwd: configRoot,
-          encoding: 'utf8'
-        }).trim();
         gitExec(`git push origin ${branch}`, configRoot);
         console.log(`✅ Changes committed and pushed`);
       } catch {
         try {
-          const branch = execSync('git rev-parse --abbrev-ref HEAD', {
-            cwd: configRoot,
-            encoding: 'utf8'
-          }).trim();
           gitExec(`git push --set-upstream origin ${branch}`, configRoot);
           console.log(`✅ New branch pushed with upstream`);
         } catch {
@@ -152,9 +160,6 @@ export async function showInjectionPlan(
   plan: InjectionPlan,
   autoConfirm: boolean = false
 ): Promise<boolean> {
-  const { createReadlineInterface } = await import('./utils.ts');
-  const rl = createReadlineInterface();
-
   console.log(`\n🎯 Injection Plan for: ${plan.targetPath}`);
   console.log(`📁 Target: ${path.basename(plan.targetPath)}`);
   console.log(`📦 Package.json: ${plan.hasPackageJson ? '✅' : '❌'}`);
@@ -176,12 +181,10 @@ export async function showInjectionPlan(
 
   if (autoConfirm) {
     console.log(`\n✅ Auto-confirming all file replacements...`);
-    rl.close();
     return true;
   }
 
   // No global confirmation needed - file-by-file confirmation will happen in diffAndPromptFiles
-  rl.close();
   return true;
 }
 
@@ -211,7 +214,7 @@ export async function cleanOldScripts(
       const scriptFile = path.join(scriptsPath, `${scriptName}${ext}`);
       if (await isValidPath(scriptFile)) {
         if (approvedDests.has(scriptFile)) {
-          fs.unlinkSync(scriptFile);
+          await unlink(scriptFile);
           console.log(`🗑️  Removed existing ${scriptName}${ext} (will be replaced)`);
         }
       }
@@ -222,7 +225,7 @@ export async function cleanOldScripts(
   for (const fileName of obsoleteRootFiles) {
     const filePath = path.join(path.dirname(scriptsPath), fileName);
     if (await isValidPath(filePath)) {
-      fs.unlinkSync(filePath);
+      await unlink(filePath);
       console.log(`🗑️  Removed obsolete root file: ${fileName}`);
     }
   }
@@ -231,7 +234,7 @@ export async function cleanOldScripts(
   for (const fileName of obsoleteFiles) {
     const filePath = path.join(scriptsPath, fileName);
     if (await isValidPath(filePath)) {
-      fs.unlinkSync(filePath);
+      await unlink(filePath);
       console.log(`🗑️  Removed obsolete file: ${fileName}`);
     }
   }
@@ -252,7 +255,7 @@ export async function cleanOldLintFiles(targetPath: string): Promise<void> {
   for (const fileName of oldLintFiles) {
     const filePath = path.join(targetPath, fileName);
     if (await isValidPath(filePath)) {
-      fs.unlinkSync(filePath);
+      await unlink(filePath);
       console.log(
         `🗑️  Removed old ESLint file: ${fileName} (replaced by eslint.config.mts)`
       );
@@ -262,7 +265,7 @@ export async function cleanOldLintFiles(targetPath: string): Promise<void> {
   for (const fileName of conflictingLintFiles) {
     const filePath = path.join(targetPath, fileName);
     if (await isValidPath(filePath)) {
-      fs.unlinkSync(filePath);
+      await unlink(filePath);
       console.log(
         `🗑️  Removed existing ESLint file: ${fileName} (will be replaced by injection)`
       );
@@ -360,9 +363,8 @@ export async function diffAndPromptFiles(
   targetPath: string,
   autoConfirm: boolean
 ): Promise<Set<string>> {
-  const { askConfirmation, createReadlineInterface } = await import('./utils.ts');
   const rl = autoConfirm ? null : createReadlineInterface();
-  const configRoot = findPluginConfigRoot();
+  const configRoot = await findPluginConfigRoot();
   const entries = buildFileList(targetPath);
   const approved = new Set<string>();
 
@@ -380,14 +382,14 @@ export async function diffAndPromptFiles(
     const srcPath = path.join(configRoot, entry.src);
     let srcContent: string;
     try {
-      srcContent = fs.readFileSync(srcPath, 'utf8');
+      srcContent = await readFile(srcPath, 'utf8');
     } catch {
       // Source doesn't exist, skip
       continue;
     }
 
     // Target doesn't exist yet → inject without prompting
-    if (!fs.existsSync(entry.dest)) {
+    if (!(await isValidPath(entry.dest))) {
       approved.add(entry.dest);
       continue;
     }
@@ -400,23 +402,27 @@ export async function diffAndPromptFiles(
         '.eslintrc.json',
         '.eslintrc.cjs'
       ];
-      const hasOldEslint = oldEslintFiles.some((file) =>
-        fs.existsSync(path.join(targetPath, file))
-      );
+      let hasOldEslint = false;
+      for (const file of oldEslintFiles) {
+        if (await isValidPath(path.join(targetPath, file))) {
+          hasOldEslint = true;
+          break;
+        }
+      }
       if (hasOldEslint) {
         console.log(
-          `   🔄 ${path.relative(targetPath, entry.dest)} (migrating from old .eslintrc format)`
+          `   🔄 ${path.relative(targetPath, entry.dest).replace(/\\/g, '/')} (migrating from old .eslintrc format)`
         );
         approved.add(entry.dest);
         continue;
       }
     }
 
-    const destContent = fs.readFileSync(entry.dest, 'utf8');
+    const destContent = await readFile(entry.dest, 'utf8');
 
     // Identical → skip silently
     if (srcContent === destContent) {
-      console.log(`   ✅ ${path.relative(targetPath, entry.dest)} (unchanged)`);
+      console.log(`   ✅ ${path.relative(targetPath, entry.dest).replace(/\\/g, '/')} (unchanged)`);
       continue;
     }
 
@@ -425,17 +431,17 @@ export async function diffAndPromptFiles(
     const relDest = path.relative(targetPath, entry.dest);
 
     if (autoConfirm) {
-      console.log(`   ✅ ${relDest} (will be updated)`);
+      console.log(`   ✅ ${relDest.replace(/\\/g, '/')} (will be updated)`);
       approved.add(entry.dest);
     } else {
       const update = await askConfirmation(
-        `   Update ${relDest}? (content differs)`,
+        `   Update ${relDest.replace(/\\/g, '/')}? (content differs)`,
         rl!
       );
       if (update) {
         approved.add(entry.dest);
       } else {
-        console.log(`   ⏭️  Kept existing ${relDest}`);
+        console.log(`   ⏭️  Kept existing ${relDest.replace(/\\/g, '/')}`);
       }
     }
   }
@@ -458,7 +464,7 @@ export async function injectScripts(
   const scriptsPath = path.join(targetPath, 'scripts');
 
   if (!(await isValidPath(scriptsPath))) {
-    fs.mkdirSync(scriptsPath, { recursive: true });
+    await mkdir(scriptsPath, { recursive: true });
     console.log(`📁 Created scripts directory`);
   }
 
@@ -517,8 +523,8 @@ export async function injectScripts(
         console.log(`   ⏭️  Skipped ${fileName} (kept existing)`);
         continue;
       }
-      const content = copyFromLocal(scriptFile);
-      fs.writeFileSync(targetFile, content, 'utf8');
+      const content = await copyFromLocal(scriptFile);
+      await writeFile(targetFile, content, 'utf8');
       console.log(`   ✅ ${fileName}`);
     } catch (error) {
       console.error(`   ❌ Failed to inject ${scriptFile}: ${error}`);
@@ -536,18 +542,16 @@ export async function injectScripts(
     }
 
     try {
-      const templateContent = copyFromLocal(src);
+      const templateContent = await copyFromLocal(src);
 
       // For .env: merge existing values into the template
-      if (mergeEnvFile.has(destName) && fs.existsSync(targetFile)) {
-        const existing = fs.readFileSync(targetFile, 'utf8');
-        // Parse existing key=value pairs
+      if (mergeEnvFile.has(destName) && (await isValidPath(targetFile))) {
+        const existing = await readFile(targetFile, 'utf8');
         const existingVals: Record<string, string> = {};
         for (const line of existing.split(/\r?\n/)) {
           const m = line.match(/^([^#=]+)=(.*)$/);
           if (m) existingVals[m[1].trim()] = m[2].trim();
         }
-        // Re-write template, substituting existing values
         const merged = templateContent
           .split(/\r?\n/)
           .map((line) => {
@@ -560,12 +564,12 @@ export async function injectScripts(
             return line;
           })
           .join('\n');
-        fs.writeFileSync(targetFile, merged, 'utf8');
+        await writeFile(targetFile, merged, 'utf8');
         console.log(`   ✅ ${destName} (values preserved)`);
         continue;
       }
 
-      fs.writeFileSync(targetFile, templateContent, 'utf8');
+      await writeFile(targetFile, templateContent, 'utf8');
       console.log(`   ✅ ${destName}`);
     } catch (error) {
       console.error(`   ❌ Failed to inject ${destName}: ${error}`);
@@ -577,12 +581,12 @@ export async function injectScripts(
     try {
       const targetFile = path.join(targetPath, destName);
       if (!approvedDests.has(targetFile)) continue;
-      const content = copyFromLocal(src);
+      const content = await copyFromLocal(src);
       const targetDir = path.dirname(targetFile);
       if (!(await isValidPath(targetDir))) {
-        fs.mkdirSync(targetDir, { recursive: true });
+        await mkdir(targetDir, { recursive: true });
       }
-      fs.writeFileSync(targetFile, content, 'utf8');
+      await writeFile(targetFile, content, 'utf8');
       console.log(`   ✅ ${destName}`);
     } catch (error) {
       console.error(`   ❌ Failed to inject ${destName}: ${error}`);
@@ -590,20 +594,17 @@ export async function injectScripts(
   }
 
   console.log(`\n📥 Copying GitHub workflows from local files...`);
-
   for (const workflowFile of workflowFiles) {
     try {
-      const content = copyFromLocal(workflowFile);
+      const content = await copyFromLocal(workflowFile);
       const relativePath = workflowFile.replace('templates/', '');
       const targetFile = path.join(targetPath, relativePath);
       if (!approvedDests.has(targetFile)) continue;
       const targetDir = path.dirname(targetFile);
-
       if (!(await isValidPath(targetDir))) {
-        fs.mkdirSync(targetDir, { recursive: true });
+        await mkdir(targetDir, { recursive: true });
       }
-
-      fs.writeFileSync(targetFile, content, 'utf8');
+      await writeFile(targetFile, content, 'utf8');
       console.log(`   ✅ ${relativePath}`);
     } catch (error) {
       console.error(`   ❌ Failed to inject ${workflowFile}: ${error}`);
@@ -625,11 +626,11 @@ export async function updatePackageJson(
   }
 
   try {
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
 
-    const configRoot = findPluginConfigRoot();
+    const configRoot = await findPluginConfigRoot();
     const templatePkg = JSON.parse(
-      fs.readFileSync(path.join(configRoot, 'templates/package.json.template'), 'utf8')
+      await readFile(path.join(configRoot, 'templates/package.json.template'), 'utf8')
     );
 
     const obsoleteScripts = ['version'];
@@ -666,7 +667,7 @@ export async function updatePackageJson(
     packageJson.engines.yarn = templatePkg.engines.yarn;
     packageJson.type = templatePkg.type;
 
-    fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');
+    await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2), 'utf8');
     console.log(
       `   ✅ Updated package.json (${addedDeps} new, ${updatedDeps} updated dependencies)`
     );
@@ -680,11 +681,10 @@ export async function updatePackageJson(
  */
 export async function createRequiredDirectories(targetPath: string): Promise<void> {
   const directories = [path.join(targetPath, '.github', 'workflows')];
-
   for (const dir of directories) {
     if (!(await isValidPath(dir))) {
-      fs.mkdirSync(dir, { recursive: true });
-      console.log(`   📁 Created ${path.relative(targetPath, dir)}`);
+      await mkdir(dir, { recursive: true });
+      console.log(`   📁 Created ${path.relative(targetPath, dir).replace(/\\/g, '/')}`);
     }
   }
 }
@@ -693,38 +693,35 @@ export async function createRequiredDirectories(targetPath: string): Promise<voi
  * Create injection info file
  */
 export async function createInjectionInfo(targetPath: string): Promise<void> {
-  const configRoot = findPluginConfigRoot();
+  const configRoot = await findPluginConfigRoot();
   const configPackageJsonPath = path.join(configRoot, 'package.json');
-
   let injectorVersion = 'unknown';
   try {
-    const configPackageJson = JSON.parse(fs.readFileSync(configPackageJsonPath, 'utf8'));
+    const configPackageJson = JSON.parse(await readFile(configPackageJsonPath, 'utf8'));
     injectorVersion = configPackageJson.version || 'unknown';
   } catch {
     console.warn('Warning: Could not read injector version');
   }
-
   const injectionInfo = {
     injectorVersion,
     injectionDate: new Date().toISOString(),
     injectorName: 'obsidian-plugin-config'
   };
-
   const infoPath = path.join(targetPath, '.injection-info.json');
-  fs.writeFileSync(infoPath, JSON.stringify(injectionInfo, null, 2));
+  await writeFile(infoPath, JSON.stringify(injectionInfo, null, 2));
   console.log(`   ✅ Created injection info file (.injection-info.json)`);
 }
 
 /**
  * Read injection info from target plugin
  */
-export function readInjectionInfo(targetPath: string): Record<string, string> | null {
+export async function readInjectionInfo(
+  targetPath: string
+): Promise<Record<string, string> | null> {
   const infoPath = path.join(targetPath, '.injection-info.json');
-
-  if (!fs.existsSync(infoPath)) return null;
-
+  if (!(await isValidPath(infoPath))) return null;
   try {
-    return JSON.parse(fs.readFileSync(infoPath, 'utf8'));
+    return JSON.parse(await readFile(infoPath, 'utf8'));
   } catch {
     console.warn('Warning: Could not parse .injection-info.json');
     return null;
@@ -739,35 +736,28 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
   const yarnLockPath = path.join(targetPath, 'yarn.lock');
   const nodeModulesPath = path.join(targetPath, 'node_modules');
 
-  const hasPackageLock = fs.existsSync(packageLockPath);
-  const hasYarnLock = fs.existsSync(yarnLockPath);
+  const hasPackageLock = await isValidPath(packageLockPath);
+  const hasYarnLock = await isValidPath(yarnLockPath);
 
   if (hasPackageLock) {
     console.log(`\n🧹 Cleaning NPM artifacts (migrating to Yarn)...`);
-
     try {
-      // Remove node_modules FIRST (before lock files)
-      if (fs.existsSync(nodeModulesPath)) {
+      if (await isValidPath(nodeModulesPath)) {
         console.log(`   ⏳ Removing node_modules (this may take a moment)...`);
-
         try {
-          fs.rmSync(nodeModulesPath, { recursive: true, force: true });
+          await rm(nodeModulesPath, { recursive: true, force: true });
         } catch {
-          // Ignore initial error, lock detection checks if it still exists below
+          // ignore
         }
-
-        if (fs.existsSync(nodeModulesPath)) {
-          // rmdir failed silently (locked .exe files) - rename instead
+        if (await isValidPath(nodeModulesPath)) {
           const timestamp = Date.now();
           const oldPath = `${nodeModulesPath}.old.${timestamp}`;
           try {
-            fs.renameSync(nodeModulesPath, oldPath);
+            await rename(nodeModulesPath, oldPath);
             console.log(`   🔄 Renamed locked node_modules to ${path.basename(oldPath)}`);
             console.log(`   💡 Delete it manually later: ${oldPath}`);
           } catch {
-            console.log(
-              `   ⚠️  Could not remove/rename node_modules (locked by processes)`
-            );
+            console.log(`   ⚠️  Could not remove/rename node_modules (locked by processes)`);
             console.log(`   💡 Close Obsidian/VSCode and run: obsidian-inject again`);
             throw new Error('node_modules locked - close processes and retry');
           }
@@ -775,27 +765,19 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
           console.log(`   🗑️  Removed node_modules (will be reinstalled with Yarn)`);
         }
       }
-
-      // Then remove lock files
       if (hasPackageLock) {
-        fs.unlinkSync(packageLockPath);
+        await unlink(packageLockPath);
         console.log(`   🗑️  Removed package-lock.json`);
       }
-
       if (hasYarnLock) {
-        fs.unlinkSync(yarnLockPath);
+        await unlink(yarnLockPath);
         console.log(`   🗑️  Removed yarn.lock`);
       }
-
       console.log(`   ✅ Lock files and artifacts cleaned for fresh install`);
     } catch (error) {
-      if (error instanceof Error && error.message.includes('locked')) {
-        throw error;
-      }
+      if (error instanceof Error && error.message.includes('locked')) throw error;
       console.error(`   ❌ Failed to clean artifacts: ${error}`);
-      console.log(
-        `   💡 You may need to manually remove package-lock.json, yarn.lock and node_modules`
-      );
+      console.log(`   💡 You may need to manually remove package-lock.json, yarn.lock and node_modules`);
     }
   }
 }
@@ -805,21 +787,17 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
  */
 export async function ensureTsxInstalled(targetPath: string): Promise<void> {
   console.log(`\n🔍 Checking tsx installation...`);
-
   const packageJsonPath = path.join(targetPath, 'package.json');
-
   try {
-    const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+    const packageJson = JSON.parse(await readFile(packageJsonPath, 'utf8'));
     const devDependencies = packageJson.devDependencies || {};
     const dependencies = packageJson.dependencies || {};
-
     if (devDependencies.tsx || dependencies.tsx) {
       console.log(`   ✅ tsx is already installed`);
       return;
     }
-
     console.log(`   ⚠️  tsx not found, installing as dev dependency...`);
-    execSync('yarn add -D tsx', { cwd: targetPath, stdio: 'inherit' });
+    gitExec('yarn add -D tsx', targetPath);
     console.log(`   ✅ tsx installed successfully`);
   } catch (error) {
     console.error(`   ❌ Failed to install tsx: ${error}`);
@@ -833,15 +811,12 @@ export async function ensureTsxInstalled(targetPath: string): Promise<void> {
  */
 export async function runYarnInstall(targetPath: string): Promise<void> {
   console.log(`\n📦 Installing dependencies...`);
-
   try {
-    execSync('yarn install', { cwd: targetPath, stdio: 'inherit' });
+    gitExec('yarn install', targetPath);
     console.log(`   ✅ Dependencies installed successfully`);
   } catch (error) {
     console.error(`   ❌ Failed to install dependencies: ${error}`);
-    console.log(
-      `   💡 You may need to run 'yarn install' manually in the target directory`
-    );
+    console.log(`   💡 You may need to run 'yarn install' manually in the target directory`);
   }
 }
 
@@ -853,7 +828,6 @@ export async function performInjection(
   autoConfirm: boolean = false
 ): Promise<void> {
   console.log(`\n🚀 Starting injection process...`);
-
   try {
     const approvedDests = await diffAndPromptFiles(targetPath, autoConfirm);
     await cleanNpmArtifactsIfNeeded(targetPath);
@@ -878,9 +852,8 @@ export async function performInjection(
     console.log(`   3. yarn start    # Test development mode`);
     console.log(`   4. yarn acp      # Commit changes (or yarn bacp for build+commit)`);
 
-    // Check for .old directories and remind user to delete them
-    const oldDirs = fs
-      .readdirSync(targetPath)
+    const allEntries = await readdir(targetPath);
+    const oldDirs = allEntries
       .filter((name) => name.startsWith('node_modules.old.'))
       .map((name) => path.basename(name));
 

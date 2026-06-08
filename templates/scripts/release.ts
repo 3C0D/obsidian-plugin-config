@@ -1,11 +1,12 @@
 import { writeFile, stat } from 'fs/promises';
-import { execSync } from 'child_process';
 import dedent from 'dedent';
 import { join } from 'path';
 import {
   askConfirmation,
   askQuestion,
   createReadlineInterface,
+  gitExec,
+  gitOutput,
   ensureGitSync
 } from './utils.ts';
 
@@ -31,9 +32,7 @@ async function handleExistingTag(tag: string): Promise<boolean> {
   // Get the existing tag message to show to the user
   let existingMessage = '';
   try {
-    existingMessage = execSync(`git tag -l -n999 ${tag}`, {
-      encoding: 'utf8'
-    }).trim();
+    existingMessage = gitOutput(`git tag -l -n999 ${tag}`);
   } catch {
     // If we can't get the message, continue anyway
   }
@@ -51,8 +50,8 @@ async function handleExistingTag(tag: string): Promise<boolean> {
     return false;
   }
 
-  execSync(`git tag -d ${tag}`);
-  execSync(`git push origin :refs/tags/${tag}`);
+  gitExec(`git tag -d ${tag}`);
+  gitExec(`git push origin :refs/tags/${tag}`);
   console.log(`Deleted existing tag ${tag} locally and remotely.`);
   return true;
 }
@@ -62,9 +61,7 @@ async function createTag(): Promise<void> {
   const tag = `${currentVersion}`;
 
   await checkOrCreateFile(body);
-  const exists = execSync('git ls-remote --tags origin')
-    .toString()
-    .includes(`refs/tags/${tag}`);
+  const exists = gitOutput('git ls-remote --tags origin').includes(`refs/tags/${tag}`);
 
   if (exists && !(await handleExistingTag(tag))) {
     rl.close();
@@ -89,28 +86,28 @@ async function doNextSteps(message: string, tag: string): Promise<void> {
   const tagMessage = messages.map((m) => `-m "${m}"`).join(' ');
 
   try {
-    execSync('git add -A');
-    execSync('git commit -m "update tag description"');
+    gitExec('git add -A');
+    gitExec('git commit -m "update tag description"');
 
     // Ensure Git is synchronized before pushing
     await ensureGitSync();
 
-    execSync('git push');
+    gitExec('git push');
   } catch (error: unknown) {
     console.error('Error:', error instanceof Error ? error.message : String(error));
   }
   try {
-    execSync(`git tag -a ${tag} ${tagMessage}`);
+    gitExec(`git tag -a ${tag} ${tagMessage}`);
   } catch {
-    execSync(`git tag -d ${tag}`);
-    execSync(`git push origin :refs/tags/${tag}`);
+    gitExec(`git tag -d ${tag}`);
+    gitExec(`git push origin :refs/tags/${tag}`);
     console.log('Fixed');
-    execSync(`git tag -a ${tag} ${tagMessage}`);
+    gitExec(`git tag -a ${tag} ${tagMessage}`);
   }
   // Ensure Git is synchronized before pushing tag
   await ensureGitSync();
 
-  execSync(`git push origin ${tag}`);
+  gitExec(`git push origin ${tag}`);
   console.log(`Release ${tag} pushed to repo.`);
   console.log(dedent`
         with message:
