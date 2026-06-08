@@ -389,7 +389,7 @@ async function verifyPackage(): Promise<void> {
   console.log(`   ✅ Bin file ready`);
 
   // Quick build test (suppress tsc output, only show pass/fail)
-  gitExec('tsc --noEmit', undefined, true);
+  gitExec('npx tsc --noEmit', undefined, true);
   console.log(`   ✅ TypeScript check passed`);
 }
 

@@ -26,7 +26,7 @@ const pluginDir = process.cwd();
 // Create readline interface for prompts
 const rl: Interface = createReadlineInterface();
 
-const manifest: Manifest = checkManifest(pluginDir);
+const manifest: Manifest = await checkManifest(pluginDir);
 
 config();
 
