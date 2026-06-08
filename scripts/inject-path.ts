@@ -18,7 +18,9 @@ async function main(): Promise<void> {
     const configRoot = await findPluginConfigRoot();
     let version = 'unknown';
     try {
-      const pkg = JSON.parse(await readFile(path.join(configRoot, 'package.json'), 'utf8'));
+      const pkg = JSON.parse(
+        await readFile(path.join(configRoot, 'package.json'), 'utf8')
+      );
       version = pkg.version || 'unknown';
     } catch {
       // Ignore

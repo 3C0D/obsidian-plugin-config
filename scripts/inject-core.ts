@@ -2,15 +2,7 @@
 
 import path from 'path';
 import { fileURLToPath } from 'url';
-import {
-  mkdir,
-  readdir,
-  readFile,
-  rename,
-  rm,
-  unlink,
-  writeFile
-} from 'fs/promises';
+import { mkdir, readdir, readFile, rename, rm, unlink, writeFile } from 'fs/promises';
 import {
   askConfirmation,
   createReadlineInterface,
@@ -27,7 +19,6 @@ export interface InjectionPlan {
   hasScriptsFolder: boolean;
   currentDependencies: string[];
 }
-
 
 /**
  * Analyze the target plugin directory
@@ -175,7 +166,9 @@ export async function showInjectionPlan(
   }
 
   console.log(`\n📋 Will inject:`);
-  console.log(`   ✅ Local scripts (esbuild.config.ts, utils.ts, env.ts, constants.ts, etc.)`);
+  console.log(
+    `   ✅ Local scripts (esbuild.config.ts, utils.ts, env.ts, constants.ts, etc.)`
+  );
   console.log(`   ✅ Updated package.json scripts`);
   console.log(`   ✅ Required dependencies`);
 
@@ -422,7 +415,9 @@ export async function diffAndPromptFiles(
 
     // Identical → skip silently
     if (srcContent === destContent) {
-      console.log(`   ✅ ${path.relative(targetPath, entry.dest).replace(/\\/g, '/')} (unchanged)`);
+      console.log(
+        `   ✅ ${path.relative(targetPath, entry.dest).replace(/\\/g, '/')} (unchanged)`
+      );
       continue;
     }
 
@@ -615,9 +610,7 @@ export async function injectScripts(
 /**
  * Update package.json with autonomous configuration
  */
-export async function updatePackageJson(
-  targetPath: string
-): Promise<void> {
+export async function updatePackageJson(targetPath: string): Promise<void> {
   const packageJsonPath = path.join(targetPath, 'package.json');
 
   if (!(await isValidPath(packageJsonPath))) {
@@ -757,7 +750,9 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
             console.log(`   🔄 Renamed locked node_modules to ${path.basename(oldPath)}`);
             console.log(`   💡 Delete it manually later: ${oldPath}`);
           } catch {
-            console.log(`   ⚠️  Could not remove/rename node_modules (locked by processes)`);
+            console.log(
+              `   ⚠️  Could not remove/rename node_modules (locked by processes)`
+            );
             console.log(`   💡 Close Obsidian/VSCode and run: obsidian-inject again`);
             throw new Error('node_modules locked - close processes and retry');
           }
@@ -777,7 +772,9 @@ export async function cleanNpmArtifactsIfNeeded(targetPath: string): Promise<voi
     } catch (error) {
       if (error instanceof Error && error.message.includes('locked')) throw error;
       console.error(`   ❌ Failed to clean artifacts: ${error}`);
-      console.log(`   💡 You may need to manually remove package-lock.json, yarn.lock and node_modules`);
+      console.log(
+        `   💡 You may need to manually remove package-lock.json, yarn.lock and node_modules`
+      );
     }
   }
 }
@@ -816,7 +813,9 @@ export async function runYarnInstall(targetPath: string): Promise<void> {
     console.log(`   ✅ Dependencies installed successfully`);
   } catch (error) {
     console.error(`   ❌ Failed to install dependencies: ${error}`);
-    console.log(`   💡 You may need to run 'yarn install' manually in the target directory`);
+    console.log(
+      `   💡 You may need to run 'yarn install' manually in the target directory`
+    );
   }
 }
 

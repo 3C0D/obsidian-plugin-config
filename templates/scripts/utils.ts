@@ -211,8 +211,8 @@ export async function validateVaultPath(vaultPath: string): Promise<boolean> {
   // Normalize path to handle both forward and backward slashes
   const normalizedPath = path.normalize(vaultPath);
   return (
-    await isValidPath(path.join(normalizedPath, '.obsidian')) &&
-    await isValidPath(path.join(normalizedPath, '.obsidian', 'plugins'))
+    (await isValidPath(path.join(normalizedPath, '.obsidian'))) &&
+    (await isValidPath(path.join(normalizedPath, '.obsidian', 'plugins')))
   );
 }
 
